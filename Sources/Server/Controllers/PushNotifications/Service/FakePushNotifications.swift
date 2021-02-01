@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftyAWSSNS
+import LoggerAPI
 
 class FakePushNotifications: PushNotificationsService {
     required init?() {}
@@ -14,6 +15,7 @@ class FakePushNotifications: PushNotificationsService {
     // Simple fakes, with some async to simulate network requests.
     
     private func async(run: @escaping ()->()) {
+        Log.debug("Using FAKE_PUSH_NOTIFICATIONS")
         DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(200)) {
             run()
         }

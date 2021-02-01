@@ -89,7 +89,7 @@ extension PushNotificationsService {
                 return
             }
             
-            Log.debug("Sending push notification: \(message) to devices subscribed to topic \(topic) for user \(String(describing: user.username))")
+            Log.debug("Sending push notification: \(message) to devices subscribed to topic \(topic) for username \(String(describing: user.username)) with userId: \(String(describing: user.userId))")
             
             publish(message: message, target: .topicArn(topic), jsonMessageStructure: true) { response in
                 switch response {
@@ -103,6 +103,9 @@ extension PushNotificationsService {
         }
         
         let (_, errors) = users.synchronouslyRun(apply: apply)
+        
+        Log.debug("Error count: \(errors.count) when sending push notifications to: \(users.count) user(s)")
+        
         return errors.count == 0
     }
 }

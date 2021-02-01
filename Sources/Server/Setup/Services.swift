@@ -25,13 +25,10 @@ class Services {
 #if FAKE_PUSH_NOTIFICATIONS
         fakePushNotifications = true
 #endif
-        if Configuration.server.awssns == nil {
-
-            fakePushNotifications = true
-        }
 #endif
 
         if fakePushNotifications {
+            Log.debug("Using FAKE_PUSH_NOTIFICATIONS")
             guard let pns = FakePushNotifications() else {
                 Log.error("Failed during startup: Failed setting up FakePushNotifications")
                 return nil

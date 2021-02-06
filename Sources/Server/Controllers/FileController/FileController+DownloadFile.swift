@@ -155,7 +155,7 @@ extension FileController {
                 params.completion(.success(response))
             
             case .failure(let error):
-                let message = "Failed downloading file: \(error)"
+                let message = "Failed downloading file: \(error); file: \(cloudFileName)"
                 Log.error(message)
                 params.completion(.failure(.message(message)))
             }

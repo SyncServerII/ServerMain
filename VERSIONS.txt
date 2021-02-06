@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.0.1 (2/5/21)
+	* Added logging.
+
 Version 1.0.0 (1/24/21; beta testing)
 	* Change configuration files to use Codable
 	* Adding Microsoft authentication and OneDrive

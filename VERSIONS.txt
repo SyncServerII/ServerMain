@@ -1,6 +1,6 @@
 SyncServer
 
-Version 1.1.0
+Version 1.1.0 (2/6/21)
 	* Added new endpoint: UpdateUser-- to update user name
 
 Version 1.0.1 (2/5/21)

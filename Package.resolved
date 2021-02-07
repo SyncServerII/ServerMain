@@ -168,8 +168,8 @@
         "repositoryURL": "https://github.com/Kitura/Kitura-Session.git",
         "state": {
           "branch": null,
-          "revision": "774509e7fb48a01400c177c771faa5f8ff7842e4",
-          "version": "3.3.200"
+          "revision": "501de45890c6942f263a56145c9bca571002e09f",
+          "version": "3.3.201"
         }
       },
       {
@@ -321,8 +321,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerShared.git",
         "state": {
           "branch": null,
-          "revision": "6c725c50cdb575c183943dcfcdb7394390a5e933",
-          "version": "0.0.4"
+          "revision": "e193b9e79351a2f4a68af0cd784fde84e1032a77",
+          "version": "0.1.0"
         }
       },
       {

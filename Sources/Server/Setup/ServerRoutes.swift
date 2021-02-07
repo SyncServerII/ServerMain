@@ -26,6 +26,7 @@ public class ServerRoutes {
 
             (ServerEndpoints.addUser, userController.addUser),
             (ServerEndpoints.checkCreds, userController.checkCreds),
+            (ServerEndpoints.updateUser, userController.updateUser),
             (ServerEndpoints.removeUser, userController.removeUser),
             
             (ServerEndpoints.index, fileController.index),

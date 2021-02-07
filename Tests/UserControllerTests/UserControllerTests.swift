@@ -282,5 +282,65 @@ class UserControllerTests: ServerTestCase {
             return
         }
     }
+    
+    func testUpdateUserName() {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+
+        guard let addUserResponse = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+
+        // Update the user name
+        
+        let request = UpdateUserRequest()
+        request.userName = "XXXX YYYY"
+        
+        self.performServerTest { [weak self] expectation, testCreds in
+            guard let self = self else { return }
+            let headers = self.setupHeaders(testUser: .primaryOwningAccount, accessToken: testCreds.accessToken, deviceUUID:deviceUUID)
+
+            guard let parameters = request.urlParameters() else {
+                XCTFail()
+                expectation.fulfill()
+                return
+            }
+                        
+            self.performRequest(route: ServerEndpoints.updateUser, responseDictFrom: .body, headers: headers, urlParameters: "?" + parameters) { response, dict in
+                
+                Log.info("Status code: \(response?.statusCode)")
+
+                guard response?.statusCode == .OK, dict != nil else {
+                    XCTFail("Did not work on update user request: \(response?.statusCode)")
+                    expectation.fulfill()
+                    return
+                }
+
+                expectation.fulfill()
+            }
+        }
+        
+        // Check creds to get verify username
+        
+        performServerTest { expectation, creds in
+            let headers = self.setupHeaders(testUser: .primaryOwningAccount, accessToken: creds.accessToken, deviceUUID:deviceUUID)
+            
+            self.performRequest(route: ServerEndpoints.checkCreds, headers: headers) { response, dict in
+                Log.info("Status code: \(String(describing: response?.statusCode))")
+                XCTAssert(response?.statusCode == .OK, "checkCreds failed")
+                
+                if let dict = dict,
+                    let checkCredsResponse = try? CheckCredsResponse.decode(dict) {
+                    XCTAssert(checkCredsResponse.userInfo?.fullUserName == request.userName, "\(String(describing: checkCredsResponse.userInfo?.fullUserName))")
+                }
+                else {
+                    XCTFail()
+                }
+                
+                expectation.fulfill()
+            }
+        }
+    }
 }
 

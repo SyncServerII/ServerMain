@@ -238,6 +238,22 @@ class UserRepository : Repository, RepositoryLookup {
         return true
     }
     
+    func updateUser(name: String, forUser userId: UserId) -> Bool {
+        let update = Database.PreparedStatement(repo: self, type: .update)
+        update.add(fieldName: User.usernameKey, value: .string(name))
+        update.where(fieldName: User.userIdKey, value: .int64(userId))
+        
+        do {
+            try update.run()
+        }
+        catch (let error) {
+            Log.error("Failed updating User: \(error)")
+            return false
+        }
+        
+        return true
+    }
+    
     // For a sharing user, will have one element per sharing group the user is a member of. These are the "owners" or "parents" of the sharing groups the sharing user is in. Returns an empty list if the user isn't a sharing user.
     func getOwningSharingGroupUsers(forSharingUserId userId: UserId) -> [User]? {
         let sharingGroupUserTableName = SharingGroupUserRepository.tableName

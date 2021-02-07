@@ -201,7 +201,7 @@ class UserController : ControllerProtocol {
         }
         
         var fullUserName: String? = currentUser.username
-        // Don't send an empty user name back as an empty string.
+        // Don't send an empty user name back as an empty string. I want to be more definitive about a missing user name.
         if let username = currentUser.username, username.count == 0 {
             fullUserName = nil
         }
@@ -216,6 +216,48 @@ class UserController : ControllerProtocol {
         }, failure: {
             params.completion(.failure(nil))
         })
+    }
+    
+    func updateUser(params:RequestProcessingParameters) {
+        assert(params.ep.authenticationLevel == .secondary)
+
+        guard let updateUserRequest = params.request as? UpdateUserRequest else {
+            let message = "Did not receive UpdateUserRequest"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+
+        guard let newUserName = updateUserRequest.userName else {
+            let message = "Did not get new userName"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        guard let currentUser = params.currentSignedInUser else {
+            let message = "No current user!"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+
+        guard let userId = currentUser.userId else {
+            let message = "No user id!"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        guard params.repos.user.updateUser(name: newUserName, forUser: userId) else {
+            let message = "Could not update user name"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        let response = UpdateUserResponse()
+        params.completion(.success(response))
     }
     
     // A user can only remove themselves, not another user-- this policy is enforced because the currently signed in user (with the UserProfile) is the one removed.

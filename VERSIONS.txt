@@ -1,5 +1,9 @@
 SyncServer
 
+Version
+	* Improved notification messages-- in the cases of missing
+		username and missing sharing group name.
+
 Version 1.1.0 (2/6/21)
 	* Added new endpoint: UpdateUser-- to update user name
 

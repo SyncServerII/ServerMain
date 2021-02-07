@@ -92,15 +92,21 @@ extension PushNotificationsController {
             return false
         }
         
-        guard let username = fromUser.username else {
-            Log.error("sendNotifications: No username!")
-            return false
+        var modifiedMessage = ""
+        
+        if let username = fromUser.username, username.count > 0 {
+            modifiedMessage = "\(username)"
+        }
+        else {
+            Log.warning("Sending notifications: But no user name")
         }
         
-        var modifiedMessage = "\(username)"
-        
-        if let name = sharingGroup.sharingGroupName {
-            modifiedMessage += ", \(name)"
+        let sharingGroupName = sharingGroup.sharingGroupName ?? "Untitled Album"
+        if modifiedMessage.count == 0 {
+            modifiedMessage = "\(sharingGroupName)"
+        }
+        else {
+            modifiedMessage += ", \(sharingGroupName)"
         }
         
         modifiedMessage += ": " + message

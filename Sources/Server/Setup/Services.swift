@@ -20,28 +20,22 @@ class Services {
     
     init?(accountManager: AccountManager, changeResolverManager: ChangeResolverManager) {
 
-        var fakePushNotifications = false
-#if DEBUG
 #if FAKE_PUSH_NOTIFICATIONS
-        fakePushNotifications = true
-#endif
-#endif
-
-        if fakePushNotifications {
-            Log.debug("Using FAKE_PUSH_NOTIFICATIONS")
-            guard let pns = FakePushNotifications() else {
-                Log.error("Failed during startup: Failed setting up FakePushNotifications")
-                return nil
-            }
-            pushNotifications = pns
+#if DEBUG
+        Log.debug("Using FAKE_PUSH_NOTIFICATIONS")
+        guard let pns = FakePushNotifications() else {
+            Log.error("Failed during startup: Failed setting up FakePushNotifications")
+            return nil
         }
-        else {
-            guard let pns = PushNotifications() else {
-                Log.error("Failed during startup: Failed setting up PushNotifications")
-                return nil
-            }
-            pushNotifications = pns
+        pushNotifications = pns
+#endif
+#else
+        guard let pns = PushNotifications() else {
+            Log.error("Failed during startup: Failed setting up PushNotifications")
+            return nil
         }
+        pushNotifications = pns
+#endif
 
         self.accountManager = accountManager
         self.changeResolverManager = changeResolverManager

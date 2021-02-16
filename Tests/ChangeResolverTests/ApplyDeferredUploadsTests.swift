@@ -20,7 +20,7 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
 
         accountManager = AccountManager()
         let credentials = Credentials()
-        accountManager.setupAccounts(credentials: credentials)
+        _ = accountManager.setupAccounts(credentials: credentials)
         resolverManager = ChangeResolverManager()
 
         guard let services = Services(accountManager: accountManager, changeResolverManager: resolverManager) else {

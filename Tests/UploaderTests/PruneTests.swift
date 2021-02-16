@@ -18,7 +18,7 @@ class PruneTests: ServerTestCase, UploaderCommon {
         super.setUp()
         
         accountManager = AccountManager()
-        accountManager.setupAccounts(credentials: Credentials())
+        _ = accountManager.setupAccounts(credentials: Credentials())
         let resolverManager = ChangeResolverManager()
 
         guard let services = Services(accountManager: accountManager, changeResolverManager: resolverManager) else {

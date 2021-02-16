@@ -38,7 +38,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         super.setUp()
         
         accountManager = AccountManager()
-        accountManager.setupAccounts(credentials: Credentials())
+        _ = accountManager.setupAccounts(credentials: Credentials())
         
         let resolverManager = ChangeResolverManager()
         do {
@@ -60,7 +60,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
-        var repos = Repositories(db: db)
+        let repos = Repositories(db: db)
         let changeResolverName = CommentFile.changeResolverName
         let fakeUploader = UploaderFake(delegate: self)
         
@@ -157,7 +157,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         let deviceUUID = Foundation.UUID().uuidString
-        var repos = Repositories(db: db)
+        let repos = Repositories(db: db)
         let changeResolverName = CommentFile.changeResolverName
         let fakeUploader = UploaderFake(delegate: self)
         

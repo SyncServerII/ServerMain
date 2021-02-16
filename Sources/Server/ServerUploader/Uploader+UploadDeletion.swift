@@ -22,25 +22,7 @@ extension Uploader {
     }
     
     // Do the actual file deletions
-    func processFileDeletions(deferredUploads: [DeferredUpload]) throws {
-        guard try getDbConnection().startTransaction() else {
-            throw Errors.failedStartingDatabaseTransaction
-        }
-        
-        do {
-            try processFileDeletionsWithoutTransaction(deferredUploads: deferredUploads)
-        } catch let error {
-            _ = try getDbConnection().rollback()
-            throw error
-        }
-        
-        guard try getDbConnection().commit() else {
-            _ = try getDbConnection().rollback()
-            throw Errors.failedCommittingDatabaseTransaction
-        }
-    }
-
-    private func processFileDeletionsWithoutTransaction(deferredUploads: [DeferredUpload]) throws {
+    func processFileDeletionsWithoutTransaction(deferredUploads: [DeferredUpload]) throws {
         guard deferredUploads.count > 0 else {
             return
         }

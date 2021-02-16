@@ -25,7 +25,7 @@ class Sharing_FileManipulationTests: ServerTestCase {
     override func setUp() {
         super.setUp()
         accountManager = AccountManager()
-        accountManager.setupAccounts(credentials: Credentials())
+        _ = accountManager.setupAccounts(credentials: Credentials())
     }
     
     override func tearDown() {

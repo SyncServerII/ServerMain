@@ -126,8 +126,8 @@ class AccountAuthenticationTests: ServerTestCase {
             }
             
             self.performRequest(route: ServerEndpoints.addUser, headers: headers, urlParameters: queryParams) { response, dict in
-                Log.info("Status code: \(response?.statusCode)")
-                XCTAssert(response?.statusCode == .OK, "Did not work on addUser request: \(response?.statusCode)")
+                Log.info("Status code: \(String(describing: response?.statusCode))")
+                XCTAssert(response?.statusCode == .OK, "Did not work on addUser request: \(String(describing: response?.statusCode))")
                 
                 if let dict = dict, let addUserResponse = try? AddUserResponse.decode(dict) {
                     XCTAssert(addUserResponse.userAlreadyExisted == true, "userAlreadyExisted was not true")

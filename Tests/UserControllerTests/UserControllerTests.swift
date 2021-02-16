@@ -287,7 +287,7 @@ class UserControllerTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
 
-        guard let addUserResponse = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+        guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
         }
@@ -309,10 +309,10 @@ class UserControllerTests: ServerTestCase {
                         
             self.performRequest(route: ServerEndpoints.updateUser, responseDictFrom: .body, headers: headers, urlParameters: "?" + parameters) { response, dict in
                 
-                Log.info("Status code: \(response?.statusCode)")
+                Log.info("Status code: \(String(describing: response?.statusCode))")
 
                 guard response?.statusCode == .OK, dict != nil else {
-                    XCTFail("Did not work on update user request: \(response?.statusCode)")
+                    XCTFail("Did not work on update user request: \(String(describing: response?.statusCode))")
                     expectation.fulfill()
                     return
                 }

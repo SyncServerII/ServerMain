@@ -18,7 +18,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         
         accountManager = AccountManager()
         let credentials = Credentials()
-        accountManager.setupAccounts(credentials: credentials)
+        _ = accountManager.setupAccounts(credentials: credentials)
         let resolverManager = ChangeResolverManager()
 
         guard let services = Services(accountManager: accountManager, changeResolverManager: resolverManager) else {

@@ -32,7 +32,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         super.setUp()
         
         accountManager = AccountManager()
-        accountManager.setupAccounts(credentials: Credentials())
+        _ = accountManager.setupAccounts(credentials: Credentials())
         
         let resolverManager = ChangeResolverManager()
         do {
@@ -48,7 +48,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
     func runDeletionOfFile(withFileGroup:Bool) throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
-        var repos = Repositories(db: db)
+        let repos = Repositories(db: db)
         
         var fileGroup: FileGroup?
         if withFileGroup {

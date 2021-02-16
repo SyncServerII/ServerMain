@@ -24,7 +24,7 @@ class FileDeletionTests: ServerTestCase {
     override func setUp() {
         super.setUp()
         accountManager = AccountManager()
-        accountManager.setupAccounts(credentials: Credentials())
+        _ = accountManager.setupAccounts(credentials: Credentials())
     }
     
     // Returns the cloud file name

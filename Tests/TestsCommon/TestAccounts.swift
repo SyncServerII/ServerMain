@@ -277,7 +277,7 @@ extension AccountScheme {
             
             creds.refresh { error in
                 guard error == nil, creds.accessToken != nil else {
-                    Log.error("Error: \(error)")
+                    Log.error("Error: \(String(describing: error))")
                     XCTFail()
                     expectation.fulfill()
                     return

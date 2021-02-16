@@ -66,6 +66,7 @@ class Uploader: UploaderProtocol {
         case failedStartingDatabaseTransaction
         case failedCommittingDatabaseTransaction
         case couldNotGetFileGroup
+        case generic(String)
     }
     
     let services: UploaderServices
@@ -81,7 +82,8 @@ class Uploader: UploaderProtocol {
     private(set) var uploadRepo:UploadRepository!
     private(set) var fileIndexRepo:FileIndexRepository!
     private(set) var userRepo: UserRepository!
-    
+    private(set) var staleVersionRepo:StaleVersionRepository!
+
     // For testing
     weak var delegate: UploaderDelegate?
     
@@ -119,6 +121,7 @@ class Uploader: UploaderProtocol {
         self.uploadRepo = UploadRepository(db)
         self.fileIndexRepo = FileIndexRepository(db)
         self.userRepo = UserRepository(db)
+        self.staleVersionRepo = StaleVersionRepository(db)
         
         return _db
     }
@@ -180,21 +183,52 @@ class Uploader: UploaderProtocol {
         Log.info("About to start async processing.")
         
         DispatchQueue.global().async {
-            do {
-                try self.processFileDeletions(deferredUploads: deferredFileDeletions)
-            } catch let error {
-                Log.error("\(error)")
-                self.finishRun(message: "processFileDeletions", error: error)
+            if !(self.transactProcessing(message: "processFileDeletions") { [weak self] in
+                try self?.processFileDeletionsWithoutTransaction(deferredUploads: deferredFileDeletions)
+            }) {
+                return
+            }
+            
+            if !(self.transactProcessing(message: "processFileChanges") { [weak self] in
+                try self?.processFileChanges(deferredUploads: deferredFileChangeUploads)
+            }) {
                 return
             }
 
-            self.processFileChanges(deferredUploads: deferredFileChangeUploads) { [weak self] error in
-                guard let self = self else { return }
-                if let error = error {
-                    Log.error("\(error); deferredFileChangeUploads: \(deferredFileChangeUploads)")
-                }
-                self.finishRun(message: "processFileChanges", error: error)
+            let deletions = DeleteStaleFileVersions(staleVersionRepo: self.staleVersionRepo, fileIndexRepo: self.fileIndexRepo, userRepo: self.userRepo, services: self.services)
+            
+            if !(self.transactProcessing(message: "DeleteStaleFileVersions") {
+                try deletions.doNeededDeletions()
+            }) {
+                return
             }
+                        
+            self.finishRun(message: "Success!", error: nil)
+        }
+    }
+    
+    private func transactProcessing(message:String, completion:() throws ->()) -> Bool {
+        do {
+            guard try getDbConnection().startTransaction() else {
+                throw Errors.failedStartingDatabaseTransaction
+            }
+            
+            try completion()
+            
+            guard try getDbConnection().commit() else {
+                _ = try getDbConnection().rollback()
+                Log.error("transactProcessing: Failed on commit")
+                finishRun(message: message, error:
+                    Errors.generic("transactProcessing: Failed on commit"))
+                return false
+            }
+            
+            return true
+        } catch let error {
+            _ = try? getDbConnection().rollback()
+            Log.error("transactProcessing: \(error)")
+            finishRun(message: message, error: error)
+            return false
         }
     }
     
@@ -223,10 +257,7 @@ class Uploader: UploaderProtocol {
     }
     
     // Assumes all `deferredUploads` have a sharingGroupUUID.
-    private func processFileChanges(deferredUploads: [DeferredUpload], completion: @escaping (Swift.Error?)->()) {
-    
-        Log.debug("Starting to process.")
-        
+    private func processFileChanges(deferredUploads: [DeferredUpload]) throws {
         var noFileGroupUUIDs = [DeferredUpload]()
         var withFileGroupUUIDs = [DeferredUpload]()
         for deferredUpload in deferredUploads {
@@ -251,17 +282,15 @@ class Uploader: UploaderProtocol {
                 aggregatedGroups += aggregatedByFileGroups
             }
 
-            Log.debug("applyDeferredUploads: with file groups")
             if let error = self.applyDeferredUploads(aggregatedGroups: aggregatedGroups, withFileGroupUUID: true) {
                 Log.error("applyDeferredUploads: with file groups: \(error)")
-                completion(error)
+                throw error
             }
         }
         
         // Next: Deal with any DeferredUpload's that don't have fileGroupUUID's
         
         guard noFileGroupUUIDs.count > 0 else {
-            completion(nil)
             return
         }
         
@@ -271,8 +300,9 @@ class Uploader: UploaderProtocol {
         
         aggregateBySharingGroups = Self.aggregateSharingGroupUUIDs(deferredUploads: noFileGroupUUIDs)
     
-        Log.debug("applyDeferredUploads: without file groups")
-        completion(self.applyDeferredUploads(aggregatedGroups: aggregateBySharingGroups, withFileGroupUUID: false))
+        if let error = self.applyDeferredUploads(aggregatedGroups: aggregateBySharingGroups, withFileGroupUUID: false) {
+            throw error
+        }
     }
     
     // When withFileGroupUUID is true: Synchronously process each group of deferred uploads, all with the same fileGroupUUID.
@@ -310,6 +340,7 @@ class Uploader: UploaderProtocol {
                 // `applier.run` executes asynchronously. Need to retain the applier.
                 applier = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroupUUID, deferredUploads: aggregatedGroup, services: services, db: try getDbConnection())
             } catch let error {
+                Log.error("applyDeferredUploads: failed creating ApplyDeferredUploads")
                 completion(.failure(error))
                 return
             }

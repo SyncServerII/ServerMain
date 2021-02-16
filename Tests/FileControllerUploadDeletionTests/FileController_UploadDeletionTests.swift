@@ -18,7 +18,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
 
         accountManager = AccountManager()
         let credentials = Credentials()
-        accountManager.setupAccounts(credentials: credentials)
+        _ = accountManager.setupAccounts(credentials: credentials)
         let resolverManager = ChangeResolverManager()
 
         guard let services = Services(accountManager: accountManager, changeResolverManager: resolverManager) else {
@@ -437,7 +437,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let deviceUUID2 = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
 
-        let account = TestAccount.dropbox1
+        let account = TestAccount.google2
         guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, testAccount: account, deviceUUID:deviceUUID1, fileUUID: fileUUID, fileLabel: UUID().uuidString),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()

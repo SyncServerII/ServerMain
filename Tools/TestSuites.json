@@ -75,6 +75,9 @@
     },
     {
       "name": "DatabaseTests.SpecificDatabaseTests_UserRepository"
+    },
+    {
+      "name": "DatabaseTests.SpecificDatabaseTests_StaleVersion"
     }
   ],
   "FileControllerUploadFileTests": [

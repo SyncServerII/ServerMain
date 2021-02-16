@@ -24,7 +24,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         
         accountManager = AccountManager()
         let credentials = Credentials()
-        accountManager.setupAccounts(credentials: credentials)
+        _ = accountManager.setupAccounts(credentials: credentials)
     }
     
     func runGetUploadsResult(withInvalidDeferredUploadId: Bool) throws {

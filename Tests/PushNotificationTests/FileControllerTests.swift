@@ -151,12 +151,12 @@ class SendPushNotificationsTests: ServerTestCase {
         let fakeToken1 = Foundation.UUID().uuidString
         let fakeToken2 = Foundation.UUID().uuidString
 
-        guard let addUserResponse1 = self.addNewUser(testAccount: .google1, sharingGroupUUID: sharingGroupUUID1, deviceUUID:deviceUUID1, cloudFolderName: ServerTestCase.cloudFolderName) else {
+        guard let _ = self.addNewUser(testAccount: .google1, sharingGroupUUID: sharingGroupUUID1, deviceUUID:deviceUUID1, cloudFolderName: ServerTestCase.cloudFolderName) else {
             XCTFail()
             return
         }
         
-        guard let addUserResponse2 = self.addNewUser(testAccount: .dropbox1, sharingGroupUUID: sharingGroupUUID2, deviceUUID:deviceUUID2, cloudFolderName: ServerTestCase.cloudFolderName) else {
+        guard let _ = self.addNewUser(testAccount: .dropbox1, sharingGroupUUID: sharingGroupUUID2, deviceUUID:deviceUUID2, cloudFolderName: ServerTestCase.cloudFolderName) else {
             XCTFail()
             return
         }
@@ -169,7 +169,7 @@ class SendPushNotificationsTests: ServerTestCase {
             return
         }
 
-        guard let redeemResult = redeemSharingInvitation(sharingUser: .dropbox1, deviceUUID: deviceUUID2, canGiveCloudFolderName: false, sharingInvitationUUID: invitationUUID) else {
+        guard let _ = redeemSharingInvitation(sharingUser: .dropbox1, deviceUUID: deviceUUID2, canGiveCloudFolderName: false, sharingInvitationUUID: invitationUUID) else {
             XCTFail()
             return
         }

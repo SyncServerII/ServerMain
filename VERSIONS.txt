@@ -1,9 +1,10 @@
 SyncServer
 
-Version
+Version 1.2.0 (2/16/21)
 	* Improved notification messages-- in the cases of missing
 		username and missing sharing group name.
-
+	* Enabled downloading stale file versions. Stale file versions are deleted after a delay.
+	
 Version 1.1.0 (2/6/21)
 	* Added new endpoint: UpdateUser-- to update user name
 

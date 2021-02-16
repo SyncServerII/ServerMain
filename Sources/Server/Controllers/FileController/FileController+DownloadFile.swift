@@ -35,7 +35,6 @@ extension FileController {
             // First, lookup the file in the FileIndex. This does an important security check too-- make sure the fileUUID is in the sharing group.
            
         let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: downloadRequest.sharingGroupUUID, fileUUID: downloadRequest.fileUUID)
-
         let lookupResult = params.repos.fileIndex.lookup(key: key, modelInit: FileIndex.init)
         
         let fileIndex:FileIndex
@@ -63,8 +62,28 @@ extension FileController {
             params.completion(.failure(.message(message)))
             return
         }
+
+        var foundStaleVersion = false
+        let staleVersionKey = StaleVersionRepository.LookupKey.uuids(fileUUID: fileIndex.fileUUID, sharingGroupUUID: fileIndex.sharingGroupUUID, fileVersion: downloadRequest.fileVersion)
+        let staleVersionLookupResult = params.repos.staleVersion.lookup(key: staleVersionKey, modelInit: StaleVersion.init)
+        switch staleVersionLookupResult {
+        case .found:
+            foundStaleVersion = true
+            
+        case .noObjectFound:
+            break
+            
+        case .error(let error):
+            let message = "Error looking up file in StaleVersion: \(error)"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
         
-        guard downloadRequest.fileVersion == fileIndex.fileVersion else {
+        // Either the file version needs to be in the FileIndex or in StaleVersion.
+        
+        guard foundStaleVersion ||
+            downloadRequest.fileVersion == fileIndex.fileVersion else {
             let message = "Expected file version \(String(describing: downloadRequest.fileVersion)) was not the same as the actual version \(String(describing: fileIndex.fileVersion))"
             Log.error(message)
             params.completion(.failure(.message(message)))

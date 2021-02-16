@@ -58,7 +58,7 @@ class DeleteStaleFileVersions {
             }
         
             let options = CloudStorageFileNameOptions(cloudFolderName: owningCreds.cloudFolderName, mimeType: fileIndex.mimeType)
-            let currentCloudFileName = Filename.inCloud(deviceUUID: staleFileVersion.deviceUUID, fileUUID: staleFileVersion.fileUUID, mimeType: options.mimeType, fileVersion: staleFileVersion.fileVersion)
+            let currentCloudFileName = Filename.inCloud(deviceUUID: fileIndex.deviceUUID, fileUUID: staleFileVersion.fileUUID, mimeType: options.mimeType, fileVersion: staleFileVersion.fileVersion)
             let deletion = FileDeletion(cloudStorage: cloudStorage, cloudFileName: currentCloudFileName, options: options)
             
             fileDeletions += [deletion]

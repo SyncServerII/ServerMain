@@ -30,11 +30,11 @@ class SpecificDatabaseTests_StaleVersion: ServerTestCase {
         super.tearDown()
     }
 
-    func doAddStaleVersion(fileUUID: String, deviceUUID: String, fileVersion: FileVersionInt, fileIndexId: FileIndexId, expiryDate: Date) -> StaleVersion? {
+    func doAddStaleVersion(fileUUID: String, sharingGroupUUID: String, fileVersion: FileVersionInt, fileIndexId: FileIndexId, expiryDate: Date) -> StaleVersion? {
         let staleVersion = StaleVersion()
         
         staleVersion.fileUUID = fileUUID
-        staleVersion.deviceUUID = deviceUUID
+        staleVersion.sharingGroupUUID = sharingGroupUUID
         staleVersion.fileVersion = fileVersion
         staleVersion.expiryDate = expiryDate
         staleVersion.fileIndexId = fileIndexId
@@ -60,19 +60,19 @@ class SpecificDatabaseTests_StaleVersion: ServerTestCase {
     }
     
     func testAddSingleUpload() {
-        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, deviceUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date()) else {
+        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date()) else {
             XCTFail()
             return
         }
     }
     
     func testLookupFromStaleVersion() {
-        guard let staleVersion = doAddStaleVersion(fileUUID: UUID().uuidString, deviceUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date()) else {
+        guard let staleVersion = doAddStaleVersion(fileUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date()) else {
             XCTFail()
             return
         }
         
-        let lookupKey = StaleVersionRepository.LookupKey.uuids(fileUUID: staleVersion.fileUUID, deviceUUID: staleVersion.deviceUUID)
+        let lookupKey = StaleVersionRepository.LookupKey.uuids(fileUUID: staleVersion.fileUUID, sharingGroupUUID: staleVersion.sharingGroupUUID, fileVersion: staleVersion.fileVersion)
         let result = StaleVersionRepository(db).lookup(key: lookupKey, modelInit: StaleVersion.init)
         
         switch result {
@@ -87,7 +87,7 @@ class SpecificDatabaseTests_StaleVersion: ServerTestCase {
             }
             
             XCTAssert(staleVersionResult.fileUUID == staleVersion.fileUUID)
-            XCTAssert(staleVersionResult.deviceUUID == staleVersion.deviceUUID)
+            XCTAssert(staleVersionResult.sharingGroupUUID == staleVersion.sharingGroupUUID)
             XCTAssert(DateExtras.equals(staleVersionResult.expiryDate, staleVersion.expiryDate))
             XCTAssert(staleVersionResult.fileVersion == staleVersion.fileVersion)
             XCTAssert(staleVersionResult.fileIndexId == staleVersion.fileIndexId)
@@ -101,12 +101,12 @@ class SpecificDatabaseTests_StaleVersion: ServerTestCase {
     func testRemoveExpired_NoneExpectedToBeRemoved() {
         let expiry = Date().addingTimeInterval(100)
         
-        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, deviceUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: expiry) else {
+        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: expiry) else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, deviceUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: expiry) else {
+        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: expiry) else {
             XCTFail()
             return
         }
@@ -123,12 +123,12 @@ class SpecificDatabaseTests_StaleVersion: ServerTestCase {
     }
     
     func testRemoveExpired_OneExpectedToBeRemoved() {
-        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, deviceUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date().addingTimeInterval(100)) else {
+        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date().addingTimeInterval(100)) else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, deviceUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date().addingTimeInterval(-100)) else {
+        guard let _ = doAddStaleVersion(fileUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, fileVersion: 1, fileIndexId: 2, expiryDate: Date().addingTimeInterval(-100)) else {
             XCTFail()
             return
         }

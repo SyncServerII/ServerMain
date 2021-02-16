@@ -313,9 +313,9 @@ class ApplyDeferredUploads {
                 
                 // Don't do deletions yet. The overall operations can't be repeated if the original files are gone.
                 // 2/15/21: Plus, we're delaying deleting files. See https://github.com/SyncServerII/ServerMain/issues/3
-
+                
                 let staleVersion = StaleVersion()
-                staleVersion.deviceUUID = deviceUUID
+                staleVersion.sharingGroupUUID = fileIndex.sharingGroupUUID
                 staleVersion.fileUUID = fileUUID
                 staleVersion.expiryDate = StaleVersion.initialExpiryDate
                 staleVersion.fileVersion = priorFileVersion

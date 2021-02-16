@@ -1336,7 +1336,7 @@ class ServerTestCase : XCTestCase {
                             dataResponse = data
                         }
                         
-                        XCTAssert(downloadFileResponse.contentsChanged == contentsChangedExpected)
+                        XCTAssert(downloadFileResponse.contentsChanged == contentsChangedExpected, "downloadFileResponse.contentsChanged: \(String(describing: downloadFileResponse.contentsChanged)); contentsChangedExpected: \(contentsChangedExpected)")
 
                         var loadTesting = false
                         if let loadTestingCloudStorage = Configuration.server.loadTestingCloudStorage, loadTestingCloudStorage {

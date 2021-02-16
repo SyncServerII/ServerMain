@@ -23,8 +23,8 @@ class StaleVersion : NSObject, Model {
     static let fileUUIDKey = "fileUUID"
     var fileUUID: String!
     
-    static let deviceUUIDKey = "deviceUUID"
-    var deviceUUID:String!
+    static let sharingGroupUUIDKey = "sharingGroupUUID"
+    var sharingGroupUUID:String!
     
     // The stale version
     static let fileVersionKey = "fileVersion"
@@ -51,8 +51,8 @@ class StaleVersion : NSObject, Model {
             case StaleVersion.fileUUIDKey:
                 fileUUID = newValue as? String
 
-            case StaleVersion.deviceUUIDKey:
-                deviceUUID = newValue as? String
+            case StaleVersion.sharingGroupUUIDKey:
+                sharingGroupUUID = newValue as? String
 
             case StaleVersion.fileVersionKey:
                 fileVersion = newValue as? FileVersionInt
@@ -118,7 +118,7 @@ class StaleVersionRepository : Repository, RepositoryLookup, ModelIndexId {
             "fileUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
                 
             // From FileIndex
-            "deviceUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
+            "sharingGroupUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
 
             // From FileIndex
             "fileVersion INT NOT NULL, " +
@@ -140,7 +140,7 @@ class StaleVersionRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     private func basicFieldCheck(staleVersion:StaleVersion) -> Bool {
-        return staleVersion.deviceUUID == nil ||
+        return staleVersion.sharingGroupUUID == nil ||
         staleVersion.fileUUID == nil ||
         staleVersion.fileVersion == nil ||
         staleVersion.expiryDate == nil ||
@@ -180,7 +180,7 @@ class StaleVersionRepository : Repository, RepositoryLookup, ModelIndexId {
 
         insert.add(fieldName: StaleVersion.fileIndexIdKey, value: .int64(staleVersion.fileIndexId))
         insert.add(fieldName: StaleVersion.fileUUIDKey, value: .string(staleVersion.fileUUID))
-        insert.add(fieldName: StaleVersion.deviceUUIDKey, value: .string(staleVersion.deviceUUID))
+        insert.add(fieldName: StaleVersion.sharingGroupUUIDKey, value: .string(staleVersion.sharingGroupUUID))
         insert.add(fieldName: StaleVersion.fileVersionKey, value: .int32(staleVersion.fileVersion))
         
         if let expiryDate = staleVersion.expiryDate {
@@ -216,13 +216,13 @@ class StaleVersionRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     enum LookupKey : CustomStringConvertible {
-        case uuids(fileUUID:String, deviceUUID: String)
+        case uuids(fileUUID:String, sharingGroupUUID: String, fileVersion: FileVersionInt)
         case needingDeletion
         
         var description : String {
             switch self {
-            case .uuids(let fileUUID, let deviceUUID):
-                return "uuids(fileUUID: \(fileUUID); deviceUUID: \(deviceUUID))"
+            case .uuids(let fileUUID, let sharingGroupUUID, let fileVersion):
+                return "uuids(fileUUID: \(fileUUID); sharingGroupUUID: \(sharingGroupUUID); fileVersion: \(fileVersion)"
             case .needingDeletion:
                 return "needingDeletion"
             }
@@ -231,8 +231,8 @@ class StaleVersionRepository : Repository, RepositoryLookup, ModelIndexId {
     
     func lookupConstraint(key:LookupKey) -> String {
         switch key {
-        case .uuids(let fileUUID, let deviceUUID):
-            return "fileUUID = '\(fileUUID)' && deviceUUID = '\(deviceUUID)'"
+        case .uuids(let fileUUID, let sharingGroupUUID, let fileVersion):
+            return "fileUUID = '\(fileUUID)' && sharingGroupUUID = '\(sharingGroupUUID)' && fileVersion = \(fileVersion)"
         case .needingDeletion:
             let staleDateString = DateExtras.date(Date(), toFormat: .DATETIME)
             return "expiryDate < '\(staleDateString)'"

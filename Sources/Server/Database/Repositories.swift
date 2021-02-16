@@ -19,6 +19,7 @@ class Repositories {
     lazy var sharingGroup = SharingGroupRepository(db)
     lazy var sharingGroupUser = SharingGroupUserRepository(db)
     lazy var deferredUpload = DeferredUploadRepository(db)
+    lazy var staleVersion = StaleVersionRepository(db)
 
     init(db: Database) {
         self.db = db

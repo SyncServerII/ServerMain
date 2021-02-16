@@ -48,6 +48,7 @@
 		83671F9625DB521B00A8A716 /* StaleVersionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83671F9525DB521B00A8A716 /* StaleVersionRepository.swift */; };
 		83671FF825DB5E0700A8A716 /* SpecificDatabaseTests_StaleVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83671FF725DB5E0600A8A716 /* SpecificDatabaseTests_StaleVersion.swift */; };
 		8367205A25DB708900A8A716 /* DeleteStaleFileVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8367205925DB708900A8A716 /* DeleteStaleFileVersions.swift */; };
+		836720BC25DBB5AA00A8A716 /* FileController_DownloadStaleFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836720BB25DBB5AA00A8A716 /* FileController_DownloadStaleFiles.swift */; };
 		8C192432ECE78FA92A4E7083 /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 08BFE61700ACC1D03BAC93E6 /* Server.json */; };
 		OBJ_1019 /* AppleClaims.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_358 /* AppleClaims.swift */; };
 		OBJ_1020 /* ApplePublicKey+HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_359 /* ApplePublicKey+HTTP.swift */; };
@@ -8193,6 +8194,7 @@
 		83671F9525DB521B00A8A716 /* StaleVersionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaleVersionRepository.swift; sourceTree = "<group>"; };
 		83671FF725DB5E0600A8A716 /* SpecificDatabaseTests_StaleVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecificDatabaseTests_StaleVersion.swift; sourceTree = "<group>"; };
 		8367205925DB708900A8A716 /* DeleteStaleFileVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteStaleFileVersions.swift; sourceTree = "<group>"; };
+		836720BB25DBB5AA00A8A716 /* FileController_DownloadStaleFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileController_DownloadStaleFiles.swift; sourceTree = "<group>"; };
 		"AppleJWTDecoder::AppleJWTDecoder::Product" /* AppleJWTDecoder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AppleJWTDecoder.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"ChangeResolvers::ChangeResolvers::Product" /* ChangeResolvers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ChangeResolvers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"CredentialsAppleSignIn::CredentialsAppleSignIn::Product" /* CredentialsAppleSignIn.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = CredentialsAppleSignIn.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -10245,6 +10247,7 @@
 		OBJ_130 /* FileControllerUploadFileTests */ = {
 			isa = PBXGroup;
 			children = (
+				836720BB25DBB5AA00A8A716 /* FileController_DownloadStaleFiles.swift */,
 				OBJ_131 /* FileController_FinishUploadsTests.swift */,
 				OBJ_132 /* FileController_V0_UploadTests.swift */,
 				OBJ_133 /* FileController_VN_UploadTests.swift */,
@@ -14794,6 +14797,7 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_1990 /* FileController_FinishUploadsTests.swift in Sources */,
+				836720BC25DBB5AA00A8A716 /* FileController_DownloadStaleFiles.swift in Sources */,
 				OBJ_1991 /* FileController_V0_UploadTests.swift in Sources */,
 				OBJ_1992 /* FileController_VN_UploadTests.swift in Sources */,
 			);

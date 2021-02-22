@@ -177,7 +177,7 @@ class SharingGroupRepository: Repository, RepositoryLookup {
         }
     }
 
-    func sharingGroups(forUserId userId: UserId, sharingGroupUserRepo: SharingGroupUserRepository, userRepo: UserRepository) -> [SharingGroup]? {
+    func sharingGroups(forUserId userId: UserId, includeContentsSummary: Bool, sharingGroupUserRepo: SharingGroupUserRepository, userRepo: UserRepository, fileIndexRepo: FileIndexRepository) -> [ServerShared.SharingGroup]? {
         let sharingGroupUserTableName = SharingGroupUserRepository.tableName
         
         let query = "select \(tableName).sharingGroupUUID, \(tableName).sharingGroupName, \(tableName).deleted,  \(sharingGroupUserTableName).permission, \(sharingGroupUserTableName).owningUserId FROM \(tableName),\(sharingGroupUserTableName) WHERE \(sharingGroupUserTableName).userId = \(userId) AND \(sharingGroupUserTableName).sharingGroupUUID = \(tableName).sharingGroupUUID"
@@ -193,15 +193,30 @@ class SharingGroupRepository: Repository, RepositoryLookup {
             return nil
         }
         
+        var clientSharingGroups = [ServerShared.SharingGroup]()
+        
         // Now, get the accountTypes of the "owning" or "parent" users for each sharing group, for sharing users. This will be used downstream to determine the cloud sharing type of each sharing group for the sharing user.
         for sharingGroup in sharingGroups {
             let owningUser = owningUsers.filter {sharingGroup.owningUserId != nil && $0.userId == sharingGroup.owningUserId}
             if owningUser.count == 1 {
                 sharingGroup.accountType = owningUser[0].accountType
             }
+            
+            let clientSharingGroup = sharingGroup.toClient()
+            
+            if includeContentsSummary {                
+                guard let summary = fileIndexRepo.getGroupSummary(forSharingGroupUUID: sharingGroup.sharingGroupUUID) else {
+                    Log.error("Failed getGroupSummary: \(sharingGroup.sharingGroupUUID)")
+                    return nil
+                }
+                
+                clientSharingGroup.contentsSummary = summary
+            }
+            
+            clientSharingGroups += [clientSharingGroup]
         }
         
-        return sharingGroups
+        return clientSharingGroups
     }
     
     private func sharingGroups(forSelectQuery selectQuery: String, sharingGroupUserRepo: SharingGroupUserRepository) -> [SharingGroup]? {

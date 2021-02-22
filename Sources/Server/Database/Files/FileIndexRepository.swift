@@ -850,4 +850,54 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         
         return fileIndex
     }
+    
+    func getGroupSummary(forSharingGroupUUID sharingGroupUUID: String) -> [FileGroupSummary]? {
+        let selectQuery = """
+            select
+                \(FileIndex.fileGroupUUIDKey),
+                MAX(\(FileIndex.deletedKey)) AS \(FileIndex.deletedKey),
+                MAX(\(FileIndex.creationDateKey)) AS \(FileIndex.creationDateKey),
+                MAX(\(FileIndex.updateDateKey)) AS \(FileIndex.updateDateKey)
+            from \(tableName)
+            where \(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
+            group by \(FileIndex.fileGroupUUIDKey);
+        """
+
+        guard let select = Select(db:db, query: selectQuery, modelInit: FileIndex.init, ignoreErrors:false) else {
+            Log.error("Failed on select: \(selectQuery)")
+            return nil
+        }
+
+        var result = [FileGroupSummary]()
+
+        select.forEachRow { rowModel in
+            guard let rowModel = rowModel as? FileIndex else {
+                Log.error("Bad row model!")
+                return
+            }
+
+            let summary = FileGroupSummary()
+            summary.deleted = rowModel.deleted ?? false
+            
+            if let creationDate = rowModel.creationDate, let updateDate = rowModel.updateDate {
+                summary.mostRecentDate = max(creationDate, updateDate)
+            }
+            else if let creationDate = rowModel.creationDate {
+                summary.mostRecentDate = creationDate
+            }
+            else if let updateDate = rowModel.updateDate {
+                summary.mostRecentDate = updateDate
+            }
+            
+            summary.fileGroupUUID = rowModel.fileGroupUUID
+            result += [summary]
+        }
+        
+        if select.forEachRowStatus == nil {
+            return result
+        }
+        else {
+            return nil
+        }
+    }
 }

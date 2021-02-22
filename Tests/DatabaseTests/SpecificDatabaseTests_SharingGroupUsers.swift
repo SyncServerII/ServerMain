@@ -187,10 +187,12 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             XCTFail("Error: \(error)")
         }
         
-        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db)), groups.count == 1 else {
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: false, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 1 else {
             XCTFail()
             return
         }
+        
+        XCTAssert(groups[0].contentsSummary == nil)
         
         XCTAssert(groups[0].sharingGroupUUID == sharingGroupUUID)
     }
@@ -232,7 +234,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db)), groups.count == 2 else {
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: false, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
             XCTFail()
             return
         }
@@ -251,5 +253,135 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         XCTAssert(filter2[0].sharingGroupName == "Foobar")
+    }
+    
+    func testGetUserSharingGroupsForMultipleGroupsWithEmptySummaries() {
+        let sharingGroupUUID1 = UUID().uuidString
+
+        guard addSharingGroup(sharingGroupUUID: sharingGroupUUID1) else {
+            XCTFail()
+            return
+        }
+
+        let sharingGroupUUID2 = UUID().uuidString
+
+        guard addSharingGroup(sharingGroupUUID: sharingGroupUUID2, sharingGroupName: "Foobar") else {
+            XCTFail()
+            return
+        }
+
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        
+        let accountDelegate = UserRepository.AccountDelegateHandler(userRepository: userRepo, accountManager: accountManager)
+        guard let userId: UserId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addSharingGroupUser(sharingGroupUUID:sharingGroupUUID1, userId: userId, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addSharingGroupUser(sharingGroupUUID:sharingGroupUUID2, userId: userId, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
+            XCTFail()
+            return
+        }
+        
+        let filter1 = groups.filter {$0.sharingGroupUUID == sharingGroupUUID1}
+        guard filter1.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(filter1[0].sharingGroupName == nil)
+        XCTAssert(filter1[0].contentsSummary?.count == 0)
+        
+        let filter2 = groups.filter {$0.sharingGroupUUID == sharingGroupUUID2}
+        guard filter2.count == 1 else {
+            XCTFail()
+            return
+        }
+        XCTAssert(filter2[0].sharingGroupName == "Foobar")
+        XCTAssert(filter2[0].contentsSummary?.count == 0)
+    }
+    
+    func testGetUserSharingGroupsForMultipleGroupsWithNonEmptySummaries() {
+        let sharingGroupUUID1 = UUID().uuidString
+
+        guard addSharingGroup(sharingGroupUUID: sharingGroupUUID1) else {
+            XCTFail()
+            return
+        }
+
+        let sharingGroupUUID2 = UUID().uuidString
+
+        guard addSharingGroup(sharingGroupUUID: sharingGroupUUID2, sharingGroupName: "Foobar") else {
+            XCTFail()
+            return
+        }
+
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        
+        let accountDelegate = UserRepository.AccountDelegateHandler(userRepository: userRepo, accountManager: accountManager)
+        guard let userId: UserId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addSharingGroupUser(sharingGroupUUID:sharingGroupUUID1, userId: userId, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileIndexInserted1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID1, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addSharingGroupUser(sharingGroupUUID:sharingGroupUUID2, userId: userId, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileIndexInserted2 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID2, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
+            XCTFail()
+            return
+        }
+        
+        let filter1 = groups.filter {$0.sharingGroupUUID == sharingGroupUUID1}
+        guard filter1.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(filter1[0].sharingGroupName == nil)
+        XCTAssert(filter1[0].contentsSummary?.count == 1)
+        
+        let filter2 = groups.filter {$0.sharingGroupUUID == sharingGroupUUID2}
+        guard filter2.count == 1 else {
+            XCTFail()
+            return
+        }
+        XCTAssert(filter2[0].sharingGroupName == "Foobar")
+        XCTAssert(filter2[0].contentsSummary?.count == 1)
     }
 }

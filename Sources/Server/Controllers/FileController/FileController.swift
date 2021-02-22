@@ -85,16 +85,15 @@ class FileController : ControllerProtocol {
             Log.info("Finished sleep (testServerSleep= \(indexRequest.testServerSleep!)).")
         }
 #endif
+        
+        // Only giving a summary of content per sharing group when not requesting an index for a specific sharing group.
+        let includeContentsSummary = indexRequest.sharingGroupUUID == nil
 
-        guard let groups = params.repos.sharingGroup.sharingGroups(forUserId: params.currentSignedInUser!.userId, sharingGroupUserRepo: params.repos.sharingGroupUser, userRepo: params.repos.user) else {
+        guard let clientSharingGroups = params.repos.sharingGroup.sharingGroups(forUserId: params.currentSignedInUser!.userId, includeContentsSummary: includeContentsSummary, sharingGroupUserRepo: params.repos.sharingGroupUser, userRepo: params.repos.user, fileIndexRepo: params.repos.fileIndex) else {
             let message = "Could not get sharing groups for user."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
-        }
-        
-        let clientSharingGroups:[ServerShared.SharingGroup] = groups.map { serverGroup in
-            return serverGroup.toClient()
         }
         
         guard let sharingGroupUUID = indexRequest.sharingGroupUUID else {

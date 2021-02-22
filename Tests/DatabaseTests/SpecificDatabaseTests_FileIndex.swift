@@ -283,5 +283,64 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
         }
     }
+    
+    func testGetGroupSummary() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndexInserted1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileIndexInserted2 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID), result.count == 2 else {
+            XCTFail()
+            return
+        }
+        
+        let result1 = result.filter {$0.fileGroupUUID == fileIndexInserted1.fileGroupUUID}
+        guard result1.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(result1[0].mostRecentDate != nil)
+        XCTAssert(result1[0].fileGroupUUID == fileIndexInserted1.fileGroupUUID)
+        XCTAssert(result1[0].deleted == false)
+        
+        let result2 = result.filter {$0.fileGroupUUID == fileIndexInserted2.fileGroupUUID}
+        guard result2.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(result2[0].mostRecentDate != nil)
+        XCTAssert(result2[0].fileGroupUUID == fileIndexInserted2.fileGroupUUID)
+        XCTAssert(result2[0].deleted == false)
+    }
 }
 

@@ -480,7 +480,7 @@ extension FileController {
         switch addUploadResult {
         case .success:
             guard let finishUploads = FinishUploadFiles(sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
-                finish(.errorCleanup(message: "Could not FinishUploads", cleanup: cleanup), params: params)
+                finish(.errorCleanup(message: "Could not FinishUploads: FinishUploadFiles", cleanup: cleanup), params: params)
                 return
             }
             
@@ -488,7 +488,7 @@ extension FileController {
             do {
                 transferResponse = try finishUploads.finish()
             } catch let error {
-                finish(.errorCleanup(message: "Could not FinishUploads: \(error)", cleanup: cleanup), params: params)
+                finish(.errorCleanup(message: "Could not FinishUploads: finish: \(error)", cleanup: cleanup), params: params)
                 return
             }
             
@@ -508,7 +508,7 @@ extension FileController {
                 postCommitRunner = runner
                 
             case .error(let error):
-                finish(.errorCleanup(message: "Could not FinishUploads: \(String(describing: error))", cleanup: cleanup), params: params)
+                finish(.errorCleanup(message: "Could not FinishUploads: transferResponse: \(String(describing: error))", cleanup: cleanup), params: params)
                 return
             }
             

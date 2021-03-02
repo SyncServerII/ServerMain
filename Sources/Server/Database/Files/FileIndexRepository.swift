@@ -855,6 +855,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         let selectQuery = """
             select
                 \(FileIndex.fileGroupUUIDKey),
+                MAX(\(FileIndex.fileVersionKey)) AS \(FileIndex.fileVersionKey),
                 MAX(\(FileIndex.deletedKey)) AS \(FileIndex.deletedKey),
                 MAX(\(FileIndex.creationDateKey)) AS \(FileIndex.creationDateKey),
                 MAX(\(FileIndex.updateDateKey)) AS \(FileIndex.updateDateKey)
@@ -888,6 +889,8 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             else if let updateDate = rowModel.updateDate {
                 summary.mostRecentDate = updateDate
             }
+            
+            summary.fileVersion = rowModel.fileVersion
             
             summary.fileGroupUUID = rowModel.fileGroupUUID
             result += [summary]

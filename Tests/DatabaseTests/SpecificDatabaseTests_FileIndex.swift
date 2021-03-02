@@ -331,6 +331,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         XCTAssert(result1[0].mostRecentDate != nil)
         XCTAssert(result1[0].fileGroupUUID == fileIndexInserted1.fileGroupUUID)
         XCTAssert(result1[0].deleted == false)
+        XCTAssert(result1[0].fileVersion == 1)
         
         let result2 = result.filter {$0.fileGroupUUID == fileIndexInserted2.fileGroupUUID}
         guard result2.count == 1 else {
@@ -341,6 +342,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         XCTAssert(result2[0].mostRecentDate != nil)
         XCTAssert(result2[0].fileGroupUUID == fileIndexInserted2.fileGroupUUID)
         XCTAssert(result2[0].deleted == false)
+        XCTAssert(result2[0].fileVersion == 1)
     }
 }
 

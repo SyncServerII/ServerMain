@@ -161,11 +161,11 @@ class FinishUploadFiles {
         }
         
         // Else: v0 uploads-- files have already been uploaded. Just need to do the transfer to the FileIndex.
-        return transfer(currentUploads: currentUploads)
+        return transfer(batchUUID: batchUUID, currentUploads: currentUploads)
     }
     
     // For v0 uploads only.
-    private func transfer(currentUploads: [Upload]) -> UploadsResponse {
+    private func transfer(batchUUID: String, currentUploads: [Upload]) -> UploadsResponse {
        // Deferring computation of `effectiveOwningUserId` because: (a) don't always need it in the `transferUploads` below, and (b) it will cause unecessary failures in some cases where a sharing owner user has been removed. effectiveOwningUserId is only needed when v0 of a file is being uploaded.
         var effectiveOwningUserId: UserId?
         func getEffectiveOwningUserId() -> FileIndexRepository.EffectiveOwningUser {
@@ -206,7 +206,7 @@ class FinishUploadFiles {
         }
         
         // Remove the corresponding records from the Upload repo-- this is specific to the userId and the deviceUUID.
-        let filesForUserDevice = UploadRepository.LookupKey.filesForUserDevice(userId: params.currentSignedInUser!.userId, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID)
+        let filesForUserDevice = UploadRepository.LookupKey.filesForUserDevice(userId: params.currentSignedInUser!.userId, batchUUID: batchUUID, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID)
         
         // 5/28/17; I just got an error on this:
         // [ERR] Number rows removed from Upload was 10 but should have been Optional(9)!

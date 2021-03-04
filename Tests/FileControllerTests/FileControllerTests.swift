@@ -78,7 +78,7 @@ class FileController_IndexTests: ServerTestCase {
         let testAccount:TestAccount = .primaryOwningAccount
         let fileLabel = UUID().uuidString
         
-        guard let uploadResult = uploadTextFile(testAccount: testAccount, deviceUUID:deviceUUID, fileLabel: fileLabel),
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, testAccount: testAccount, deviceUUID:deviceUUID, fileLabel: fileLabel),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -131,13 +131,13 @@ class FileController_IndexTests: ServerTestCase {
     
     func testIndexWithTwoFiles() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult1 = uploadTextFile(deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
         }
         
-        guard let uploadResult2 = uploadJPEGFile(deviceUUID:deviceUUID, addUser:.no(sharingGroupUUID: sharingGroupUUID)) else {
+        guard let uploadResult2 = uploadJPEGFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser:.no(sharingGroupUUID: sharingGroupUUID)) else {
             XCTFail()
             return
         }
@@ -147,7 +147,7 @@ class FileController_IndexTests: ServerTestCase {
     
     func testIndexWithFakeSharingGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileLabel: UUID().uuidString), let _ = uploadResult.sharingGroupUUID else {
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString), let _ = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }
@@ -159,7 +159,7 @@ class FileController_IndexTests: ServerTestCase {
     
     func testIndexWithBadSharingGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileLabel: UUID().uuidString) else {
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString) else {
             XCTFail()
             return
         }
@@ -182,7 +182,7 @@ class FileController_IndexTests: ServerTestCase {
          
         // First upload the v0 file.
   
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -190,7 +190,7 @@ class FileController_IndexTests: ServerTestCase {
                 
         // Next, upload v1 of the file -- i.e., upload just the specific change to the file.
 
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, testAccount: .primaryOwningAccount, mimeType: nil, deviceUUID: deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: nil, dataToUpload: exampleComment.updateContents) else {
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: .primaryOwningAccount, mimeType: nil, deviceUUID: deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: nil, dataToUpload: exampleComment.updateContents) else {
             XCTFail()
             return
         }
@@ -227,7 +227,7 @@ class FileController_IndexTests: ServerTestCase {
         // First upload a v0 file, with change resolver name and app meta data
         let appMetaData = "Foobly."
         
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, appMetaData: appMetaData, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, appMetaData: appMetaData, stringFile: .commentFile, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return

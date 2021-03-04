@@ -24,6 +24,7 @@ class FinishUploadFiles {
     private var params:FinishUploadsParameters
     private let currentSignedInUser: UserId
     private let uploader: UploaderProtocol
+    private let batchUUID: String
     
     /** This is for both file uploads, and upload deletions.
      * Specific upload use cases:
@@ -43,11 +44,12 @@ class FinishUploadFiles {
      *  b) More than one file in batch, but they have different fileGroupUUID's.
      */
     
-    init?(sharingGroupUUID: String, deviceUUID: String, uploader: UploaderProtocol, params:FinishUploadsParameters) {
+    init?(batchUUID: String, sharingGroupUUID: String, deviceUUID: String, uploader: UploaderProtocol, params:FinishUploadsParameters) {
         self.sharingGroupUUID = sharingGroupUUID
         self.deviceUUID = deviceUUID
         self.params = params
         self.uploader = uploader
+        self.batchUUID = batchUUID
         
         // Get uploads for the current signed in user -- uploads are identified by userId, not effectiveOwningUserId, because we want to organize uploads by specific user.
         guard let currentSignedInUser = params.currentSignedInUser?.userId else {
@@ -76,7 +78,7 @@ class FinishUploadFiles {
         let currentUploads: [Upload]
         
         // deferredUploadIdNull true because once these rows have a non-null  deferredUploadId they are pending deferred transfer and we should not deal with them here.
-        let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: currentSignedInUser, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true)
+        let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: currentSignedInUser, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true)
         
         switch fileUploadsResult {
         case .uploads(let uploads):
@@ -189,7 +191,7 @@ class FinishUploadFiles {
         
         // Transfer info to the FileIndex repository from Upload.
         let numberTransferredResult =
-            params.repos.fileIndex.transferUploads(uploadUserId: params.currentSignedInUser!.userId, owningUserId: getEffectiveOwningUserId, sharingGroupUUID: sharingGroupUUID,
+            params.repos.fileIndex.transferUploads(uploadUserId: params.currentSignedInUser!.userId, owningUserId: getEffectiveOwningUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID,
                 uploadingDeviceUUID: deviceUUID,
                 uploadRepo: params.repos.upload)
         

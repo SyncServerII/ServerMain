@@ -559,14 +559,14 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     }
          
     func transferUploads(uploadUserId: UserId,
-        owningUserId: @escaping ()->(EffectiveOwningUser), sharingGroupUUID: String, uploadingDeviceUUID:String, uploadRepo:UploadRepository) -> TransferUploadsResult {
+        owningUserId: @escaping ()->(EffectiveOwningUser), batchUUID: String, sharingGroupUUID: String, uploadingDeviceUUID:String, uploadRepo:UploadRepository) -> TransferUploadsResult {
         
         var error = false
         var failureResult:RequestHandler.FailureResult?
         var numberTransferred:Int32 = 0
         
         // [1] Fetch the uploaded files for the user, device, and sharing group.
-        guard let uploadSelect = uploadRepo.select(forUserId: uploadUserId, sharingGroupUUID: sharingGroupUUID, deviceUUID: uploadingDeviceUUID) else {
+        guard let uploadSelect = uploadRepo.select(forUserId: uploadUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: uploadingDeviceUUID) else {
             return .failure(nil)
         }
         

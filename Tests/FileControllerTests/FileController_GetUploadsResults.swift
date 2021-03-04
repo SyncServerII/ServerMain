@@ -44,7 +44,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -60,8 +60,10 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
+        
+        let batchUUID = UUID().uuidString
             
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, state: .vNUploadFileChange) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
             XCTFail()
             return
         }
@@ -113,7 +115,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -134,8 +136,10 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
+        
+        let batchUUID = UUID().uuidString
 
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: actualUserId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, state: .vNUploadFileChange) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: actualUserId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
             XCTFail()
             return
         }
@@ -178,7 +182,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -195,7 +199,9 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             return
         }
 
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, state: .vNUploadFileChange) else {
+        let batchUUID = UUID().uuidString
+
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
             XCTFail()
             return
         }

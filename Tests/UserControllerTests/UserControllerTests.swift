@@ -227,6 +227,7 @@ class UserControllerTests: ServerTestCase {
     func testThatFilesUploadedByUserMarkedAsDeletedWhenUserRemoved() {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
+        let batchUUID = Foundation.UUID().uuidString
 
         guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
@@ -234,7 +235,7 @@ class UserControllerTests: ServerTestCase {
         }
         
         // Upload a file.
-        guard let uploadResult = uploadTextFile(deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString) else {
+        guard let uploadResult = uploadTextFile(batchUUID: batchUUID, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString) else {
             XCTFail()
             return
         }

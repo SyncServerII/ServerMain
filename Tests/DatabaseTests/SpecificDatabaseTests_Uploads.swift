@@ -57,6 +57,9 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         upload.uploadCount = uploadCount
         upload.uploadIndex = uploadIndex
         upload.deferredUploadId = deferredUploadId
+        upload.batchUUID = Foundation.UUID().uuidString
+        upload.batchExpiryInterval = TimeInterval(100)
+        
         if fileVersion == 0 {
             upload.changeResolverName = changeResolverName
         }
@@ -305,7 +308,7 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         let result1 = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false)
         XCTAssert(result1 == 1, "Bad credentialsId!")
         
-        let uploadedFilesResult = UploadRepository(db).uploadedFiles(forUserId: result1!, sharingGroupUUID: UUID().uuidString, deviceUUID: Foundation.UUID().uuidString)
+        let uploadedFilesResult = UploadRepository(db).uploadedFiles(forUserId: result1!, batchUUID: UUID().uuidString, sharingGroupUUID: UUID().uuidString, deviceUUID: Foundation.UUID().uuidString)
         switch uploadedFilesResult {
         case .uploads(let uploads):
             XCTAssert(uploads.count == 0)
@@ -337,7 +340,12 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         let count: Int32 = 1
         let upload1 = doAddUpload(sharingGroupUUID:sharingGroupUUID, uploadIndex: index, uploadCount: count, userId:userId!, deviceUUID:deviceUUID)
 
-        let uploadedFilesResult = UploadRepository(db).uploadedFiles(forUserId: userId!, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID)
+        guard let batchUUID = upload1.batchUUID else {
+            XCTFail()
+            return
+        }
+        
+        let uploadedFilesResult = UploadRepository(db).uploadedFiles(forUserId: userId!, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID)
         switch uploadedFilesResult {
         case .uploads(let uploads):
             guard uploads.count == 1 else {
@@ -381,8 +389,13 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         let count: Int32 = 1
         let changeResolverName = "ExampleChangeResolverName"
         let upload1 = doAddUpload(sharingGroupUUID:sharingGroupUUID, changeResolverName:changeResolverName, uploadIndex: index, uploadCount: count, userId:userId!, deviceUUID:deviceUUID)
+
+        guard let batchUUID = upload1.batchUUID else {
+            XCTFail()
+            return
+        }
         
-        let uploadedFilesResult1 = UploadRepository(db).uploadedFiles(forUserId: userId!, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID)
+        let uploadedFilesResult1 = UploadRepository(db).uploadedFiles(forUserId: userId!, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID)
         switch uploadedFilesResult1 {
         case .uploads(let uploads):
             guard uploads.count == 1 else {
@@ -409,8 +422,8 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
             XCTFail()
             return
         }
-
-        let uploadedFilesResult2 = UploadRepository(db).uploadedFiles(forUserId: userId!, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true)
+        
+        let uploadedFilesResult2 = UploadRepository(db).uploadedFiles(forUserId: userId!, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true)
         switch uploadedFilesResult2 {
         case .uploads(let uploads):
             guard uploads.count == 0 else {
@@ -422,7 +435,7 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
             XCTFail()
         }
         
-        let uploadedFilesResult3 = UploadRepository(db).uploadedFiles(forUserId: userId!, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: false)
+        let uploadedFilesResult3 = UploadRepository(db).uploadedFiles(forUserId: userId!, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: false)
         switch uploadedFilesResult3 {
         case .uploads(let uploads):
             guard uploads.count == 1 else {
@@ -465,8 +478,13 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
 
         // This is illustrating an "interleaved" upload-- where a client could have uploaded a file to a different sharing group UUID before doing a DoneUploads.
         let _ = doAddUpload(sharingGroupUUID:sharingGroupUUID2, userId:userId!, deviceUUID:deviceUUID)
+
+        guard let batchUUID = upload1.batchUUID else {
+            XCTFail()
+            return
+        }
         
-        let uploadedFilesResult = UploadRepository(db).uploadedFiles(forUserId: userId!, sharingGroupUUID: sharingGroupUUID1, deviceUUID: deviceUUID)
+        let uploadedFilesResult = UploadRepository(db).uploadedFiles(forUserId: userId!, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID1, deviceUUID: deviceUUID)
         switch uploadedFilesResult {
         case .uploads(let uploads):
             XCTAssert(uploads.count == 1)

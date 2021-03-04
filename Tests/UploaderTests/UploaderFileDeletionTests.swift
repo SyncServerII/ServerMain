@@ -61,7 +61,7 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
         }
 
         // Do the v0 upload.
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -81,7 +81,9 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
         }
                 
         if fileGroup == nil {
-            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, fileGroup: nil, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId1, state: .deleteSingleFile) else {
+            let batchUUID = UUID().uuidString
+
+            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, fileGroup: nil, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId1, batchUUID: batchUUID, state: .deleteSingleFile) else {
                 XCTFail()
                 return
             }
@@ -144,7 +146,7 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
         }
 
         // Do the v0 uploads.
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -155,7 +157,7 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup) else {
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup) else {
             XCTFail()
             return
         }
@@ -171,7 +173,9 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
         var deferredUploadId2: Int64?
         
         if fileGroup == nil {
-            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, fileGroup: nil, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId1, state: .deleteSingleFile) else {
+            let batchUUID = UUID().uuidString
+
+            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, fileGroup: nil, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId1, batchUUID: batchUUID, state: .deleteSingleFile) else {
                 XCTFail()
                 return
             }
@@ -182,7 +186,7 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
                 return
             }
         
-            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, fileGroup: nil, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId, state: .deleteSingleFile) else {
+            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, fileGroup: nil, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId, batchUUID: batchUUID, state: .deleteSingleFile) else {
                 XCTFail()
                 return
             }
@@ -261,7 +265,7 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
         }
 
         // Do the v0 uploads.
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -272,7 +276,7 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile) else {
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile) else {
             XCTFail()
             return
         }
@@ -291,8 +295,10 @@ class UploaderFileDeletionTests: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
+        
+        let batchUUID = UUID().uuidString
     
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId2, state: .deleteSingleFile) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId2, batchUUID: batchUUID, state: .deleteSingleFile) else {
             XCTFail()
             return
         }

@@ -475,6 +475,9 @@ extension Database {
             
             case int64(Int64)
             case int64Optional(Int64?)
+
+            case double(Double)
+            case doubleOptional(Double?)
             
             case string(String)
             case stringOptional(String?)
@@ -624,6 +627,16 @@ extension Database {
                 case .int64Optional(let int64Value):
                     if let int64Value = int64Value {
                         self.stmt.bindParam(int64Value)
+                    }
+                    else {
+                        haveValue = false
+                    }
+
+                case .double(let doubleValue):
+                    self.stmt.bindParam(doubleValue)
+                case .doubleOptional(let doubleValue):
+                    if let doubleValue = doubleValue {
+                        self.stmt.bindParam(doubleValue)
                     }
                     else {
                         haveValue = false

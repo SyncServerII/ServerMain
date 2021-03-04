@@ -66,7 +66,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         }
 
         // Do the v0 upload.
-        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
+        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -85,7 +85,9 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
             type = .fileGroup(fileGroupUUID: fileGroup.fileGroupUUID)
         }
         else {
-            guard let upload = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, state: .deleteSingleFile) else {
+            let batchUUID = UUID().uuidString
+
+            guard let upload = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, batchUUID: batchUUID, state: .deleteSingleFile) else {
                 XCTFail()
                 return
             }

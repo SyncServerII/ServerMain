@@ -461,8 +461,18 @@ extension FileController {
     
         upload.updateDate = todaysDate
         
+        guard let batchUUID = uploadRequest.batchUUID,
+            let batchExpiryInterval = uploadRequest.batchExpiryInterval else {
+            let message = "Batch UUID or batch expiry not given."
+            finish(.errorCleanup(message: message, cleanup: cleanup), params: params)
+            return
+        }
+        
+        upload.batchUUID = batchUUID
+        upload.batchExpiryInterval = batchExpiryInterval
+        
         // 9/5/20; To deal with https://github.com/SyncServerII/ServerMain/issues/5 issue with parallel uploads, and in particular the `forUpdate: true`.
-        let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: signedInUserId, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true, forUpdate: true)
+        let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: signedInUserId, batchUUID: batchUUID, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true, forUpdate: true)
         switch fileUploadsResult {
         case .uploads:
             break
@@ -479,7 +489,7 @@ extension FileController {
 
         switch addUploadResult {
         case .success:
-            guard let finishUploads = FinishUploadFiles(sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
+            guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
                 finish(.errorCleanup(message: "Could not FinishUploads: FinishUploadFiles", cleanup: cleanup), params: params)
                 return
             }
@@ -491,6 +501,8 @@ extension FileController {
                 finish(.errorCleanup(message: "Could not FinishUploads: finish: \(error)", cleanup: cleanup), params: params)
                 return
             }
+            
+            // 2/26/21; Getting an error in here: https://github.com/SyncServerII/Neebla/issues/6
             
             let response = UploadFileResponse()
             var postCommitRunner: RequestHandler.PostRequestRunner?

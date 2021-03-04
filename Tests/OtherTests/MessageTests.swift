@@ -34,7 +34,9 @@ class MessageTests: ServerTestCase {
         uploadRequest.checkSum = TestFile.test1.dropboxCheckSum
         uploadRequest.uploadCount = 1
         uploadRequest.uploadIndex = 1
-        
+        uploadRequest.batchUUID = UUID().uuidString
+        uploadRequest.batchExpiryInterval = TimeInterval(100)
+
         guard uploadRequest.valid() else {
             XCTFail()
             return
@@ -50,7 +52,9 @@ class MessageTests: ServerTestCase {
         uploadRequest.fileUUID = uuidString1
         uploadRequest.mimeType = "text/plain"
         uploadRequest.sharingGroupUUID = sharingGroupUUID
-
+        uploadRequest.batchUUID = UUID().uuidString
+        uploadRequest.batchExpiryInterval = TimeInterval(100)
+        
         guard let result = uploadRequest.urlParameters() else {
             XCTFail()
             return
@@ -107,6 +111,8 @@ class MessageTests: ServerTestCase {
         uploadRequest.mimeType = "text/plain"
         uploadRequest.sharingGroupUUID = sharingGroupUUID
         uploadRequest.checkSum = TestFile.test1.dropboxCheckSum
+        uploadRequest.batchUUID = UUID().uuidString
+        uploadRequest.batchExpiryInterval = TimeInterval(100)
         
         XCTAssert(!uploadRequest.valid())
     }
@@ -122,6 +128,8 @@ class MessageTests: ServerTestCase {
         uploadRequest.checkSum = TestFile.test1.dropboxCheckSum
         uploadRequest.uploadCount = 1
         uploadRequest.uploadIndex = 1
+        uploadRequest.batchUUID = UUID().uuidString
+        uploadRequest.batchExpiryInterval = TimeInterval(100)
         
         guard uploadRequest.valid() else {
             XCTFail()

@@ -119,6 +119,16 @@ class Upload : NSObject, Model, ChangeResolverContents {
     static let fileLabelKey = "fileLabel"
     var fileLabel: String?
     
+    // The following two are optional only for deletions.
+    
+    // See https://github.com/SyncServerII/Neebla/issues/6
+    static let batchUUIDKey = "batchUUID"
+    var batchUUID: String?
+    
+    // Added to the current date to get the time/date after which the rows with this `batchUUID` will be removed.
+    static let batchExpiryIntervalKey = "batchExpiryInterval"
+    var batchExpiryInterval:TimeInterval?
+    
     subscript(key:String) -> Any? {
         set {
             switch key {
@@ -181,6 +191,12 @@ class Upload : NSObject, Model, ChangeResolverContents {
 
             case Upload.fileLabelKey:
                 fileLabel = newValue as? String
+
+            case Upload.batchUUIDKey:
+                batchUUID = newValue as? String
+                
+            case Upload.batchExpiryIntervalKey:
+                batchExpiryInterval = newValue as? TimeInterval
                 
             default:
                 Log.error("key: \(key)")
@@ -308,6 +324,10 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
             // Can be null if we create the Upload entry before actually uploading the file.
             "lastUploadedCheckSum TEXT, " +
             
+            "batchUUID VARCHAR(\(Database.uuidLength)), " +
+
+            "batchExpiryInterval DOUBLE," +
+
             "FOREIGN KEY (sharingGroupUUID) REFERENCES \(SharingGroupRepository.tableName)(\(SharingGroup.sharingGroupUUIDKey)), " +
             
             // Because file label's must be unique within file group's.
@@ -395,7 +415,19 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
                     return .failure(.constraintCreation)
                 }
             }
-
+            
+            if db.columnExists(Upload.batchUUIDKey, in: tableName) == false {
+                if !db.addColumn("\(Upload.batchUUIDKey) VARCHAR(\(Database.uuidLength))", to: tableName) {
+                    return .failure(.columnCreation)
+                }
+            }
+            
+            if db.columnExists(Upload.batchExpiryIntervalKey, in: tableName) == false {
+                if !db.addColumn("\(Upload.batchExpiryIntervalKey) DOUBLE", to: tableName) {
+                    return .failure(.columnCreation)
+                }
+            }
+            
         default:
             break
         }
@@ -428,6 +460,12 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
         
         if upload.state.isUploadFile && upload.lastUploadedCheckSum == nil && upload.state == .v0UploadCompleteFile {
             Log.error("Need lastUploadedCheckSum for v0 uploads.")
+            return true
+        }
+        
+        if upload.state.isUploadFile &&
+            (upload.batchExpiryInterval == nil || upload.batchUUID == nil) {
+            Log.error("Need batchExpiryInterval and batchUUID for uploads")
             return true
         }
         
@@ -500,6 +538,9 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
         insert.add(fieldName: Upload.deferredUploadIdKey, value: .int64Optional(upload.deferredUploadId))
         
         insert.add(fieldName: Upload.fileLabelKey, value: .stringOptional(upload.fileLabel))
+        
+        insert.add(fieldName: Upload.batchUUIDKey, value: .stringOptional(upload.batchUUID))
+        insert.add(fieldName: Upload.batchExpiryIntervalKey, value: .doubleOptional(upload.batchExpiryInterval))
 
         do {
             try insert.run()
@@ -628,9 +669,9 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
         }
     }
     
-    func select(forUserId userId: UserId, sharingGroupUUID: String, deviceUUID:String, deferredUploadIdNull: Bool = false, andState state:UploadState? = nil, forUpdate: Bool = false) -> Select? {
+    func select(forUserId userId: UserId, batchUUID: String, sharingGroupUUID: String, deviceUUID:String, deferredUploadIdNull: Bool = false, andState state:UploadState? = nil, forUpdate: Bool = false) -> Select? {
     
-        var query = "select * from \(tableName) where userId=\(userId) and sharingGroupUUID = '\(sharingGroupUUID)' and deviceUUID='\(deviceUUID)'"
+        var query = "select * from \(tableName) where userId=\(userId) and sharingGroupUUID = '\(sharingGroupUUID)' and deviceUUID='\(deviceUUID)' and batchUUID = '\(batchUUID)'"
         
         if state != nil {
             query += " and state='\(state!.rawValue)'"
@@ -655,9 +696,9 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
     // With nil `andState` parameter value, returns both file uploads and upload deletions.
     // Uploads are identified by userId, not effectiveOwningUserId: We want to organize uploads by specific user.
     // Set deferredUploadIdNil to true if you only want records where deferredUploadIdNil is non-nil.
-    func uploadedFiles(forUserId userId: UserId, sharingGroupUUID: String, deviceUUID: String, deferredUploadIdNull: Bool = false, andState state:UploadState? = nil, forUpdate: Bool = false) -> UploadedFilesResult {
+    func uploadedFiles(forUserId userId: UserId, batchUUID: String, sharingGroupUUID: String, deviceUUID: String, deferredUploadIdNull: Bool = false, andState state:UploadState? = nil, forUpdate: Bool = false) -> UploadedFilesResult {
         
-        guard let selectUploadedFiles = select(forUserId: userId, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: deferredUploadIdNull, andState: state, forUpdate: forUpdate) else {
+        guard let selectUploadedFiles = select(forUserId: userId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: deferredUploadIdNull, andState: state, forUpdate: forUpdate) else {
             return .error(nil)
         }
 

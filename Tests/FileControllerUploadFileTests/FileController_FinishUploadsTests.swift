@@ -64,13 +64,13 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         let changeResolverName = CommentFile.changeResolverName
         let fakeUploader = UploaderFake(delegate: self)
         
-        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
         }
         
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName) else {
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName) else {
             XCTFail()
             return
         }
@@ -86,10 +86,11 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
-        
-        
+
+        let batchUUID = UUID().uuidString
+
         let params = Params(repos: repos, currentSignedInUser: user)
-        guard let finishUploads = FinishUploadFiles(sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader: fakeUploader,  params: params) else {
+        guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader: fakeUploader,  params: params) else {
             XCTFail()
             return
         }
@@ -99,7 +100,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
 
         // We don't add DeferredUpload's here-- these get added by FinishUploads
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID) else {
             XCTFail()
             return
         }
@@ -111,7 +112,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
                 return
             }
         case .twoFiles:
-            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1) else {
+            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID) else {
                 XCTFail()
                 return
             }
@@ -152,6 +153,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
     func runFinishUploadsWithFileGroups(test: FinishUploadsWithFileGroupsTest) throws {
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
+        let batchUUID = UUID().uuidString
         
         let fileGroup1 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
@@ -163,7 +165,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         
         // upload v0 files
         
-        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup1, changeResolverName: changeResolverName),
+        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup1, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -177,7 +179,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
             secondFileGroup = fileGroup2
         }
         
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: secondFileGroup, changeResolverName: changeResolverName) else {
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: secondFileGroup, changeResolverName: changeResolverName) else {
             XCTFail()
             return
         }
@@ -194,8 +196,10 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
             return
         }
         
+        let batchUUID2 = UUID().uuidString
+        
         let params = Params(repos: repos, currentSignedInUser: user)
-        guard let finishUploads = FinishUploadFiles(sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader:fakeUploader, params: params) else {
+        guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID2, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader:fakeUploader, params: params) else {
             XCTFail()
             return
         }
@@ -205,12 +209,12 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
 
         // We don't add DeferredUpload's here-- these get added by FinishUploads
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, fileGroup: fileGroup1, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, fileGroup: fileGroup1, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
             XCTFail()
             return
         }
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, fileGroup: secondFileGroup, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, fileGroup: secondFileGroup, sharingGroupUUID: sharingGroupUUID, userId: userId, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
             XCTFail()
             return
         }

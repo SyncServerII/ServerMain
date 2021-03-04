@@ -125,9 +125,9 @@ class Upload : NSObject, Model, ChangeResolverContents {
     static let batchUUIDKey = "batchUUID"
     var batchUUID: String?
     
-    // Added to the current date to get the time/date after which the rows with this `batchUUID` will be removed.
-    static let batchExpiryIntervalKey = "batchExpiryInterval"
-    var batchExpiryInterval:TimeInterval?
+    // The date after which the row will be removed if it's not already.
+    static let batchExpiryDateKey = "batchExpiryDate"
+    var batchExpiryDate:Date?
     
     subscript(key:String) -> Any? {
         set {
@@ -195,8 +195,8 @@ class Upload : NSObject, Model, ChangeResolverContents {
             case Upload.batchUUIDKey:
                 batchUUID = newValue as? String
                 
-            case Upload.batchExpiryIntervalKey:
-                batchExpiryInterval = newValue as? TimeInterval
+            case Upload.batchExpiryDateKey:
+                batchExpiryDate = newValue as? Date
                 
             default:
                 Log.error("key: \(key)")
@@ -222,6 +222,11 @@ class Upload : NSObject, Model, ChangeResolverContents {
                 }
 
             case Upload.updateDateKey:
+                return {(x:Any) -> Any? in
+                    return DateExtras.date(x as! String, fromFormat: .DATETIME)
+                }
+
+            case Upload.batchExpiryDateKey:
                 return {(x:Any) -> Any? in
                     return DateExtras.date(x as! String, fromFormat: .DATETIME)
                 }
@@ -326,7 +331,7 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
             
             "batchUUID VARCHAR(\(Database.uuidLength)), " +
 
-            "batchExpiryInterval DOUBLE," +
+            "batchExpiryDate DATETIME," +
 
             "FOREIGN KEY (sharingGroupUUID) REFERENCES \(SharingGroupRepository.tableName)(\(SharingGroup.sharingGroupUUIDKey)), " +
             
@@ -422,8 +427,8 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
                 }
             }
             
-            if db.columnExists(Upload.batchExpiryIntervalKey, in: tableName) == false {
-                if !db.addColumn("\(Upload.batchExpiryIntervalKey) DOUBLE", to: tableName) {
+            if db.columnExists(Upload.batchExpiryDateKey, in: tableName) == false {
+                if !db.addColumn("\(Upload.batchExpiryDateKey) DATETIME", to: tableName) {
                     return .failure(.columnCreation)
                 }
             }
@@ -464,8 +469,8 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
         }
         
         if upload.state.isUploadFile &&
-            (upload.batchExpiryInterval == nil || upload.batchUUID == nil) {
-            Log.error("Need batchExpiryInterval and batchUUID for uploads")
+            (upload.batchExpiryDate == nil || upload.batchUUID == nil) {
+            Log.error("Need batchExpiryDate and batchUUID for uploads")
             return true
         }
         
@@ -540,7 +545,7 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
         insert.add(fieldName: Upload.fileLabelKey, value: .stringOptional(upload.fileLabel))
         
         insert.add(fieldName: Upload.batchUUIDKey, value: .stringOptional(upload.batchUUID))
-        insert.add(fieldName: Upload.batchExpiryIntervalKey, value: .doubleOptional(upload.batchExpiryInterval))
+        insert.add(fieldName: Upload.batchExpiryDateKey, value: .dateTimeOptional(upload.batchExpiryDate))
 
         do {
             try insert.run()

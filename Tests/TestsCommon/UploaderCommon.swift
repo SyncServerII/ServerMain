@@ -82,7 +82,7 @@ public extension UploaderCommon {
         upload.fileGroupUUID = fileGroup?.fileGroupUUID
         upload.objectType = fileGroup?.objectType
         upload.batchUUID = batchUUID
-        upload.batchExpiryInterval = TimeInterval(100)
+        upload.batchExpiryDate = Date()
         
         let addUploadResult = UploadRepository(db).add(upload: upload, fileInFileIndex: true)
         guard case .success(let uploadId) = addUploadResult else {

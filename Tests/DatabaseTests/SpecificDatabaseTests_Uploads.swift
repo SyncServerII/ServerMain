@@ -58,7 +58,7 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         upload.uploadIndex = uploadIndex
         upload.deferredUploadId = deferredUploadId
         upload.batchUUID = Foundation.UUID().uuidString
-        upload.batchExpiryInterval = TimeInterval(100)
+        upload.batchExpiryDate = Date()
         
         if fileVersion == 0 {
             upload.changeResolverName = changeResolverName

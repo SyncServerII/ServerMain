@@ -469,7 +469,7 @@ extension FileController {
         }
         
         upload.batchUUID = batchUUID
-        upload.batchExpiryInterval = batchExpiryInterval
+        upload.batchExpiryDate = Date().addingTimeInterval(batchExpiryInterval)
         
         // 9/5/20; To deal with https://github.com/SyncServerII/ServerMain/issues/5 issue with parallel uploads, and in particular the `forUpdate: true`.
         let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: signedInUserId, batchUUID: batchUUID, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true, forUpdate: true)

@@ -278,7 +278,7 @@ class Database {
 
 private struct DBLog {
     static func query(_ query: String) {
-        Log.debug("DB QUERY: \(query)")
+        // Log.debug("DB QUERY: \(query)")
     }
 }
 

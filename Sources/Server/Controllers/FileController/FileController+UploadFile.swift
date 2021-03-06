@@ -299,7 +299,8 @@ extension FileController {
                 }
                 
                 guard resolver.validV0(contents: fileContents) else {
-                    let message = "v0 contents for change resolver (\(resolverName)) were not valid."
+                    let stringContents = String(data: fileContents, encoding: .utf8)?.prefix(100)
+                    let message = "v0 contents for change resolver (\(resolverName)) were not valid: \(String(describing: stringContents))"
                     finish(.errorMessage(message), params: params)
                     return
                 }

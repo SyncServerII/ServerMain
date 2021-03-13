@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.6.0 (3/13/21)
+	* Added GIF mime type.
+	
 Version 1.5.2 (3/3/21)
 	* Fix issue with Upload expiry date.
 	

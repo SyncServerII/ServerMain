@@ -33,8 +33,8 @@
         "repositoryURL": "https://github.com/Kitura/BlueRSA.git",
         "state": {
           "branch": null,
-          "revision": "c885fcdbe1b04718cb46d747387137653c030f6c",
-          "version": "1.0.200"
+          "revision": "440f78db26d8bb073f29590f1c7bd31004da09ae",
+          "version": "1.0.201"
         }
       },
       {
@@ -321,8 +321,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerShared.git",
         "state": {
           "branch": null,
-          "revision": "04e6b2f063e5d4ab8dea6e6c71e342431893f7f6",
-          "version": "0.5.1"
+          "revision": "96642c2be2833e9062addaf259fc323a7cabdc9e",
+          "version": "0.6.0"
         }
       },
       {
@@ -348,8 +348,8 @@
         "repositoryURL": "https://github.com/apple/swift-log.git",
         "state": {
           "branch": null,
-          "revision": "12d3a8651d32295794a850307f77407f95b8c881",
-          "version": "1.4.1"
+          "revision": "5d66f7ba25daf4f94100e7022febf3c75e37a6c7",
+          "version": "1.4.2"
         }
       },
       {

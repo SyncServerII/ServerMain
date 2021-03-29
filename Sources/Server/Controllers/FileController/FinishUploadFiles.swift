@@ -118,7 +118,8 @@ class FinishUploadFiles {
         }
         
         guard currentUploads.filter({$0.uploadCount != uploadCount}).count == 0 else {
-            let message = "Mismatch: At least one of the uploads had an uploadCount different than: \(uploadCount)"
+            let uploadCounts = currentUploads.map { $0.uploadCount }
+            let message = "Mismatch: At least one of the uploads had an uploadCount different than: \(uploadCount); uploadCounts: \(uploadCounts)"
             Log.error(message)
             return .error(message: message)
         }

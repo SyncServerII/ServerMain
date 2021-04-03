@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.6.1 (4/3/21)
+	* Added some logging to https://github.com/SyncServerII/Kitura-CredentialsGoogle
+	
 Version 1.6.0 (3/13/21)
 	* Added GIF mime type.
 	

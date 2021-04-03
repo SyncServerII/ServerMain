@@ -33,7 +33,10 @@ let package = Package(
 
         .package(url: "https://github.com/IBM-Swift/Kitura-Credentials.git", .upToNextMajor(from: "2.4.1")),
         .package(url: "https://github.com/IBM-Swift/Kitura-CredentialsFacebook.git", .upToNextMajor(from: "2.3.1")),
-        .package(url: "https://github.com/IBM-Swift/Kitura-CredentialsGoogle.git", .upToNextMajor(from: "2.3.1")),
+        
+        .package(url: "https://github.com/SyncServerII/Kitura-CredentialsGoogle.git", .branch("master")),
+        // .package(url: "https://github.com/IBM-Swift/Kitura-CredentialsGoogle.git", .upToNextMajor(from: "2.3.1")),
+        
         .package(url: "https://github.com/crspybits/CredentialsDropbox.git", from: "0.4.5"),
         .package(url: "https://github.com/crspybits/CredentialsMicrosoft.git", from: "0.2.0"),
         .package(url: "https://github.com/crspybits/CredentialsAppleSignIn.git", from: "0.0.4"),

@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.6.3 (4/10/21)
+	* Added logging
+	
 Version 1.6.2 (4/10/21)
 	* Added logging
 	

@@ -285,8 +285,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerDropboxAccount.git",
         "state": {
           "branch": null,
-          "revision": "5e9024e46d9b5c689e91e836a8112aeedd1c4900",
-          "version": "0.0.2"
+          "revision": "42e711e7cd91be0a6333adc5fe723c932d70c725",
+          "version": "0.0.4"
         }
       },
       {

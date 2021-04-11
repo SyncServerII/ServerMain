@@ -147,11 +147,11 @@
       },
       {
         "package": "Kitura-CredentialsGoogle",
-        "repositoryURL": "https://github.com/SyncServerII/Kitura-CredentialsGoogle.git",
+        "repositoryURL": "https://github.com/IBM-Swift/Kitura-CredentialsGoogle.git",
         "state": {
-          "branch": "master",
-          "revision": "a9f981c2931272463ba659b02cae4b0475cd8191",
-          "version": null
+          "branch": null,
+          "revision": "df9ecfa6405afd87bfc55f9788e0e25962f0b890",
+          "version": "2.3.200"
         }
       },
       {

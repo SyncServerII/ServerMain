@@ -229,6 +229,7 @@ class SharingAccountsController : ControllerProtocol {
         let response = RedeemSharingInvitationResponse()
         response.sharingGroupUUID = sharingInvitation.sharingGroupUUID
         response.userId = existingUser.userId
+        response.userCreated = false
         
         completion(.success(response))
     }
@@ -304,6 +305,7 @@ class SharingAccountsController : ControllerProtocol {
         let response = RedeemSharingInvitationResponse()
         response.sharingGroupUUID = sharingInvitation.sharingGroupUUID
         response.userId = userId
+        response.userCreated = true
         
         // 11/5/17; Up until now I had been calling `generateTokensIfNeeded` for Facebook creds and that had been generating tokens. Somehow, in running my tests today, I'm getting failures from the Facebook API when I try to do this. This may only occur in testing because I'm passing long-lived access tokens. Plus, it's possible this error has gone undiagnosed until now. In testing, there is no need to generate the long-lived access tokens.
 

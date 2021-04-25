@@ -375,8 +375,8 @@
         "repositoryURL": "https://github.com/Kitura/TypeDecoder.git",
         "state": {
           "branch": null,
-          "revision": "a5978582981f7151594bdaf5fe0d3cd9b1d2d0c0",
-          "version": "1.3.200"
+          "revision": "28ec01815c0aea9236f92982ca8d351e7112a4a0",
+          "version": "1.3.201"
         }
       }
     ]

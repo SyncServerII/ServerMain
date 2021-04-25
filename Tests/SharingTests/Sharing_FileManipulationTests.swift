@@ -18,6 +18,7 @@ import ChangeResolvers
 import Credentials
 
 // Needs: .primarySharingAccount, .nonOwningSharingAccount, .secondarySharingAccount, .secondaryOwningAccount
+// Needs .google3
 
 class Sharing_FileManipulationTests: ServerTestCase {
     var accountManager: AccountManager!

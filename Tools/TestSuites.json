@@ -143,10 +143,16 @@
   ],
   "PushNotificationTests": [
     {
-      "name": "PushNotificationTests.SendPushNotificationsTests"
+      "name": "PushNotificationTests.SendPushNotificationsTests",
+      "parameters": [
+        "FAKE_PUSH_NOTIFICATIONS" 
+       ]
     },
     {
-      "name": "PushNotificationTests.RegisterPushNotificationsTest"
+      "name": "PushNotificationTests.RegisterPushNotificationsTest",
+      "parameters": [
+        "FAKE_PUSH_NOTIFICATIONS" 
+       ]
     }
   ],
   "AccountFileTests": [

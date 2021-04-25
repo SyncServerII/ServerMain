@@ -48,8 +48,6 @@ class Database {
             return nil
         }
         
-        ServerStatsKeeper.session.increment(stat: .dbConnectionsOpened)
-
         if showStartupInfo {
             Log.info("Connecting to database named: \(Configuration.server.db.database)...")
         }
@@ -60,6 +58,9 @@ class Database {
             Log.error("Failure: \(self.error)")
             return nil
         }
+        
+        // This needs to be right at the end of the `init` -- so that nil can't be returned.
+        ServerStatsKeeper.session.increment(stat: .dbConnectionsOpened)
     }
     
     func query(statement: String) -> Bool {

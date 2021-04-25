@@ -477,20 +477,29 @@ extension XCTestCase {
                 XCTFail()
                 return nil
             }
-            creds.accessToken = testAccount.token()
+            creds.refreshToken = testAccount.token()
             creds.accountId = testAccount.id()
             
-            creds.lookupFile(cloudFileName:cloudFileName, options:options) { result in
-                switch result {
-                case .success (let found):
-                    lookupResult = found
-                case .failure, .accessTokenRevokedOrExpired:
+            creds.refresh { error in
+                guard error == nil, creds.accessToken != nil else {
+                    Log.error("Error: \(String(describing: error))")
                     XCTFail()
+                    expectation.fulfill()
+                    return
                 }
                 
-                expectation.fulfill()
+                creds.lookupFile(cloudFileName:cloudFileName, options:options) { result in
+                    switch result {
+                    case .success (let found):
+                        lookupResult = found
+                    case .failure, .accessTokenRevokedOrExpired:
+                        XCTFail("lookupFile: \(cloudFileName): \(result)")
+                    }
+                    
+                    expectation.fulfill()
+                }
             }
-            
+
         case AccountScheme.microsoft.accountName:
             guard let creds = MicrosoftCreds(configuration: Configuration.server, delegate: nil) else {
                 XCTFail()

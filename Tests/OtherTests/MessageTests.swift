@@ -46,14 +46,16 @@ class MessageTests: ServerTestCase {
     func testURLParameters() {
         let uuidString1 = Foundation.UUID().uuidString
         let sharingGroupUUID = UUID().uuidString
+        let batchExpiryInterval = TimeInterval(100)
+        let batchUUID = UUID().uuidString
         
         let uploadRequest = UploadFileRequest()
         uploadRequest.checkSum = TestFile.test1.dropboxCheckSum
         uploadRequest.fileUUID = uuidString1
         uploadRequest.mimeType = "text/plain"
         uploadRequest.sharingGroupUUID = sharingGroupUUID
-        uploadRequest.batchUUID = UUID().uuidString
-        uploadRequest.batchExpiryInterval = TimeInterval(100)
+        uploadRequest.batchUUID = batchUUID
+        uploadRequest.batchExpiryInterval = batchExpiryInterval
         
         guard let result = uploadRequest.urlParameters() else {
             XCTFail()
@@ -62,22 +64,28 @@ class MessageTests: ServerTestCase {
         
         let resultArray = result.components(separatedBy: "&")
         
+        let expectedBatchExpiryInterval = "batchExpiryInterval=\(Int(batchExpiryInterval))"
+        let expectedBatchUUID = "batchUUID=\(batchUUID)"
         let expectedCheckSum = "checkSum=\(TestFile.test1.dropboxCheckSum!)"
         let expectedFileUUID = "fileUUID=\(uuidString1)"
         let expectedMimeType = "mimeType=text%2Fplain"
         let expectedSharingGroupUUID = "sharingGroupUUID=\(sharingGroupUUID)"
 
-        guard resultArray.count == 4 else {
+        guard resultArray.count == 6 else {
             XCTFail("result: \(result); resultArray: \(resultArray)")
             return
         }
         
-        XCTAssert(resultArray[0] == expectedCheckSum)
-        XCTAssert(resultArray[1] == expectedFileUUID)
-        XCTAssert(resultArray[2] == expectedMimeType)
-        XCTAssert(resultArray[3] == expectedSharingGroupUUID)
+        XCTAssert(resultArray[0] == expectedBatchExpiryInterval, "\(resultArray[0]) == \(expectedBatchExpiryInterval)")
+        XCTAssert(resultArray[1] == expectedBatchUUID)
+        XCTAssert(resultArray[2] == expectedCheckSum)
+        XCTAssert(resultArray[3] == expectedFileUUID)
+        XCTAssert(resultArray[4] == expectedMimeType)
+        XCTAssert(resultArray[5] == expectedSharingGroupUUID)
 
         let expected =
+            expectedBatchExpiryInterval + "&" +
+            expectedBatchUUID + "&" +
             expectedCheckSum + "&" +
             expectedFileUUID + "&" +
             expectedMimeType + "&" +

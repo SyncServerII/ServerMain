@@ -16,6 +16,12 @@ import CredentialsAppleSignIn
 import Foundation
 import ServerShared
 
+// Credentials are stored in ServerTests.json, under "apple1".
+// To regenerate, I'm taking the creds from the Neebla test server *database* User table and copying them into the ServerTests.json file.
+// The `testThatAppleSignInUserHasValidCreds` test case also uses the .dropbox1 creds.
+// So, those creds also need to be copied over from the server.
+// And it uses the .google1 creds. Copy those over too.
+
 class AccountAuthenticationTests_Apple: AccountAuthenticationTests {
     override func setUp() {
         super.setUp()

@@ -9,6 +9,8 @@ import ServerShared
 import ChangeResolvers
 import Credentials
 
+// Test `testDeletionByOneClientAndAnotherDeletionByOtherClientWorks` needs .google2 credentials; these are for spasticmuffin.louisville@gmail.com
+
 class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
     var accountManager: AccountManager!
     var services: Services!

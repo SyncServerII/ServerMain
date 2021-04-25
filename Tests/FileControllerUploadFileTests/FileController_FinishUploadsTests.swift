@@ -153,7 +153,6 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
     func runFinishUploadsWithFileGroups(test: FinishUploadsWithFileGroupsTest) throws {
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
-        let batchUUID = UUID().uuidString
         
         let fileGroup1 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")

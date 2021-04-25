@@ -50,7 +50,6 @@ class FileController_DownloadStaleFiles: ServerTestCase, UploaderCommon  {
         let deviceUUID = Foundation.UUID().uuidString
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
-        var mimeType: MimeType?
         
         let file:TestFile = .commentFile
         let changeResolverName = CommentFile.changeResolverName
@@ -62,7 +61,7 @@ class FileController_DownloadStaleFiles: ServerTestCase, UploaderCommon  {
             return
         }
         
-        guard let result2 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: nil, mimeType: nil, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), file: file, dataToUpload: comment.updateContents) else {
+        guard let _ = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: nil, mimeType: nil, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), file: file, dataToUpload: comment.updateContents) else {
             XCTFail()
             return
         }

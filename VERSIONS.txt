@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.7.1 (4/24/21)
+	* Tests cases now succeeding.
+	
 Version 1.7.0 (4/15/21)
 	* Added parameter to redeem invitation response.
 	

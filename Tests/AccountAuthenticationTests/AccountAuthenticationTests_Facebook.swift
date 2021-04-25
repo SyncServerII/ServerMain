@@ -11,6 +11,11 @@ import LoggerAPI
 @testable import Server
 @testable import TestsCommon
 
+// Get a new access token from https://developers.facebook.com/apps/401074930287098/roles/test-users/
+// Then, convert it to longer term using:
+// ./Tools/getLongLivedFacebookToken.sh ServerTests.json FacebookLongLivedToken1
+// and copy that back into the ServerTests.json file.
+
 class AccountAuthenticationTests_Facebook: AccountAuthenticationTests {
     override func setUp() {
         super.setUp()

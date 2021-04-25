@@ -206,7 +206,7 @@ class SharingGroupRepository: Repository, RepositoryLookup {
             
             if includeContentsSummary {                
                 guard let summary = fileIndexRepo.getGroupSummary(forSharingGroupUUID: sharingGroup.sharingGroupUUID) else {
-                    Log.error("Failed getGroupSummary: \(sharingGroup.sharingGroupUUID)")
+                    Log.error("Failed getGroupSummary: \(String(describing: sharingGroup.sharingGroupUUID))")
                     return nil
                 }
                 

@@ -38,7 +38,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
 
     
         let badFileUUID = Foundation.UUID().uuidString
-        downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: badFileUUID, sharingGroupUUID: sharingGroupUUID, expectedError: true)
+        downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: badFileUUID, sharingGroupUUID: sharingGroupUUID, expectedError: true)
     }
     
     func testDownloadAppMetaDataForReallyBadUUIDFails() {
@@ -51,7 +51,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         }
     
         let badFileUUID = "Blig"
-        downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: badFileUUID, sharingGroupUUID: sharingGroupUUID, expectedError: true)
+        downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: badFileUUID, sharingGroupUUID: sharingGroupUUID, expectedError: true)
     }
     
     func testDownloadAppMetaDataForFileThatIsNotOwnedFails() {
@@ -76,12 +76,12 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
             return
         }
         
-        Log.debug("About to downloadAppMetaDataVersion")
+        Log.debug("About to downloadAppMetaData")
 
-        downloadAppMetaDataVersion(testAccount: nonOwningAccount, deviceUUID:deviceUUID2, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID2, expectedError: true)
+        downloadAppMetaData(testAccount: nonOwningAccount, deviceUUID:deviceUUID2, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID2, expectedError: true)
     }
     
-    func testDownloadValidAppMetaDataVersion0() {
+    func testDownloadValidAppMetaData0() {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
 
@@ -91,7 +91,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
             return
         }
 
-        guard let downloadAppMetaDataResponse = downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let downloadAppMetaDataResponse = downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -99,7 +99,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         XCTAssert(downloadAppMetaDataResponse.appMetaData == appMetaData)
     }
     
-    func testDownloadValidAppMetaDataVersion1() {
+    func testDownloadValidAppMetaData1() {
         let deviceUUID = Foundation.UUID().uuidString
         var appMetaData = "Test1"
         
@@ -109,7 +109,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
             return
         }
         
-        guard let downloadAppMetaDataResponse1 = downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let downloadAppMetaDataResponse1 = downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -140,7 +140,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
             return
         }
         
-        guard let downloadAppMetaDataResponse1 = downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let downloadAppMetaDataResponse1 = downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -158,7 +158,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         }
 
         let invalidSharingGroupUUID = UUID().uuidString
-        downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: invalidSharingGroupUUID, expectedError: true)
+        downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: invalidSharingGroupUUID, expectedError: true)
     }
     
     func testDownloadAppMetaDataWithBadSharingGroupUUIDFails() {
@@ -176,7 +176,7 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
             return
         }
         
-        downloadAppMetaDataVersion(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: workingButBadSharingGroupUUID, expectedError: true)
+        downloadAppMetaData(deviceUUID:deviceUUID, fileUUID: uploadResult1.request.fileUUID, sharingGroupUUID: workingButBadSharingGroupUUID, expectedError: true)
     }
 }
 

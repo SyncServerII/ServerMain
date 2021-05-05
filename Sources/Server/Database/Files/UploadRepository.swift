@@ -301,9 +301,6 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
             // 7/10/20: And will be nil for file uploads too.
             "fileVersion INT, " +
             
-            // Making this optional because appMetaData is optional. If there is app meta data, this must not be null.
-            "appMetaDataVersion INT, " +
-            
             // Nullable because v0 uploads will not have this.
             // 16MB limit on size. See https://stackoverflow.com/questions/5775571 and
             "uploadContents MEDIUMBLOB, " +

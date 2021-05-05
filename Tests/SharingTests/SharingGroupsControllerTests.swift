@@ -334,7 +334,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
 
-        downloadAppMetaDataVersion(deviceUUID: deviceUUID, fileUUID: uploadResult.request.fileUUID, sharingGroupUUID: sharingGroupUUID, expectedError: true)
+        downloadAppMetaData(deviceUUID: deviceUUID, fileUUID: uploadResult.request.fileUUID, sharingGroupUUID: sharingGroupUUID, expectedError: true)
     }
     
     func testRemoveSharingGroupWorks_downloadFileFails() {

@@ -215,7 +215,7 @@ class ServerTestCase : XCTestCase {
     }
     
     @discardableResult
-    func downloadAppMetaDataVersion(testAccount:TestAccount = .primaryOwningAccount, deviceUUID: String, fileUUID: String, sharingGroupUUID: String, expectedError: Bool = false) -> DownloadAppMetaDataResponse? {
+    func downloadAppMetaData(testAccount:TestAccount = .primaryOwningAccount, deviceUUID: String, fileUUID: String, sharingGroupUUID: String, expectedError: Bool = false) -> DownloadAppMetaDataResponse? {
 
         var result:DownloadAppMetaDataResponse?
         

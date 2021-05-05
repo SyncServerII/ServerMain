@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.8.0 (5/4/21)
+	* Improving database opening/closing accounting.
+	* Added read-only file mechanism for testing.
+	
 Version 1.7.1 (4/24/21)
 	* Tests cases now succeeding.
 	

@@ -43,6 +43,11 @@ class Database {
         if showStartupInfo {
             Log.info("Connecting to database with host: \(Configuration.server.db.host)...")
         }
+        
+        // This needs to be right at the beginning of the `init` -- because the destructor will be called in all cases, even when returning nil.
+        
+        ServerStatsKeeper.session.increment(stat: .dbConnectionsOpened)
+        
         guard self.connection.connect(host: Configuration.server.db.host, user: Configuration.server.db.user, password: Configuration.server.db.password ) else {
             Log.error("Failure connecting to mySQL server \(Configuration.server.db.host): \(self.error)")
             return nil
@@ -58,9 +63,6 @@ class Database {
             Log.error("Failure: \(self.error)")
             return nil
         }
-        
-        // This needs to be right at the end of the `init` -- so that nil can't be returned.
-        ServerStatsKeeper.session.increment(stat: .dbConnectionsOpened)
     }
     
     func query(statement: String) -> Bool {

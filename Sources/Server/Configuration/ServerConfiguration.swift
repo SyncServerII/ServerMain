@@ -85,12 +85,17 @@ struct ServerConfiguration: Decodable, GoogleCredsConfiguration, MicrosoftCredsC
     }
     let awssns:AWSSNS?
     
-    // If true, uses MockStorage.
-    let loadTestingCloudStorage: Bool?
-    
     struct PeriodicUploader: Decodable {
         let canRun: Bool
         let interval: TimeInterval
     }
     let periodicUploader: PeriodicUploader?
+    
+    // TESTING ONLY
+    // If true, uses MockStorage.
+    let loadTestingCloudStorage: Bool?
+    
+    // TESTING ONLY
+    // Use `ReadOnlyCloudStorage`.
+    let readonlyCloudStorage: Bool?
 }

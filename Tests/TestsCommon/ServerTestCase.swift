@@ -83,7 +83,7 @@ class ServerTestCase : XCTestCase {
     @discardableResult
     func checkOwingUserForSharingGroupUser(sharingGroupUUID: String, sharingUserId: UserId, sharingUser:TestAccount, owningUser: TestAccount) -> Bool {
         
-        let sharingUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: sharingUserId)
+        let sharingUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: sharingUserId, deleted: false)
         let sharingResult = SharingGroupUserRepository(db).lookup(key: sharingUserKey, modelInit: SharingGroupUser.init)
         var sharingGroupUser1: Server.SharingGroupUser!
         switch sharingResult {
@@ -118,7 +118,7 @@ class ServerTestCase : XCTestCase {
             return false
         }
         
-        let owningUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: owningUserId)
+        let owningUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: owningUserId, deleted: false)
         let owningResult = SharingGroupUserRepository(db).lookup(key: owningUserKey, modelInit: SharingGroupUser.init)
         var sharingGroupUser2: Server.SharingGroupUser!
         switch owningResult {
@@ -857,29 +857,34 @@ class ServerTestCase : XCTestCase {
         return uploadFileUsingServer(testAccount:testAccount, uploadIndex:uploadIndex, uploadCount:uploadCount, batchUUID: batchUUID, owningAccountType: owningAccountType, deviceUUID:deviceUUID, fileUUID:fileUUID, mimeType: .png, file: pngFile, fileLabel: UUID().uuidString, addUser:addUser, fileVersion:fileVersion, appMetaData:appMetaData, fileGroup: fileGroup, changeResolverName: changeResolverName, errorExpected:errorExpected)
     }
 
-    func getIndex(expectedFiles:[UploadFileRequest]? = nil, deviceUUID:String = Foundation.UUID().uuidString, sharingGroupUUID: String? = nil, expectedDeletionState:[String: Bool]? = nil, errorExpected: Bool = false) {
+    func getIndex(testUser: TestAccount = .primaryOwningAccount, expectedFiles:[UploadFileRequest]? = nil, deviceUUID:String = Foundation.UUID().uuidString, sharingGroupUUID: String? = nil, expectedDeletionState:[String: Bool]? = nil, errorExpected: Bool = false) {
         
         let request = IndexRequest()
         request.sharingGroupUUID = sharingGroupUUID
     
-        guard request.valid(),
-            let parameters = request.urlParameters() else {
-            XCTFail()
+        guard request.valid() else {
+            XCTFail("request.valid(): \(request.valid())")
             return
         }
         
-        self.performServerTest { [weak self] expectation, creds in
+        var urlParameters: String?
+        
+        if let parameters = request.urlParameters() {
+            urlParameters = "?" + parameters
+        }
+        
+        self.performServerTest(testAccount:testUser) { [weak self] expectation, creds in
             guard let self = self else { return }
-            let headers = self.setupHeaders(testUser: .primaryOwningAccount, accessToken: creds.accessToken, deviceUUID:deviceUUID)
+            let headers = self.setupHeaders(testUser: testUser, accessToken: creds.accessToken, deviceUUID:deviceUUID)
             
-            self.performRequest(route: ServerEndpoints.index, headers: headers, urlParameters: "?" + parameters, body:nil) { response, dict in
-                Log.info("Status code: \(response!.statusCode)")
+            self.performRequest(route: ServerEndpoints.index, headers: headers, urlParameters: urlParameters, body:nil) { response, dict in
+                Log.info("Status code: \(String(describing: response?.statusCode))")
 
                 if errorExpected {
-                    XCTAssert(response!.statusCode != .OK)
+                    XCTAssert(response?.statusCode != .OK, "statusCode: \(String(describing: response?.statusCode))")
                 }
                 else {
-                    XCTAssert(response!.statusCode == .OK, "Did not work on IndexRequest request")
+                    XCTAssert(response?.statusCode == .OK, "Did not work on IndexRequest request")
                     XCTAssert(dict != nil)
 
                     if let indexResponse = try? IndexResponse.decode(dict!) {

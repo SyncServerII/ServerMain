@@ -41,6 +41,10 @@ class User : NSObject, Model, UserData {
     static let pushNotificationTopicKey = "pushNotificationTopic"
     var pushNotificationTopic: String?
     
+    // Not in this table. For queries only.
+    static let deletedKey = SharingGroupUser.deletedKey
+    var deleted:Bool!
+    
     subscript(key:String) -> Any? {
         set {
             switch key {
@@ -65,13 +69,29 @@ class User : NSObject, Model, UserData {
             case User.pushNotificationTopicKey:
                 pushNotificationTopic = newValue as! String?
                 
+            // Not in this table. For queries only.
+            case SharingGroupUser.deletedKey:
+                deleted = newValue as? Bool
+
             default:
+                Log.error("Key not found: \(key)")
                 assert(false)
             }
         }
         
         get {
             return getValue(forKey: key)
+        }
+    }
+    
+    func typeConvertersToModel(propertyName:String) -> ((_ propertyValue:Any) -> Any?)? {
+        switch propertyName {
+            case SharingGroupUser.deletedKey:
+                return {(x:Any) -> Any? in
+                    return (x as? Int8) == 1
+                }
+            default:
+                return nil
         }
     }
 }
@@ -255,10 +275,15 @@ class UserRepository : Repository, RepositoryLookup {
     }
     
     // For a sharing user, will have one element per sharing group the user is a member of. These are the "owners" or "parents" of the sharing groups the sharing user is in. Returns an empty list if the user isn't a sharing user.
-    func getOwningSharingGroupUsers(forSharingUserId userId: UserId) -> [User]? {
+    func getOwningSharingGroupUsers(forSharingUserId userId: UserId, includeRemoved: Bool) -> [User]? {
         let sharingGroupUserTableName = SharingGroupUserRepository.tableName
         
-        let selectQuery = "select DISTINCT \(tableName).* FROM \(sharingGroupUserTableName), \(tableName) WHERE \(sharingGroupUserTableName).userId = \(userId) and \(sharingGroupUserTableName).owningUserId = \(tableName).userId"
+        var onlyCurrent = ""
+        if !includeRemoved {
+            onlyCurrent = "and \(sharingGroupUserTableName).\(SharingGroupUser.deletedKey) = false"
+        }
+        
+        let selectQuery = "select DISTINCT \(tableName).* FROM \(sharingGroupUserTableName), \(tableName) WHERE \(sharingGroupUserTableName).userId = \(userId) and \(sharingGroupUserTableName).owningUserId = \(tableName).userId \(onlyCurrent)"
 
         guard let select = Select(db:db, query: selectQuery, modelInit: User.init, ignoreErrors:false) else {
             return nil

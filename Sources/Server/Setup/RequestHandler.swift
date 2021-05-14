@@ -192,12 +192,12 @@ class RequestHandler {
             }
             
             // The user is on the system. Whether or not they can perform the endpoint depends on their permissions for the sharing group.
-            let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: currentSignedInUser!.userId)
+            let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: currentSignedInUser!.userId, deleted: false)
             let result = repositories.sharingGroupUser.lookup(key: key, modelInit: SharingGroupUser.init)
             switch result {
             case .found(let model):
-                let sharingGroupUser = model as! SharingGroupUser
-                guard let userPermissions = sharingGroupUser.permission else {
+                guard let sharingGroupUser = model as? SharingGroupUser,
+                    let userPermissions = sharingGroupUser.permission else {
                     self.failWithError(message: "SharingGroupUser did not have permissions!")
                     return .failure
                 }

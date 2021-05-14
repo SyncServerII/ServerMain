@@ -188,15 +188,31 @@ class SharingAccountsController : ControllerProtocol {
     
     private func redeemSharingInvitationForExistingUser(_ existingUser: User, params:RequestProcessingParameters, request: RedeemSharingInvitationRequest, sharingInvitation: SharingInvitation, completion: @escaping ((RequestProcessingParameters.Response)->())) {
     
+        var reAddUserToSharingGroup = false
+        
         // Check to see if this user is already in this sharing group. We've got a lock on the sharing group, so no race condition will occur for adding user to sharing group.
-        let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingInvitation.sharingGroupUUID, userId: existingUser.userId)
+        let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingInvitation.sharingGroupUUID, userId: existingUser.userId, deleted: nil)
         let result = params.repos.sharingGroupUser.lookup(key: key, modelInit: SharingGroupUser.init)
         switch result {
-        case .found:
-            let message = "User id: \(existingUser.userId!) was already in sharing group: \(String(describing: sharingInvitation.sharingGroupUUID))"
-            Log.error(message)
-            completion(.failure(.message(message)))
-            return
+        case .found(let model):
+            guard let model = model as? SharingGroupUser else {
+                let message = "Failed converting SharingGroupUser model; for User id: \(String(describing: existingUser.userId)); \(String(describing: sharingInvitation.sharingGroupUUID))"
+                Log.error(message)
+                completion(.failure(.message(message)))
+                return
+            }
+            
+            if !model.deleted {
+                let message = "User id: \(existingUser.userId!) was already in sharing group: \(String(describing: sharingInvitation.sharingGroupUUID))"
+                Log.error(message)
+                completion(.failure(.message(message)))
+                return
+            }
+            
+            reAddUserToSharingGroup = true
+            
+            // Not considering the case of re-adding a user to a sharing group when the user itself was already removed. This is because when a user is re-added, they'll get a new user id. Thus, we won't find them again in the SharingGroupUser table.
+
         case .noObjectFound:
             // Good: We can add this user to the sharing group.
             break
@@ -219,11 +235,22 @@ class SharingAccountsController : ControllerProtocol {
             owningUserId = sharingInvitation.owningUserId
         }
 
-        guard case .success = params.repos.sharingGroupUser.add(sharingGroupUUID: sharingInvitation.sharingGroupUUID, userId: existingUser.userId, permission: sharingInvitation.permission, owningUserId: owningUserId) else {
-            let message = "Failed on adding sharing group user for user."
-            Log.error(message)
-            completion(.failure(.message(message)))
-            return
+        if reAddUserToSharingGroup {
+            let success = params.repos.sharingGroupUser.reAdd(sharingGroupUUID: sharingInvitation.sharingGroupUUID, userId: existingUser.userId, with: sharingInvitation.permission, owningUserId: owningUserId)
+            guard success else {
+                let message = "Could not re-add sharing group user"
+                Log.error(message)
+                params.completion(.failure(.message(message)))
+                return
+            }
+        }
+        else {
+            guard case .success = params.repos.sharingGroupUser.add(sharingGroupUUID: sharingInvitation.sharingGroupUUID, userId: existingUser.userId, permission: sharingInvitation.permission, owningUserId: owningUserId) else {
+                let message = "Failed on adding sharing group user for user."
+                Log.error(message)
+                completion(.failure(.message(message)))
+                return
+            }
         }
 
         let response = RedeemSharingInvitationResponse()

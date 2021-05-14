@@ -128,28 +128,11 @@ class SharingGroupsController : ControllerProtocol {
         }
         
         // Any users who were members of the sharing group should no longer be members.
-        let sharingGroupUserKey = SharingGroupUserRepository.LookupKey.sharingGroupUUID(sharingGroupUUID)
-        let removeResult = params.repos.sharingGroupUser.retry {
-            return params.repos.sharingGroupUser.remove(key: sharingGroupUserKey)
-        }
-        switch removeResult {
-        case .removed:
-            break
-            
-        case .deadlock:
-            let message = "Could not remove sharing group user references: deadlock"
-            Log.error(message)
-            params.completion(.failure(.message(message)))
-            return false
-            
-        case .waitTimeout:
-            let message = "Could not remove sharing group user references: waitTimeout"
-            Log.error(message)
-            params.completion(.failure(.message(message)))
-            return false
-            
-        case .error(let error):
-            let message = "Could not remove sharing group user references: \(error)"
+        // We're handling this by marking the users as removed.
+        let deletionMarkedKey = SharingGroupUserRepository.LookupKey.sharingGroupUUID(sharingGroupUUID, deleted: false)
+                
+        guard let _ = params.repos.sharingGroupUser.updateAll(key: deletionMarkedKey, updates: [SharingGroupUser.deletedKey: .bool(true)]) else {
+            let message = "Could not mark sharing group user(s) as deleted: \(deletionMarkedKey)"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return false
@@ -186,7 +169,7 @@ class SharingGroupsController : ControllerProtocol {
         
         // Need to count number of users in sharing group-- if this will be the last user need to "remove" the sharing group because no other people will be able to enter it. ("remove" ==  mark the sharing group as deleted).
         var numberSharingUsers:Int!
-        if let result:[ServerShared.SharingGroupUser] = params.repos.sharingGroupUser.sharingGroupUsers(forSharingGroupUUID: request.sharingGroupUUID) {
+        if let result:[ServerShared.SharingGroupUser] = params.repos.sharingGroupUser.sharingGroupUsers(forSharingGroupUUID: request.sharingGroupUUID, includeRemovedUsers: false) {
             numberSharingUsers = result.count
         }
         else {
@@ -211,12 +194,12 @@ class SharingGroupsController : ControllerProtocol {
             }
         }
         
-        let removalKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: request.sharingGroupUUID, userId: params.currentSignedInUser!.userId)
-        let removalResult = params.repos.sharingGroupUser.retry {
-            return params.repos.sharingGroupUser.remove(key: removalKey)
-        }
-        guard case .removed(let numberRows) = removalResult, numberRows == 1 else {
-            let message = "Could not remove user from SharingGroup."
+        // Mark the user as removed in the SharingGroupUser table.
+        let deletionMarkedKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: request.sharingGroupUUID, userId: params.currentSignedInUser!.userId, deleted: false)
+                
+        guard let updateAllResult = params.repos.sharingGroupUser.updateAll(key: deletionMarkedKey, updates: [SharingGroupUser.deletedKey: .bool(true)]),
+            updateAllResult == 1 else {
+            let message = "Could not mark sharing group user as deleted: \(deletionMarkedKey)"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return

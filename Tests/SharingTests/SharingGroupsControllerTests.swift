@@ -160,10 +160,11 @@ class SharingGroupsControllerTests: ServerTestCase {
     
     // MARK: Remove sharing groups
     
-    func testRemoveSharingGroupWorks() {
+    // `_only` is just for filtering: To run this test by itself.
+    func testRemoveSharingGroupWorks_only() {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
-        guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+        guard let addUserResponse = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
         }
@@ -172,7 +173,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             XCTFail()
             return
         }
-        
+
         let key1 = SharingGroupRepository.LookupKey.sharingGroupUUID(sharingGroupUUID)
         let result1 = SharingGroupRepository(db).lookup(key: key1, modelInit: SharingGroup.init)
         guard case .found(let model) = result1, let sharingGroup = model as? Server.SharingGroup else {
@@ -185,7 +186,26 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        guard let count = SharingGroupUserRepository(db).count(), count == 0 else {
+        guard let count = SharingGroupUserRepository(db).count(),
+            count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        guard let userId = addUserResponse.userId else {
+            XCTFail()
+            return
+        }
+        
+        let key2 = SharingGroupUserRepository.LookupKey.userId(userId)
+        let result2 = SharingGroupUserRepository(db).lookup(key: key2 , modelInit: SharingGroupUser.init)
+        guard case .found(let model2) = result2,
+            let sharingGroupUser = model2 as? Server.SharingGroupUser else {
+            XCTFail()
+            return
+        }
+        
+        guard sharingGroupUser.deleted else {
             XCTFail()
             return
         }
@@ -247,7 +267,8 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        guard let count = SharingGroupUserRepository(db).count(), count == 0 else {
+        guard let count = SharingGroupUserRepository(db).count(),
+            count == 2 else {
             XCTFail()
             return
         }
@@ -405,11 +426,14 @@ class SharingGroupsControllerTests: ServerTestCase {
         }
         
         let key2 = SharingGroupUserRepository.LookupKey.userId(userId)
-        let result2 = SharingGroupUserRepository(db).lookup(key: key2 , modelInit: SharingGroupUser.init)
-        guard case .noObjectFound = result2 else {
+        let result2 = SharingGroupUserRepository(db).lookup(key: key2, modelInit: SharingGroupUser.init)
+        guard case .found(let model2) = result2,
+            let sharingGroupUser = model2 as? Server.SharingGroupUser else {
             XCTFail()
             return
         }
+        
+        XCTAssert(sharingGroupUser.deleted)
     }
     
     func testRemoveUserFromSharingGroup_notLastUserInSharingGroup() {
@@ -458,10 +482,13 @@ class SharingGroupsControllerTests: ServerTestCase {
         
         let key2 = SharingGroupUserRepository.LookupKey.userId(userId)
         let result2 = SharingGroupUserRepository(db).lookup(key: key2 , modelInit: SharingGroupUser.init)
-        guard case .noObjectFound = result2 else {
+        guard case .found(let model2) = result2,
+            let sharingGroupUser = model2 as? Server.SharingGroupUser else {
             XCTFail()
             return
         }
+        
+        XCTAssert(sharingGroupUser.deleted)
     }
     
     // When user has files in the sharing group-- those should be marked as deleted.
@@ -537,6 +564,83 @@ class SharingGroupsControllerTests: ServerTestCase {
         XCTAssert(result == nil)
     }
     
+    // Also want to make sure that the user we remove from the sharing group is *not* the last user in the sharing group so the sharing group is not removed.
+    func removeUserFromSharingGroup_thenTryEndpoint(usingThatSharingGroup: Bool) {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+
+        let sharingInvitationUUID:String! = createSharingInvitation(permission: .read, sharingGroupUUID:sharingGroupUUID)
+        guard sharingInvitationUUID != nil else {
+            XCTFail()
+            return
+        }
+        
+        let sharingUser: TestAccount = .secondaryOwningAccount
+        
+        guard let redeemSharingInvitationResponse = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard removeUserFromSharingGroup(testAccount: sharingUser, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+
+        let key1 = SharingGroupRepository.LookupKey.sharingGroupUUID(sharingGroupUUID)
+        let result1 = SharingGroupRepository(db).lookup(key: key1, modelInit: SharingGroup.init)
+        guard case .found(let model) = result1, let sharingGroup = model as? Server.SharingGroup else {
+            XCTFail()
+            return
+        }
+        
+        // Still one user in sharing group-- should not be deleted.
+        guard !sharingGroup.deleted else {
+            XCTFail()
+            return
+        }
+        
+        guard let userId = redeemSharingInvitationResponse.userId else {
+            XCTFail()
+            return
+        }
+        
+        let key2 = SharingGroupUserRepository.LookupKey.userId(userId)
+        let result2 = SharingGroupUserRepository(db).lookup(key: key2 , modelInit: SharingGroupUser.init)
+        guard case .found(let model2) = result2,
+            let sharingGroupUser = model2 as? Server.SharingGroupUser else {
+            XCTFail()
+            return
+        }
+        
+        guard sharingGroupUser.deleted else {
+            XCTFail()
+            return
+        }
+        
+        // Try another endpoint using `sharingUser` -- want to make sure an endpoint not using the sharing group works, but that an endpoint using the sharing group doesn't work.
+        
+        if usingThatSharingGroup {
+            getIndex(testUser: sharingUser, deviceUUID:deviceUUID, sharingGroupUUID: sharingGroupUUID, errorExpected: true)
+        }
+        else {
+            getIndex(testUser: sharingUser, deviceUUID: deviceUUID)
+        }
+        
+    }
+
+    func testRemoveUserFromSharingGroup_thenDoNotTryEndpointUsingThatSharingGroup() {
+        removeUserFromSharingGroup_thenTryEndpoint(usingThatSharingGroup: false)
+    }
+    
+    func testRemoveUserFromSharingGroup_thenTryEndpointUsingThatSharingGroup() {
+        removeUserFromSharingGroup_thenTryEndpoint(usingThatSharingGroup: true)
+    }
+    
     func testInterleavedUploadsToDifferentSharingGroupsWorks() {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID1 = Foundation.UUID().uuidString
@@ -557,5 +661,190 @@ class SharingGroupsControllerTests: ServerTestCase {
         uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID1), fileLabel: UUID().uuidString)
 
         uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID2), fileLabel: UUID().uuidString)
+    }
+    
+    func testRemoveUserFromSharingGroup_thenReAddUser() {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        let owningUser:TestAccount = .primaryOwningAccount
+        guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingInvitationUUID = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID)
+        guard sharingInvitationUUID != nil else {
+            XCTFail()
+            return
+        }
+        
+        let sharingUser: TestAccount = .nonOwningSharingAccount
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard removeUserFromSharingGroup(testAccount: sharingUser, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingInvitationUUID2 = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID)
+        guard sharingInvitationUUID2 != nil else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID2) else {
+            XCTFail()
+            return
+        }
+    }
+    
+    func testRemoveUserFromSharingGroup_thenReAddUserAndUploadFile() {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        let owningUser:TestAccount = .primaryOwningAccount
+        guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingInvitationUUID = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID)
+        guard sharingInvitationUUID != nil else {
+            XCTFail()
+            return
+        }
+        
+        let sharingUser: TestAccount = .nonOwningSharingAccount
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard removeUserFromSharingGroup(testAccount: sharingUser, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let sharingInvitationUUID2 = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID2) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false) else {
+            XCTFail()
+            return
+        }
+    }
+    
+    func testRemoveUserFromSharingGroup_thenReAddUserAndIndex() {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        let owningUser:TestAccount = .primaryOwningAccount
+        guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingInvitationUUID = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID)
+        guard sharingInvitationUUID != nil else {
+            XCTFail()
+            return
+        }
+        
+        let sharingUser: TestAccount = .nonOwningSharingAccount
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard removeUserFromSharingGroup(testAccount: sharingUser, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let sharingInvitationUUID2 = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID2) else {
+            XCTFail()
+            return
+        }
+        
+        getIndex(testUser: sharingUser, deviceUUID:deviceUUID, sharingGroupUUID: sharingGroupUUID)
+    }
+    
+    // I want to be able to re-add a user to a sharing group after they have been removed. Test will look like this: a) redeem invite to sharing group, b) add a file to that sharing group, c) remove yourself from the sharing group, d) redeem another invite to that sharing group, e) make sure there are no files present in the sharing group, f) add a file to the sharing group.
+    func testRemoveUserFromSharingGroup_uploadFileAfterReAdd() {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        let owningUser:TestAccount = .primaryOwningAccount
+        guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingInvitationUUID = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID)
+        guard sharingInvitationUUID != nil else {
+            XCTFail()
+            return
+        }
+        
+        let sharingUser: TestAccount = .nonOwningSharingAccount
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard removeUserFromSharingGroup(testAccount: sharingUser, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let sharingInvitationUUID2 = createSharingInvitation(testAccount: owningUser, permission: .write, sharingGroupUUID:sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID2) else {
+            XCTFail()
+            return
+        }
+        
+        // Make sure there is one file in the sharing group.
+        guard let (fileInfo, _) = getIndex(testAccount:sharingUser, deviceUUID:deviceUUID, sharingGroupUUID: sharingGroupUUID),
+            fileInfo?.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false) else {
+            XCTFail()
+            return
+        }
+        
+        // Make sure there are two files.
+        guard let (fileInfo2, _) = getIndex(testAccount:sharingUser, deviceUUID:deviceUUID, sharingGroupUUID: sharingGroupUUID),
+            fileInfo2?.count == 2 else {
+            XCTFail()
+            return
+        }
     }
 }

@@ -16,20 +16,20 @@ import ServerAppleSignInAccount
 
 extension ControllerProtocol {
     // Make sure the current signed in user is a member of the sharing group.
-    // `checkNotDeleted` set to true ensures the sharing group is not deleted.
-    func sharingGroupSecurityCheck(sharingGroupUUID: String, params:RequestProcessingParameters, checkNotDeleted: Bool = true) -> Bool {
+    // `checkSharingGroupNotDeleted` set to true ensures the sharing group is not deleted.
+    func sharingGroupSecurityCheck(sharingGroupUUID: String, params:RequestProcessingParameters, checkSharingGroupNotDeleted: Bool = true) -> Bool {
     
         guard let userId = params.currentSignedInUser?.userId else {
             Log.error("No userId!")
             return false
         }
         
-        let sharingUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: userId)
+        let sharingUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: userId, deleted: false)
         let lookupResult = params.repos.sharingGroupUser.lookup(key: sharingUserKey, modelInit: SharingGroupUser.init)
         
         switch lookupResult {
         case .found:
-            if checkNotDeleted {
+            if checkSharingGroupNotDeleted {
                 // The deleted flag is in the SharingGroup (not SharingGroupUser) repo. Need to look that up.
                 let sharingKey = SharingGroupRepository.LookupKey.sharingGroupUUID(sharingGroupUUID)
                 let lookupResult = params.repos.sharingGroup.lookup(key: sharingKey, modelInit: SharingGroup.init)
@@ -159,7 +159,7 @@ public class Controllers {
             return .found(user.userId)
         }
         
-        let sharingUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: user.userId)
+        let sharingUserKey = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: user.userId, deleted: false)
         let lookupResult = sharingGroupUserRepo.lookup(key: sharingUserKey, modelInit: SharingGroupUser.init)
         
         switch lookupResult {

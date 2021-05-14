@@ -177,18 +177,23 @@ class SharingGroupRepository: Repository, RepositoryLookup {
         }
     }
 
-    func sharingGroups(forUserId userId: UserId, includeContentsSummary: Bool, sharingGroupUserRepo: SharingGroupUserRepository, userRepo: UserRepository, fileIndexRepo: FileIndexRepository) -> [ServerShared.SharingGroup]? {
+    func sharingGroups(forUserId userId: UserId, includeContentsSummary: Bool, includeRemovedUsers: Bool, sharingGroupUserRepo: SharingGroupUserRepository, userRepo: UserRepository, fileIndexRepo: FileIndexRepository) -> [ServerShared.SharingGroup]? {
         let sharingGroupUserTableName = SharingGroupUserRepository.tableName
+
+        var onlyCurrent = ""
+        if !includeRemovedUsers {
+            onlyCurrent = "and \(sharingGroupUserTableName).\(SharingGroupUser.deletedKey) = false"
+        }
         
-        let query = "select \(tableName).sharingGroupUUID, \(tableName).sharingGroupName, \(tableName).deleted,  \(sharingGroupUserTableName).permission, \(sharingGroupUserTableName).owningUserId FROM \(tableName),\(sharingGroupUserTableName) WHERE \(sharingGroupUserTableName).userId = \(userId) AND \(sharingGroupUserTableName).sharingGroupUUID = \(tableName).sharingGroupUUID"
+        let query = "select \(tableName).sharingGroupUUID, \(tableName).sharingGroupName, \(tableName).deleted,  \(sharingGroupUserTableName).permission, \(sharingGroupUserTableName).owningUserId FROM \(tableName),\(sharingGroupUserTableName) WHERE \(sharingGroupUserTableName).userId = \(userId) AND \(sharingGroupUserTableName).sharingGroupUUID = \(tableName).sharingGroupUUID \(onlyCurrent)"
         
         // The "owners" or "parents" of the sharing groups the sharing user is in
-        guard let owningUsers = userRepo.getOwningSharingGroupUsers(forSharingUserId: userId) else {
+        guard let owningUsers = userRepo.getOwningSharingGroupUsers(forSharingUserId: userId, includeRemoved: includeRemovedUsers) else {
             Log.error("Failed calling getOwningSharingGroupUsers")
             return nil
         }
         
-        guard let sharingGroups = self.sharingGroups(forSelectQuery: query, sharingGroupUserRepo: sharingGroupUserRepo) else {
+        guard let sharingGroups = self.sharingGroups(forSelectQuery: query, sharingGroupUserRepo: sharingGroupUserRepo, includeRemovedUsers: includeRemovedUsers) else {
             Log.error("Failed calling sharingGroups")
             return nil
         }
@@ -219,7 +224,7 @@ class SharingGroupRepository: Repository, RepositoryLookup {
         return clientSharingGroups
     }
     
-    private func sharingGroups(forSelectQuery selectQuery: String, sharingGroupUserRepo: SharingGroupUserRepository) -> [SharingGroup]? {
+    private func sharingGroups(forSelectQuery selectQuery: String, sharingGroupUserRepo: SharingGroupUserRepository, includeRemovedUsers: Bool) -> [SharingGroup]? {
         
         guard let select = Select(db:db, query: selectQuery, modelInit: SharingGroup.init, ignoreErrors:false) else {
             return nil
@@ -231,7 +236,7 @@ class SharingGroupRepository: Repository, RepositoryLookup {
         select.forEachRow { rowModel in
             let sharingGroup = rowModel as! SharingGroup
             
-            if let sgus:[ServerShared.SharingGroupUser] = sharingGroupUserRepo.sharingGroupUsers(forSharingGroupUUID: sharingGroup.sharingGroupUUID) {
+            if let sgus:[ServerShared.SharingGroupUser] = sharingGroupUserRepo.sharingGroupUsers(forSharingGroupUUID: sharingGroup.sharingGroupUUID, includeRemovedUsers: includeRemovedUsers) {
                 sharingGroup.sharingGroupUsers = sgus
             }
             else {

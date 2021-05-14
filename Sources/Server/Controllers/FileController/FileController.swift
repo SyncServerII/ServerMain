@@ -89,7 +89,7 @@ class FileController : ControllerProtocol {
         // Only giving a summary of content per sharing group when not requesting an index for a specific sharing group.
         let includeContentsSummary = indexRequest.sharingGroupUUID == nil
 
-        guard let clientSharingGroups = params.repos.sharingGroup.sharingGroups(forUserId: params.currentSignedInUser!.userId, includeContentsSummary: includeContentsSummary, sharingGroupUserRepo: params.repos.sharingGroupUser, userRepo: params.repos.user, fileIndexRepo: params.repos.fileIndex) else {
+        guard let clientSharingGroups = params.repos.sharingGroup.sharingGroups(forUserId: params.currentSignedInUser!.userId, includeContentsSummary: includeContentsSummary, includeRemovedUsers: true, sharingGroupUserRepo: params.repos.sharingGroupUser, userRepo: params.repos.user, fileIndexRepo: params.repos.fileIndex) else {
             let message = "Could not get sharing groups for user."
             Log.error(message)
             params.completion(.failure(.message(message)))
@@ -107,7 +107,7 @@ class FileController : ControllerProtocol {
         Log.info("Index: Getting file index for sharing group uuid: \(sharingGroupUUID)")
 
         // Not worrying about whether the sharing group is deleted-- where's the harm in getting a file index for a deleted sharing group?
-        guard sharingGroupSecurityCheck(sharingGroupUUID: sharingGroupUUID, params: params, checkNotDeleted: false) else {
+        guard sharingGroupSecurityCheck(sharingGroupUUID: sharingGroupUUID, params: params, checkSharingGroupNotDeleted: false) else {
             let message = "Failed in sharing group security check."
             Log.error(message)
             params.completion(.failure(.message(message)))

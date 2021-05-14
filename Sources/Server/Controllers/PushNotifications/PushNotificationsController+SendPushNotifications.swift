@@ -60,7 +60,7 @@ extension PushNotificationsController {
     // Returns true iff success.
     private func sendNotifications(fromUser: User, forSharingGroupUUID sharingGroupUUID: String, message: String, params:RequestProcessingParameters) -> Bool {
 
-        guard var users:[User] = params.repos.sharingGroupUser.sharingGroupUsers(forSharingGroupUUID: sharingGroupUUID) else {
+        guard var users:[User] = params.repos.sharingGroupUser.sharingGroupUsers(forSharingGroupUUID: sharingGroupUUID, includeRemovedUsers: false) else {
             Log.error(("sendNotifications: Failed to get sharing group users!"))
             return false
         }

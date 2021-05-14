@@ -170,7 +170,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: userId)
+        let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: userId, deleted: false)
         let result = SharingGroupUserRepository(db).lookup(key: key, modelInit: SharingGroupUser.init)
         switch result {
         case .found(let model):
@@ -187,7 +187,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             XCTFail("Error: \(error)")
         }
         
-        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: false, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 1 else {
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: false, includeRemovedUsers: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 1 else {
             XCTFail()
             return
         }
@@ -234,7 +234,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: false, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: false, includeRemovedUsers: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
             XCTFail()
             return
         }
@@ -292,7 +292,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: true, includeRemovedUsers: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
             XCTFail()
             return
         }
@@ -362,7 +362,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
+        guard let groups = SharingGroupRepository(db).sharingGroups(forUserId: userId, includeContentsSummary: true, includeRemovedUsers: true, sharingGroupUserRepo: SharingGroupUserRepository(db), userRepo: UserRepository(db), fileIndexRepo: FileIndexRepository(db)), groups.count == 2 else {
             XCTFail()
             return
         }

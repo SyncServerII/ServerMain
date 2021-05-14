@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.9.0
+	* Changing support for removing users from sharing groups. Removing a user from a sharing group now marks the row in SharingGroupUser as deleted it doesn't remove that row.
+	* Updated test cases in support of this change.
+	
 Version 1.8.1 (5/4/21)
 	* Complete removal of appMetaDataVersion column from Upload, and FileIndex
 

@@ -334,6 +334,7 @@ class UserController : ControllerProtocol {
         }
         
         // The user will no longer be part of any sharing groups
+        // This is *not* consistent with other parts of the server. Other parts of the server just mark the SharingGroupUser rows as deleted. This removes actual rows. My thinking is that: The userId isn't valid any more. Why keep the SharingGroupUser row?
         let sharingGroupUserKey = SharingGroupUserRepository.LookupKey.userId(userId)
         let removeResult3 = repos.sharingGroupUser.retry {
             return repos.sharingGroupUser.remove(key: sharingGroupUserKey)

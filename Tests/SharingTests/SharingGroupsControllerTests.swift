@@ -240,6 +240,45 @@ class SharingGroupsControllerTests: ServerTestCase {
         }
     }
     
+    func indexReportsSharingGroupDeleted(remove: Bool) {
+        let deviceUUID = Foundation.UUID().uuidString
+
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+            let sharingGroupUUID = uploadResult.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+
+        if remove {
+            guard removeSharingGroup(deviceUUID:deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+                XCTFail()
+                return
+            }
+        }
+        
+        guard let (_, sharingGroups) = getIndex(testAccount:.primaryOwningAccount, deviceUUID:deviceUUID),
+            sharingGroups.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        let filtered = sharingGroups.filter { $0.sharingGroupUUID == sharingGroupUUID}
+        guard filtered.count == 1 else {
+            XCTFail()
+            return
+        }
+
+        XCTAssert(filtered[0].deleted == remove)
+    }
+    
+    func testRemoveSharingGroupWorks_indexReportsSharingGroupDeleted() {
+        indexReportsSharingGroupDeleted(remove: true)
+    }
+
+    func testDoNotRemoveSharingGroupWorks_indexReportsSharingGroupNotDeleted() {
+        indexReportsSharingGroupDeleted(remove: false)
+    }
+    
     func testRemoveSharingGroupWorks_multipleUsersRemovedFromSharingGroup() {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
@@ -630,7 +669,6 @@ class SharingGroupsControllerTests: ServerTestCase {
         else {
             getIndex(testUser: sharingUser, deviceUUID: deviceUUID)
         }
-        
     }
 
     func testRemoveUserFromSharingGroup_thenDoNotTryEndpointUsingThatSharingGroup() {
@@ -846,5 +884,56 @@ class SharingGroupsControllerTests: ServerTestCase {
             XCTFail()
             return
         }
+    }
+    
+    func indexReportsSharingGroup(removeUser: Bool) {
+        let deviceUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
+            XCTFail()
+            return
+        }
+
+        guard let sharingInvitationUUID = createSharingInvitation(permission: .read, sharingGroupUUID:sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingUser: TestAccount = .secondaryOwningAccount
+        
+        guard let _ = redeemSharingInvitation(sharingUser:sharingUser, sharingInvitationUUID: sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        if removeUser {
+            guard removeUserFromSharingGroup(testAccount: sharingUser, deviceUUID: deviceUUID, sharingGroupUUID: sharingGroupUUID) else {
+                XCTFail()
+                return
+            }
+        }
+        
+        // Sync/index should still report the sharing group
+        guard let (_, sharingGroups) = getIndex(testAccount:sharingUser, deviceUUID:deviceUUID),
+            sharingGroups.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        let filtered = sharingGroups.filter { $0.sharingGroupUUID == sharingGroupUUID}
+        guard filtered.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(filtered[0].deleted == removeUser)
+    }
+    
+    func testRemoveUserFromSharingGroup_indexReportsSharingGroup() {
+        indexReportsSharingGroup(removeUser: true)
+    }
+    
+    func testDoNotRemoveUserFromSharingGroup_indexReportsSharingGroup() {
+        indexReportsSharingGroup(removeUser: false)
     }
 }

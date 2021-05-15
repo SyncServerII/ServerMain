@@ -218,6 +218,16 @@ class SharingGroupRepository: Repository, RepositoryLookup {
                 clientSharingGroup.contentsSummary = summary
             }
             
+            // If user removed from sharing group, mark the sharing group itself as deleted. This is a convenience for the user/client-- to make it easier for them to know when they should treat a sharing group as removed.
+            if let userFilter = (clientSharingGroup.sharingGroupUsers?.filter {$0.userId == userId}) {
+                if userFilter.count == 1 {
+                    clientSharingGroup.deleted = userFilter[0].deleted ?? false
+                }
+                else {
+                    Log.error("Somehow, user \(userId) was in sharingGroupUsers more than once for sharingGroup: \(String(describing: sharingGroup.sharingGroupUUID))")
+                }
+            }
+
             clientSharingGroups += [clientSharingGroup]
         }
         

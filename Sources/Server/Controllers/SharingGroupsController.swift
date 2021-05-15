@@ -138,7 +138,7 @@ class SharingGroupsController : ControllerProtocol {
             return false
         }
         
-        // Mark the sharing group as deleted.
+        // Mark the sharing group itself as deleted.
         guard let _ = params.repos.sharingGroup.markAsDeleted(forCriteria:
             .sharingGroupUUID(sharingGroupUUID)) else {
             let message = "Could not mark sharing group as deleted."
@@ -146,8 +146,6 @@ class SharingGroupsController : ControllerProtocol {
             params.completion(.failure(.message(message)))
             return false
         }
-        
-        // Not going to remove row from master version. People will still be able to get the file index for this sharing group-- to see that all the files are (marked as) deleted. That requires a master version.
         
         return true
     }

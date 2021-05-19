@@ -1,0 +1,20 @@
+branch-defaults:
+  default:
+    environment: neebla-02-production
+    group_suffix: null
+deploy:
+  artifact: /Users/chris/Desktop/bundle.zip
+global:
+  application_name: neebla-02-production
+  branch: null
+  default_ec2_keyname: amazon1
+  default_platform: Docker 19.03.13-ce
+  default_region: us-west-2
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: null
+  repository: null
+  sc: null
+  workspace_type: Application

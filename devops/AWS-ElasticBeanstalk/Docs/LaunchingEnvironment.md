@@ -38,9 +38,11 @@ global:
   ...
   default_platform: Docker 17.06.2-ce
 ```
-
+See https://docs.aws.amazon.com/elasticbeanstalk/latest/platforms/platforms-supported.html#platforms-supported.docker for updated platforms.
 
 * Create a Server.json file -- this provides the configuration needed by SyncServer. Put that in your environment folder. (I have just put a sym link because I don't want to expose private info in my repo!). Hold off on putting the database specifics into this file. That comes below.
+
+* Create your new environment.
 
 * Create a SSL certificate for the domain or subdomain for your environment. For example, I'm using staging.syncserver.cprince.com for my staging server. It's free using the AWS Certificate Manager. As part of the creation process, AWS sends a confirmation email to several email addresses related to the domain or subdomain. E.g., you have to be the administrator on record with WHOIS for the domain or subdomain. See https://aws.amazon.com/certificate-manager/
 

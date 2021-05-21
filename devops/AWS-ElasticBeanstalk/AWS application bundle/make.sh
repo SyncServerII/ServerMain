@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Purpose: Creates an application bundle for upload to the AWS Elastic Beanstalk, for running SyncServer
-# Usage: ./make.sh <DockerImageTag> <file>.json [<environment-variables>.yml]
+# Usage: ./make.sh [run | failover] <DockerImageTag> <file>.json [<environment-variables>.yml]
+# Give "run" if you want to run the server normally.
+# Give "failover" if you want the load balancer to always return an HTTP 503 to go
+#   into a failover mode.
 # :<DockerImageTag> is appended to the image name given in Dockerrun.aws.json (see the raw.materials folder)
 # The .json file will be used as the Server.json file to start the server.
 # The environment variables are a little tricky. See the README.txt in this folder.
@@ -13,20 +16,21 @@
 # Examples: 
 
 # Neebla production server
-# ./make.sh 0.21.2 ../Environments/neebla-production/Server.json ../Environments/neebla-production/configure.yml
+# ./make.sh run 0.21.2 ../Environments/neebla-production/Server.json ../Environments/neebla-production/configure.yml
 
 # SharedImages production server
-# ./make.sh 0.7.7 ../Environments/sharedimages-production/Server.json ../Environments/sharedimages-production/configure.yml
+# ./make.sh run 0.7.7 ../Environments/sharedimages-production/Server.json ../Environments/sharedimages-production/configure.yml
 
 # SharedImages staging server
-# ./make.sh 0.7.6 ../Environments/sharedimages-staging/Server.json ../Environments/sharedimages-staging/configure.yml
+# ./make.sh run 0.7.6 ../Environments/sharedimages-staging/Server.json ../Environments/sharedimages-staging/configure.yml
 
 # iOS Client testing server
-# ./make.sh 0.14.0 ../Environments/syncserver-testing/Server.json ../Environments/syncserver-testing/configure.yml
+# ./make.sh run 0.14.0 ../Environments/syncserver-testing/Server.json ../Environments/syncserver-testing/configure.yml
 
-DOCKER_IMAGE_TAG=$1
-SERVER_JSON=$2
-ENV_VAR_PARAM=$3
+RUN_OR_FAILOVER=$1
+DOCKER_IMAGE_TAG=$2
+SERVER_JSON=$3
+ENV_VAR_PARAM=$4
 ZIPFILE=bundle.zip
 ENV_VARIABLES="env.variables.config"
 
@@ -45,6 +49,16 @@ fi
 
 if [ ! -d tmp ]; then
 	mkdir tmp
+fi
+
+if [ "empty${RUN_OR_FAILOVER}" == "empty" ]; then
+	echo "**** You need to give either 'run' or 'failover'!"
+	exit
+fi
+
+if [[ "${RUN_OR_FAILOVER}" != "run" && "${RUN_OR_FAILOVER}" != "failover" ]]; then
+	echo "**** You need to give either 'run' or 'failover'!"
+	exit
 fi
 
 if [ "empty${DOCKER_IMAGE_TAG}" == "empty" ]; then
@@ -82,7 +96,14 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
 done < "${SERVER_JSON}"
 
 mv -f tmp/Server.json.config .ebextensions
-cp -f raw.materials/SyncServer.ngnix.config .ebextensions
+
+if [ "${RUN_OR_FAILOVER}" == "run" ]; then
+    cp -f raw.materials/SyncServer.ngnix.config .ebextensions
+else
+    # Failover
+    cp -f raw.materials/SyncServer.failover.ngnix.config .ebextensions
+fi
+
 cp -f raw.materials/SyncServer.logging.config .ebextensions
 cp -f raw.materials/cloudwatch.config .ebextensions
 

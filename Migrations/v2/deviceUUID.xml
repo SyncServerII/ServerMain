@@ -1,0 +1,789 @@
+<?xml version="1.0"?>
+
+<resultset statement="(select userId, deviceUUID from DeviceUUID where userId = 1) union (select 3 as userId, deviceUUID from DeviceUUID where userId = 2) union (select 4 as userId, deviceUUID from DeviceUUID where userId = 3)
+" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">00D90F34-DFEF-4FB9-9B31-D1066134845B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">01571E1F-7EFA-406C-9C17-CE6E147C682B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">029D642C-04BA-48BB-A9D9-9F2E86FB3A19</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">076164A6-094F-4264-8657-9FCB9618D0E0</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">08E88359-95BD-451C-962D-E124C91D0B7D</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">0D9C8486-56F5-4FA8-9AF5-EF4E4585F30B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">124FFE42-4ABB-4BA7-91B5-27AD84698249</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">138C0EF3-53CD-4F54-801E-86D8AEE07D53</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">1D426CAA-4872-46DD-BB3C-776183D7211E</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">1DB42263-2BF3-452E-B3D9-A62BB7815FBF</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">20A5BBD7-6E9B-417A-B67C-06A62A6A7129</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">2352C119-F7C7-4932-80A8-54667A368C67</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">25989AA2-B836-4001-95A2-999544E11DC2</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">324E132E-9961-4DF0-8047-E6960DD9B302</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">33E3B71F-2472-4C92-851B-E4C27253A465</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">35B9190E-0475-4D63-A0DE-4EB0599B75A9</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">366E2A5A-8826-486A-9906-D16778788A60</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">38C09EA5-9A16-46B0-8E48-768CFA6A8810</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">3AC9A8BF-0491-4C17-93B3-EAEBDCE3550F</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">3ED1E30F-BF4F-497D-BE1F-BDF3B7B78CF1</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">43A3DE9F-3B86-4A6C-A475-191E0B7904D7</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">4C3669DA-C9C5-416E-B8CA-D009CCE8FFAF</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">4CAB7E60-6AE2-43AC-9327-CF8B55F4E071</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">4F2E9593-039E-4D37-9550-943F0204B20B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">4F32F121-B6BD-41CA-9D9D-10F774714ED3</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">4FC04851-F127-4121-AF46-36C0232050A7</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">51902948-4E5B-42D4-AC72-C527AC454973</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">52EEECED-DA0D-4209-ADDB-8BB9C8A7953F</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">55EFB95E-A7A8-4CFD-A669-B21E20D81601</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">596EA144-E9DE-4E6A-A581-8C2B16188E4A</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">5A58AD98-4F7A-48EA-AA17-06202A2C52E9</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">5B7F2F93-F4F6-4CFE-B6E2-3F10B0207CBF</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">5D951D56-32DF-4C94-913C-6C774186FE60</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">5E373805-A8EF-4841-8B7C-E113DC968D1B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">671ADDC8-B47F-4A7F-9A77-883E240FDA0A</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">67A40347-29D3-4858-9255-EB94CA362C1C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">690379AC-3B7B-477D-94B3-C90C6DF46749</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">696D77F9-A428-4023-B70A-90AB5FD4A070</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">70F451AB-DFAC-4828-B803-811C887A2641</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">710FDA99-A5B1-443E-9938-7C5BC37DACF6</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">79AF17E3-EC74-495B-81C9-182EA8949EB2</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">7AC3A845-175C-4390-B4B9-655125952FAB</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">7B5AAF67-0FD7-4B0A-A941-24B1D45D861F</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">7D9DB837-5B33-4472-AE47-9FBF22A496ED</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">7F3F02AD-DB30-4A27-803E-43936D9BD6F0</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">806B558F-BA1C-4043-B4DF-9092CDB00708</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">8116333C-8B2F-49D9-9290-204A1516C722</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">86D68A3B-C877-4F4C-9ECF-07EFD3BF0902</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">87C28CB0-B560-44B2-9470-CC3C5489EDAA</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">87C844F4-37F9-48AC-A396-320EE6F847DB</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">897499EC-E009-4E07-8C57-BB82C05D8F19</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">8C05A669-1035-40BD-9CA1-BC5C168BF42F</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">8C203C9A-F196-419D-AF5E-42BCC7C38347</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">8D006875-1D96-4939-9945-95C9D177B9E8</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">8D6BCFA5-49E6-43AA-B913-88026DEC5079</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">8DB3B824-E62D-45FA-829F-55377FEBA69C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">909390E6-2D98-40AB-8A95-75466881D287</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">91DC33D7-FD07-45AB-A826-6BB420F913EF</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">94EE769B-24F3-4ED8-B127-768FFECEF9EC</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">950BDCA4-3A9F-4CED-8BBC-E9DA417ECA74</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">98F3650B-45FE-4A87-AB1B-1F6EA1AF40F0</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">9B256C5C-8473-4DB1-8E5C-5FC745D90F29</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">9D001CE4-C93E-4680-A182-67B8553BC009</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A0301D6A-2E2F-4FC1-87EB-38774D7F8664</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A3198C09-685B-4B19-AB19-F39D3D841403</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A429A331-298D-42F7-B7C9-B78F94220E69</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A47FE3DD-8CD3-4E5A-9E75-CD5FB092E27C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A590425C-F9A4-42A2-A4C7-97B38967AB2C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A5EA7C43-6871-419A-9A83-D1FF4F716CF2</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">A735A5A1-34EF-46F4-BBD4-36ACF36540DE</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">AB687EEB-B742-498D-BFC9-FB51AA404CDA</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">ADAFDA1C-F89A-4397-BF0F-7F96A042E394</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">AE30612F-282C-473E-8DC2-7DB1093B1D36</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">AFCAB07C-2AF4-4A17-BD77-F3780F717632</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">B37055A6-CBE9-4904-BE5A-3CBC932F8E6D</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">B482ED63-436A-47A5-906B-FD73412F8B00</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">B5F92F14-3B27-41CC-B71D-FC524F31FB9B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">B9D79F5E-50CC-409F-A2FE-5A997F1AB972</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">BDB95072-C0C5-43CC-A012-EF37ADEFDBB1</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">BFC71352-18AA-427F-9C2E-5C83F0E817C6</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C1387A62-D259-4371-9740-620080C0F677</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C1AE1275-F97A-467A-B658-B85B70B6D457</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C1BB3F9C-B04C-40C2-9ACD-CC28DDE33EA0</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C4314A14-514D-465D-A416-C832DB495725</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C4F0A90E-9F2E-4E52-B84E-5AC88EDBDE5A</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C5BF7B58-F6E6-411E-8181-07B63DE6DD34</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C6AE96F4-652B-4382-AD0E-376B5E2FCF11</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C6C33C10-1491-4037-A95C-54CB0F689810</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C779E15B-381C-4E69-8FD0-27F3AF96B2CA</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">C8001D94-4C91-425A-85A1-C24B5B3BEA30</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">CF28F17D-13CB-4771-981B-EA6AD14C0300</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">D09624A8-EC64-41BD-BA67-94FBA735BC4A</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">D3CA6C72-FD07-49DC-AAC6-2DAE9696F020</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">D3E0C879-FDE3-406D-AB1B-A083D22658A5</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">D43DC013-CFA6-461B-979A-B0A3C3347C0C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">D5747A38-4D66-4405-A138-72DFA9BC102B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">DBED466F-49B5-4383-AECD-62E908F6DE3D</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">DDB67EFD-197A-48E6-B891-EAD9A19E1211</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">E09DA64C-BA1C-46ED-8A2B-1F03C23464EB</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">E31B51AA-9449-4DA8-AD20-F3668CE617D6</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">E44F2760-74E2-45AB-A258-21B8C75B0EA9</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">E4D163AF-E0FC-4D3A-B775-31F1012F8C09</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">E6F5918A-130E-41BC-9067-5410F4E265A9</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">E8FFE9B7-0652-4B7E-B086-F5CB5DEC1985</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EA0F4236-B751-4B26-B37F-6CDDF8BB5E1E</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EC2895FD-B900-410E-8357-506172F7F3FA</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EC9C42AF-3E77-4695-9119-F45BB0B2DC09</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EDC7D2F8-7385-4E0E-956E-9D4301BD54C5</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EDCDCA28-EC76-4C9F-8AEE-85B690471ED8</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EEE839AC-6A2A-4D2E-B8A7-A7B688F21BDF</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">EF7FC272-5AB3-4562-A850-37068BC0CC08</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">F5983344-6987-48C1-91D3-9D9DC3D4360B</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">F8C41093-5400-4A7B-AB10-A27227BCD48C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">FB129741-081F-4872-8537-DA6CD85B094C</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">FD21A3EA-2C71-4C85-9DA5-EF5B87678815</field>
+  </row>
+
+  <row>
+	<field name="userId">1</field>
+	<field name="deviceUUID">FEE70481-1045-4FB4-9911-A5477B1329AC</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">14C8E8D7-6FB8-41D8-BA42-30D9B448372C</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">1913F035-86AE-4B6D-8ADF-9C23B405E13B</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">1F5DFC39-68AF-4BBB-870F-C5C68D112105</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">2E2AC8BB-5615-40A5-8280-8924A3EA2198</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">349068F7-D434-4AB3-A2E8-34B3AD97A380</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">3834FEA4-6546-4AD3-981B-86A1E9AA3783</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">41106B75-035C-4103-A126-C80EE0D4FEF7</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">41AF1099-B193-4CF3-87A4-84F200C6B895</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">45FDAAB9-8A22-4114-81CC-BE9C46533FD1</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">53E1B3B5-2708-4CA4-9F1D-8A8AC9D5B43E</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">6288912F-2927-4F0A-8B4D-BB1719C22E8A</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">7311A9CF-DF14-43F1-ACFE-6D17410E762E</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">907B809A-4D97-4793-B672-8C7759F5D5D0</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">951C8429-B619-4E13-AD23-17A87973286D</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">9F76E5C4-CBF0-498A-A28D-CFDDF84D6B55</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">ABA7E9B4-5623-4137-91F9-E525BE1E9F4D</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">C5204DDE-A4E4-4B92-AA4C-F82D9893C367</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">D55CA742-82BB-43E1-9185-A79E03706C02</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">DDC35073-05A1-4882-83F1-6D803907A234</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">E7F6E13A-98B4-441B-9F16-213654F49788</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">F8723B72-2C23-46C7-A3CB-EF4BB4A0EB79</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">F9B870C3-F89A-4B9F-B89B-635AB6E6BDD2</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">FE2B4C25-A6A7-4E93-97E5-341AA87EE96D</field>
+  </row>
+
+  <row>
+	<field name="userId">3</field>
+	<field name="deviceUUID">FECA5C7C-2785-4EBC-BE0D-121CA7678968</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">1DAEAE50-524E-4FD0-B1F3-460FFEB830EC</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">1EBB9419-C260-4F96-9B50-6EE255444652</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">2BC10653-2848-4FB5-8529-87F45CBB20A9</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">2F8A1754-562A-4C41-995D-F9E3DFB8D345</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">3EEBCFB1-BDA3-44EB-884C-9F2D561F4487</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">631CD590-54F8-4D44-AE91-C2DB24867A39</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">6B22B859-B930-46D4-9DCF-1666BA1BBD5C</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">8EF96470-F867-4D8B-8330-3BA9C23E63D1</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">B58B2588-E1AC-4A7B-A873-F704C94622D9</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">B5C8AC3F-FF3D-4CAE-91D5-0514658BCEAC</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">C41F88F9-25C0-4FCD-99FA-713C571EDC3F</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">CBA496AB-8FC4-40DA-8F18-A20F6934AF69</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">CE516A7D-A395-4CFB-841E-D1FB897120EF</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">D9FA5C43-4492-465A-96D6-80D834CEF173</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">E97250D8-1B45-422F-ABAB-7509CD3E6B42</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">F172D93E-37C7-4170-B0FD-83AA4DB6693C</field>
+  </row>
+
+  <row>
+	<field name="userId">4</field>
+	<field name="deviceUUID">FF049079-C7AD-4F59-8888-5EF07F30840A</field>
+  </row>
+</resultset>

@@ -1,0 +1,15 @@
+1. From Google Drive on my Mac, I made a copy of SharedImages.Folder onto my desktop
+2. I had the script "commentMigration.py" also on my Mac OS Desktop
+3. Open a terminal window so I'm in the SharedImages.Folder on my desktop
+4. In that terminal window:
+	python3 ~/Desktop/commentMigration.py
+
+This is what I see for output:
+
+Migrating comments from 2021-01-28 00:00:00 to 2021-05-27 00:00:00
+Warning: File didn't contain JSON: Not attempting migration: IMPORTANT_README.txt
+124 migrations successfully applied
+470 migrations not applied (e.g., not in date range)
+
+Then, I did the same thing in my live Google Drive folder.
+

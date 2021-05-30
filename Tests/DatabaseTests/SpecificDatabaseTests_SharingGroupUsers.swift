@@ -197,7 +197,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
         XCTAssert(groups[0].sharingGroupUUID == sharingGroupUUID)
     }
 
-    func testGetUserSharingGroupsForMultipleGroups() {
+    func testGetUserSharingGroupsForMultipleGroups_solo() {
         let sharingGroupUUID1 = UUID().uuidString
 
         guard addSharingGroup(sharingGroupUUID: sharingGroupUUID1) else {
@@ -304,7 +304,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
         }
         
         XCTAssert(filter1[0].sharingGroupName == nil)
-        XCTAssert(filter1[0].contentsSummary?.count == 0)
+        XCTAssert(filter1[0].contentsSummary == nil)
         
         let filter2 = groups.filter {$0.sharingGroupUUID == sharingGroupUUID2}
         guard filter2.count == 1 else {
@@ -312,7 +312,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         XCTAssert(filter2[0].sharingGroupName == "Foobar")
-        XCTAssert(filter2[0].contentsSummary?.count == 0)
+        XCTAssert(filter2[0].contentsSummary == nil)
     }
     
     func testGetUserSharingGroupsForMultipleGroupsWithNonEmptySummaries() {
@@ -374,7 +374,9 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
         }
         
         XCTAssert(filter1[0].sharingGroupName == nil)
-        XCTAssert(filter1[0].contentsSummary?.count == 1)
+        
+        // No FileIndexClientUI entries, so this should be nil
+        XCTAssert(filter1[0].contentsSummary == nil, "\(String(describing: filter1[0].contentsSummary))")
         
         let filter2 = groups.filter {$0.sharingGroupUUID == sharingGroupUUID2}
         guard filter2.count == 1 else {
@@ -382,6 +384,8 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         XCTAssert(filter2[0].sharingGroupName == "Foobar")
-        XCTAssert(filter2[0].contentsSummary?.count == 1)
+        
+        // Same: No FileIndexClientUI entries, so this should be nil
+        XCTAssert(filter2[0].contentsSummary == nil)
     }
 }

@@ -20,11 +20,15 @@ import ServerAccount
 class SpecificDatabaseTests_FileIndex: ServerTestCase {
     var accountManager: AccountManager!
     var userRepo: UserRepository!
+    var fileIndexClientUI: FileIndexClientUIRepository!
+
     var accountDelegate: AccountDelegate!
     
     override func setUp() {
         super.setUp()
         userRepo = UserRepository(db)
+        fileIndexClientUI = FileIndexClientUIRepository(db)
+
         accountManager = AccountManager()
         accountDelegate = UserRepository.AccountDelegateHandler(userRepository: userRepo, accountManager: accountManager)
     }
@@ -284,7 +288,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         }
     }
     
-    func testGetGroupSummary() {
+    func testGetGroupSummary_withNoGroupSummary() {
         let user1 = User()
         user1.username = "Chris"
         user1.accountType = AccountScheme.google.accountName
@@ -307,42 +311,422 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndexInserted1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
             XCTFail()
             return
         }
         
-        guard let fileIndexInserted2 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
             XCTFail()
             return
         }
         
-        guard let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID), result.count == 2 else {
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        // There should be no  group summary here because there are no rows in `FileIndexClientUIRepository` for this sharingGroup.
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            XCTAssert(summary == nil)
+        }
+    }
+    
+    func addFileIndexClientUIRecord(userId: UserId, fileVersion:FileVersionInt, fileUUID: String, fileGroupUUID: String, sharingGroupUUID: String) -> FileIndexClientUI? {
+        let model = FileIndexClientUI()
+        
+        model.fileUUID = fileUUID
+        model.fileGroupUUID = fileGroupUUID
+        model.sharingGroupUUID = sharingGroupUUID
+        model.fileVersion = fileVersion
+        model.informAllButUserId = userId
+        model.expiry = Date()
+        
+        guard let result = fileIndexClientUI.add(model: model) else {
+            XCTFail()
+            return nil
+        }
+        
+        model.fileIndexClientUIId = result
+        return model
+    }
+    
+    func testGetGroupSummary_withOtherThanRequestingUserId() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
             XCTFail()
             return
         }
         
-        let result1 = result.filter {$0.fileGroupUUID == fileIndexInserted1.fileGroupUUID}
-        guard result1.count == 1 else {
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
         
-        XCTAssert(result1[0].mostRecentDate != nil)
-        XCTAssert(result1[0].fileGroupUUID == fileIndexInserted1.fileGroupUUID)
-        XCTAssert(result1[0].deleted == false)
-        XCTAssert(result1[0].fileVersion == 1)
-        
-        let result2 = result.filter {$0.fileGroupUUID == fileIndexInserted2.fileGroupUUID}
-        guard result2.count == 1 else {
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
             XCTFail()
             return
         }
         
-        XCTAssert(result2[0].mostRecentDate != nil)
-        XCTAssert(result2[0].fileGroupUUID == fileIndexInserted2.fileGroupUUID)
-        XCTAssert(result2[0].deleted == false)
-        XCTAssert(result2[0].fileVersion == 1)
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId+1, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        // There should be no  group summary here because of the userId mismatch.
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            XCTAssert(summary == nil)
+        }
+    }
+    
+    func testGetGroupSummary_withRequestingUserId() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            guard let summary = summary else {
+                XCTFail()
+                return
+            }
+            guard summary.count == 1 else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(summary[0].informAllButSelf?.count == 1)
+        }
+    }
+    
+    // Also with multiple FileIndex rows.
+    func testGetGroupSummary_withRequestingUserId2() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            guard let summary = summary else {
+                XCTFail()
+                return
+            }
+            guard summary.count == 1 else {
+                XCTFail()
+                return
+            }
+            XCTAssert(summary[0].informAllButSelf?.count == 1)
+        }
+    }
+    
+    // Also with multiple FileIndex rows, with the same fileGroupUUID
+    func testGetGroupSummary_withRequestingUserId3() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false, fileGroupUUID: fileGroupUUID, fileLabel: "file2") else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            guard let summary = summary else {
+                XCTFail()
+                return
+            }
+            guard summary.count == 1 else {
+                XCTFail()
+                return
+            }
+            XCTAssert(summary[0].informAllButSelf?.count == 1)
+        }
+    }
+    
+    // Also with multiple FileIndex rows, with the same fileGroupUUID,
+    // and multiple versions.
+    func testGetGroupSummary_withRequestingUserId4() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false, fileGroupUUID: fileGroupUUID, fileLabel: "file2") else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 1, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            guard let summary = summary else {
+                XCTFail()
+                return
+            }
+            guard summary.count == 1 else {
+                XCTFail()
+                return
+            }
+            XCTAssert(summary[0].informAllButSelf?.count == 2)
+        }
+    }
+    
+    // Two files each with versions that the requesting user needs to be informed about
+    func testGetGroupSummary_withRequestingUserId5() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex2 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileUUID2 = fileIndex2.fileUUID,
+            let fileGroupUUID2 = fileIndex2.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID2, fileGroupUUID: fileGroupUUID2, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            guard let summary = summary else {
+                XCTFail()
+                return
+            }
+            guard summary.count == 2 else {
+                XCTFail()
+                return
+            }
+            XCTAssert(summary[0].informAllButSelf?.count == 1)
+            XCTAssert(summary[1].informAllButSelf?.count == 1)
+        }
     }
 }
 

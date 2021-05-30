@@ -66,7 +66,7 @@ public extension UploaderCommon {
         return commentFile
     }
     
-    internal func createUploadForTextFile(deviceUUID: String, fileUUID: String, fileGroup: ServerTestCase.FileGroup? = nil, sharingGroupUUID: String, userId: UserId, deferredUploadId: Int64? = nil, updateContents: Data? = nil, uploadCount: Int32 = 1, uploadIndex:Int32 = 1, batchUUID: String, state:UploadState = .vNUploadFileChange) -> Upload? {
+    internal func createUploadForTextFile(deviceUUID: String, fileUUID: String, fileGroup: ServerTestCase.FileGroup? = nil, sharingGroupUUID: String, userId: UserId, deferredUploadId: Int64? = nil, updateContents: Data? = nil, uploadCount: Int32 = 1, uploadIndex:Int32 = 1, batchUUID: String, state:UploadState = .vNUploadFileChange, informAllButSelf: Bool? = nil) -> Upload? {
         let upload = Upload()
         upload.deviceUUID = deviceUUID
         upload.fileUUID = fileUUID
@@ -83,6 +83,10 @@ public extension UploaderCommon {
         upload.objectType = fileGroup?.objectType
         upload.batchUUID = batchUUID
         upload.batchExpiryDate = Date()
+        
+        if let informAllButSelf = informAllButSelf, informAllButSelf {
+            upload.informAllButUserId = userId
+        }
         
         let addUploadResult = UploadRepository(db).add(upload: upload, fileInFileIndex: true)
         guard case .success(let uploadId) = addUploadResult else {

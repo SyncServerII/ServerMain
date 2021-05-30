@@ -74,9 +74,13 @@ class FileIndex : NSObject, Model {
     static let fileLabelKey = "fileLabel"
     var fileLabel: String?
     
-    // For queries; not in this table.
+    // MARK: For queries; not in this table.
+    
     static let accountTypeKey = "accountType"
     var accountType: String!
+    
+    static let informAllButUserIdKey = FileIndexClientUI.informAllButUserIdKey
+    var informAllButUserId: UserId!
     
     subscript(key:String) -> Any? {
         set {
@@ -131,6 +135,9 @@ class FileIndex : NSObject, Model {
                 
             case User.accountTypeKey:
                 accountType = newValue as! String?
+                
+            case FileIndexClientUI.informAllButUserIdKey:
+                informAllButUserId = newValue as? UserId
                 
             default:
                 Log.debug("key: \(key)")
@@ -555,8 +562,9 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         case failure(RequestHandler.FailureResult)
     }
          
+    // This is for v0 uploads only.
     func transferUploads(uploadUserId: UserId,
-        owningUserId: @escaping ()->(EffectiveOwningUser), batchUUID: String, sharingGroupUUID: String, uploadingDeviceUUID:String, uploadRepo:UploadRepository) -> TransferUploadsResult {
+        owningUserId: @escaping ()->(EffectiveOwningUser), batchUUID: String, sharingGroupUUID: String, uploadingDeviceUUID:String, uploadRepo:UploadRepository, fileIndexClientUIRepo: FileIndexClientUIRepository) -> TransferUploadsResult {
         
         var error = false
         var failureResult:RequestHandler.FailureResult?
@@ -619,17 +627,9 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                 fileIndex.sharingGroupUUID = upload.sharingGroupUUID
                 fileIndex.fileLabel = upload.fileLabel
             }
-            else if upload.state == .vNUploadFileChange {
-                guard let fileVersion = upload.fileVersion else {
-                    Log.error("No file version, and vNUploadFileChange")
-                    error = true
-                    return
-                }
-                
-                fileIndex.fileVersion = fileVersion
-            }
             else {
-                Log.error("No file version.")
+                // We're only using this for v0 file uploads.
+                Log.error("Not v0UploadCompleteFile")
                 error = true
                 return
             }
@@ -701,6 +701,18 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                         return
                     }
                 }
+            }
+
+            // This is for v0. Assign that to upload.
+            upload.fileVersion = 0
+            let addIfNeededResult = fileIndexClientUIRepo.addIfNeeded(from: upload)
+            switch addIfNeededResult {
+            case .error:
+                Log.error("transferUploads: Failed on adding record to fileIndexClientUIRepo")
+                error = true
+                return
+            case .notNeeded, .success:
+                break
             }
             
             numberTransferred += 1
@@ -848,56 +860,94 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         return fileIndex
     }
     
-    func getGroupSummary(forSharingGroupUUID sharingGroupUUID: String) -> [FileGroupSummary]? {
+    enum GetGroupSummaryResult {
+        case error
+        case summary([FileGroupSummary]?)
+    }
+    
+    // `requestingUserId` is the UserId of the user doing the FileIndex request.
+    func getGroupSummary(forSharingGroupUUID sharingGroupUUID: String, requestingUserId: UserId) -> GetGroupSummaryResult {
+    
+        // We constrain the query by:
+        //  \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey) = "\(requestingUserId)
+        // because we are using `InformAllButSelf` to exclude presentation on the client. The normal case, in which we don't send this record to the client, is to include presentation.
         let selectQuery = """
-            select
-                \(FileIndex.fileGroupUUIDKey),
-                MAX(\(FileIndex.fileVersionKey)) AS \(FileIndex.fileVersionKey),
-                MAX(\(FileIndex.deletedKey)) AS \(FileIndex.deletedKey),
-                MAX(\(FileIndex.creationDateKey)) AS \(FileIndex.creationDateKey),
-                MAX(\(FileIndex.updateDateKey)) AS \(FileIndex.updateDateKey)
-            from \(tableName)
-            where \(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
-            group by \(FileIndex.fileGroupUUIDKey);
+        select \(tableName).\(FileIndex.deletedKey),
+            \(tableName).\(FileIndex.fileGroupUUIDKey),
+            \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileVersionKey),
+            \(tableName).\(FileIndex.fileUUIDKey),
+            \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey)
+        from \(tableName), \(FileIndexClientUIRepository.tableName)
+        where \(tableName).\(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
+            and \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey) = \(requestingUserId)
+            and \(tableName).\(FileIndex.sharingGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.sharingGroupUUIDKey)
+            and \(tableName).\(FileIndex.fileGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileGroupUUIDKey)
+            and \(tableName).\(FileIndex.fileUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileUUIDKey)
         """
 
         guard let select = Select(db:db, query: selectQuery, modelInit: FileIndex.init, ignoreErrors:false) else {
             Log.error("Failed on select: \(selectQuery)")
-            return nil
+            return .error
         }
-
-        var result = [FileGroupSummary]()
+        
+        var models = [FileIndex]()
 
         select.forEachRow { rowModel in
             guard let rowModel = rowModel as? FileIndex else {
                 Log.error("Bad row model!")
                 return
             }
-
+            
+            models += [rowModel]
+        }
+        
+        guard select.forEachRowStatus == nil else {
+            return .error
+        }
+        
+        let fileGroups = Partition.array(models, using: \FileIndex.fileGroupUUID)
+        
+        guard fileGroups.count > 0 else {
+            return .summary(nil)
+        }
+        
+        var result = [FileGroupSummary]()
+        for fileGroup in fileGroups {
+            guard fileGroup.count > 0 else {
+                continue
+            }
+            
             let summary = FileGroupSummary()
-            summary.deleted = rowModel.deleted ?? false
+            summary.deleted = fileGroup[0].deleted ?? false
+            summary.fileGroupUUID = fileGroup[0].fileGroupUUID
+
+            var informAllButSelf = [FileGroupSummary.InformAllButSelf]()
             
-            if let creationDate = rowModel.creationDate, let updateDate = rowModel.updateDate {
-                summary.mostRecentDate = max(creationDate, updateDate)
-            }
-            else if let creationDate = rowModel.creationDate {
-                summary.mostRecentDate = creationDate
-            }
-            else if let updateDate = rowModel.updateDate {
-                summary.mostRecentDate = updateDate
+            for model in fileGroup {
+                guard let informAllButUserId = model.informAllButUserId,
+                    requestingUserId == informAllButUserId else {
+                    continue
+                }
+                
+                guard let fileVersion = model.fileVersion,
+                    let fileUUID = model.fileUUID else {
+                    Log.error("Nil model.fileVersion")
+                    continue
+                }
+                
+                let inform = FileGroupSummary.InformAllButSelf(fileVersion: fileVersion, fileUUID: fileUUID)
+                informAllButSelf += [inform]
             }
             
-            summary.fileVersion = rowModel.fileVersion
+            // There may not be any `InformAllButSelf`'s to add. I.e., no presentation to exclude.
+            guard informAllButSelf.count > 0 else {
+                continue
+            }
             
-            summary.fileGroupUUID = rowModel.fileGroupUUID
+            summary.informAllButSelf = informAllButSelf
             result += [summary]
         }
         
-        if select.forEachRowStatus == nil {
-            return result
-        }
-        else {
-            return nil
-        }
+        return .summary(result)
     }
 }

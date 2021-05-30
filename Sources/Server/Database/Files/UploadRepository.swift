@@ -129,6 +129,9 @@ class Upload : NSObject, Model, ChangeResolverContents {
     static let batchExpiryDateKey = "batchExpiryDate"
     var batchExpiryDate:Date?
     
+    static let informAllButUserIdKey = "informAllButUserId"
+    var informAllButUserId:UserId?
+    
     subscript(key:String) -> Any? {
         set {
             switch key {
@@ -197,6 +200,9 @@ class Upload : NSObject, Model, ChangeResolverContents {
                 
             case Upload.batchExpiryDateKey:
                 batchExpiryDate = newValue as? Date
+                
+            case Upload.informAllButUserIdKey:
+                informAllButUserId = newValue as? UserId
                 
             default:
                 Log.error("key: \(key)")
@@ -328,7 +334,9 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
             
             "batchUUID VARCHAR(\(Database.uuidLength)), " +
 
-            "batchExpiryDate DATETIME," +
+            "batchExpiryDate DATETIME, " +
+            
+            "informAllButUserId BIGINT, " +
 
             "FOREIGN KEY (sharingGroupUUID) REFERENCES \(SharingGroupRepository.tableName)(\(SharingGroup.sharingGroupUUIDKey)), " +
             
@@ -430,6 +438,12 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
                 }
             }
             
+            // 5/29/21
+            if db.columnExists(Upload.informAllButUserIdKey, in: tableName) == false {
+                if !db.addColumn("\(Upload.informAllButUserIdKey) BIGINT", to: tableName) {
+                    return .failure(.columnCreation)
+                }
+            }
         default:
             break
         }
@@ -543,6 +557,8 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
         
         insert.add(fieldName: Upload.batchUUIDKey, value: .stringOptional(upload.batchUUID))
         insert.add(fieldName: Upload.batchExpiryDateKey, value: .dateTimeOptional(upload.batchExpiryDate))
+        
+        insert.add(fieldName: Upload.informAllButUserIdKey, value: .int64Optional(upload.informAllButUserId))
 
         do {
             try insert.run()

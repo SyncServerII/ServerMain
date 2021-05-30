@@ -391,7 +391,12 @@ extension FileController {
         upload.uploadIndex = uploadRequest.uploadIndex
         upload.uploadContents = uploadContents
         upload.changeResolverName = uploadRequest.changeResolverName
-
+        
+        if let informAllButSelf = uploadRequest.informAllButSelf, informAllButSelf {
+            Log.debug("Adding informAllButUserId: \(signedInUserId)")
+            upload.informAllButUserId = signedInUserId
+        }
+        
         // Waiting until now to check UploadRequest checksum because what's finally important is that the checksum before the upload is the same as that computed by the cloud storage service.
         let expectedCheckSum: String? = uploadRequest.checkSum?.lowercased()
 

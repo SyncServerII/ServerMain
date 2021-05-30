@@ -16,8 +16,11 @@ import ServerShared
 import ChangeResolvers
 
 class FileController_V0_UploadTests: ServerTestCase {
+    var fileIndexClientUIRepo: FileIndexClientUIRepository!
+
     override func setUp() {
         super.setUp()
+        fileIndexClientUIRepo = FileIndexClientUIRepository(db)
     }
     
     override func tearDown() {
@@ -85,8 +88,26 @@ class FileController_V0_UploadTests: ServerTestCase {
     }
     
     func testUploadSingleV0TextFile() {
-        uploadSingleV0File { deviceUUID, fileUUID, changeResolverName in
+        let uploadResult = uploadSingleV0File { deviceUUID, fileUUID, changeResolverName in
             return uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString)
+        }
+        
+        guard let sharingGroupUUID = uploadResult?.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
+        let lookupResult = fileIndexClientUIRepo.lookup(key: key, modelInit: FileIndexClientUI.init)
+        switch lookupResult {
+        case .found(let model):
+            XCTFail()
+            return
+        case .noObjectFound:
+            break
+        default:
+            XCTFail()
+            return
         }
     }
     
@@ -157,14 +178,17 @@ class FileController_V0_UploadTests: ServerTestCase {
     
     // MARK: file upload, v0, 1 of 2 files, and then 2 of 2 files.
     
-    func uploadTwoV0Files(fileUUIDs: [String], uploadSingleFile:(_ addUser:AddUser, _ deviceUUID: String, _ fileUUID: String, _ uploadIndex: Int32, _ uploadCount: Int32)->(ServerTestCase.UploadFileResult?)) {
+    // Returns the sharingGroupUUID
+    @discardableResult
+    func uploadTwoV0Files(fileUUIDs: [String],
+        uploadSingleFile:(_ addUser:AddUser, _ deviceUUID: String, _ fileUUID: String, _ uploadIndex: Int32, _ uploadCount: Int32)->(ServerTestCase.UploadFileResult?)) -> String? {
         let fileIndex = FileIndexRepository(db)
         let upload = UploadRepository(db)
         
         guard let fileIndexCount1 = fileIndex.count(),
             let uploadCount1 = upload.count()  else {
             XCTFail()
-            return
+            return nil
         }
         
         let deviceUUID = Foundation.UUID().uuidString
@@ -176,7 +200,7 @@ class FileController_V0_UploadTests: ServerTestCase {
         guard let result1 = uploadSingleFile(addUser, deviceUUID, fileUUIDs[Int(uploadIndex)-1], uploadIndex, uploadCount),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
-            return
+            return nil
         }
         
         addUser = .no(sharingGroupUUID: sharingGroupUUID)
@@ -185,12 +209,12 @@ class FileController_V0_UploadTests: ServerTestCase {
                 
         guard let fileIndexCount2 = fileIndex.count() else {
             XCTFail()
-            return
+            return nil
         }
         
         guard let uploadCount2 = upload.count() else {
             XCTFail()
-            return
+            return nil
         }
         
         XCTAssert(fileIndexCount1 == fileIndexCount2)
@@ -199,23 +223,25 @@ class FileController_V0_UploadTests: ServerTestCase {
         uploadIndex += 1
         guard let result2 = uploadSingleFile(addUser, deviceUUID, fileUUIDs[Int(uploadIndex)-1], uploadIndex, uploadCount) else {
             XCTFail()
-            return
+            return nil
         }
 
         XCTAssert(result2.response?.allUploadsFinished == .v0UploadsFinished)
                 
         guard let fileIndexCount3 = fileIndex.count() else {
             XCTFail()
-            return
+            return nil
         }
         
         guard let uploadCount3 = upload.count() else {
             XCTFail()
-            return
+            return nil
         }
         
         XCTAssert(fileIndexCount1 + 2 == fileIndexCount3)
         XCTAssert(uploadCount3 == uploadCount1)
+        
+        return sharingGroupUUID
     }
     
     func testUploadTwoV0TextFiles() {
@@ -586,5 +612,62 @@ class FileController_V0_UploadTests: ServerTestCase {
     
     func testUploadSameFileInBatchBySameDeviceIndicatesDuplicate() {
         upload(sameFileTwiceInSameBatch: true)
+    }
+    
+    // MARK: Upload v0 file(s) and check for FileIndexClientUI record(s).
+    
+    func testUploadSingleV0TextFile_withFileIndexClientUI() {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "example")
+        let uploadResult = uploadSingleV0File { deviceUUID, fileUUID, changeResolverName in
+            return uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup, informAllButSelf: true)
+        }
+        
+        guard let sharingGroupUUID = uploadResult?.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
+        let lookupResult = fileIndexClientUIRepo.lookup(key: key, modelInit: FileIndexClientUI.init)
+        switch lookupResult {
+        case .found(let model):
+            guard let model = model as? FileIndexClientUI else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(model.fileGroupUUID == fileGroup.fileGroupUUID)
+        default:
+            XCTFail()
+            return
+        }
+    }
+    
+    // Test case: Batch with two files; use `testUploadTwoV0TextFiles` above.
+    func testUploadTwoV0TextFile_withFileIndexClientUI() {
+        let fileUUIDs = [Foundation.UUID().uuidString, Foundation.UUID().uuidString]
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+        let batchUUID = UUID().uuidString
+        
+        let sharingGroupUUID = uploadTwoV0Files(fileUUIDs: fileUUIDs) { addUser, deviceUUID, fileUUID, uploadIndex, uploadCount in
+            return uploadTextFile(uploadIndex: uploadIndex, uploadCount: uploadCount, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: addUser, fileLabel: UUID().uuidString, fileGroup: fileGroup, informAllButSelf: true)
+        }
+        
+        guard sharingGroupUUID != nil else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID!)
+        
+        guard let fileIndexClientUIes = fileIndexClientUIRepo.lookupAll(key: key, modelInit: FileIndexClientUI.init) else {
+            XCTFail()
+            return
+        }
+        
+        guard fileIndexClientUIes.count == 2 else {
+            XCTFail("fileIndexClientUIes.count: \(fileIndexClientUIes.count)")
+            return
+        }
     }
 }

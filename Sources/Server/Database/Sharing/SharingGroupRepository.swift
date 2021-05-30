@@ -177,6 +177,7 @@ class SharingGroupRepository: Repository, RepositoryLookup {
         }
     }
 
+    // Index request given without a sharing group: Return a summary of all sharing groups for a given user.
     func sharingGroups(forUserId userId: UserId, includeContentsSummary: Bool, includeRemovedUsers: Bool, sharingGroupUserRepo: SharingGroupUserRepository, userRepo: UserRepository, fileIndexRepo: FileIndexRepository) -> [ServerShared.SharingGroup]? {
         let sharingGroupUserTableName = SharingGroupUserRepository.tableName
 
@@ -210,12 +211,15 @@ class SharingGroupRepository: Repository, RepositoryLookup {
             let clientSharingGroup = sharingGroup.toClient()
             
             if includeContentsSummary {                
-                guard let summary = fileIndexRepo.getGroupSummary(forSharingGroupUUID: sharingGroup.sharingGroupUUID) else {
+                let summaryResult = fileIndexRepo.getGroupSummary(forSharingGroupUUID: sharingGroup.sharingGroupUUID, requestingUserId: userId)
+                
+                switch summaryResult {
+                case .error:
                     Log.error("Failed getGroupSummary: \(String(describing: sharingGroup.sharingGroupUUID))")
                     return nil
+                case .summary(let summary):
+                    clientSharingGroup.contentsSummary = summary
                 }
-                
-                clientSharingGroup.contentsSummary = summary
             }
             
             // If user removed from sharing group, mark the sharing group itself as deleted. This is a convenience for the user/client-- to make it easier for them to know when they should treat a sharing group as removed.

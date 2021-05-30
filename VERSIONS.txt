@@ -1,5 +1,15 @@
 SyncServer
 
+Version 1.10.0 (5/30/21)
+    * Added support for informAllButSelf. Affects file upload, index requests,
+        and deferred uploads. As part of this, added new table: FileIndexClientUI.
+        See https://github.com/SyncServerII/Neebla/issues/15
+    * MIGRATION: Added a migration to the Upload table
+    	This migration adds the `informAllButUserId` field.
+    * Tests added in support of these changes.
+    * Fixed an issue in the `transferUploads` method-- it had been considering vN uploads
+    	but no longer deals with vN uploads, only v0 uploads.
+
 Version 1.9.0 (5/14/21)
 	* Changing support for removing users from sharing groups. Removing a user from a sharing group now marks the row in SharingGroupUser as deleted it doesn't remove that row.
 	* When SharingGroups are returned from Index, if the calling user has been removed from a sharing group, that sharing group is marked as deleted.

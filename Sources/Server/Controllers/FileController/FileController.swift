@@ -85,6 +85,13 @@ class FileController : ControllerProtocol {
             Log.info("Finished sleep (testServerSleep= \(indexRequest.testServerSleep!)).")
         }
 #endif
+
+        guard params.repos.fileIndexClientUI.removeExpiredRecords() else {
+            let message = "Could not remove expired fileIndexClientUI records"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
         
         // Only giving a summary of content per sharing group when not requesting an index for a specific sharing group.
         let includeContentsSummary = indexRequest.sharingGroupUUID == nil

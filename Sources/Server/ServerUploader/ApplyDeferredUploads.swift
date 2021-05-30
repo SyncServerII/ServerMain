@@ -62,6 +62,7 @@ class ApplyDeferredUploads {
         case couldNotCleanupDeferredUploads
         case couldNotUpdateDeferredUploads
         case failedAddingStaleVersionRecord
+        case failedOnAddToFileIndexClientUIRepo
     }
     
     let sharingGroupUUID: String
@@ -75,6 +76,7 @@ class ApplyDeferredUploads {
     let uploadRepo:UploadRepository
     let deferredUploadRepo:DeferredUploadRepository
     let staleVersionRepo:StaleVersionRepository
+    let fileIndexClientUIRepo:FileIndexClientUIRepository
     let haveFileGroupUUID: Bool
     static let debugAlloc = DebugAlloc(name: "ApplyDeferredUploads")
 
@@ -88,6 +90,7 @@ class ApplyDeferredUploads {
         self.deferredUploadRepo = DeferredUploadRepository(db)
         self.userRepo = UserRepository(db)
         self.staleVersionRepo = StaleVersionRepository(db)
+        self.fileIndexClientUIRepo = FileIndexClientUIRepository(db)
         
         guard deferredUploads.count > 0 else {
             return nil
@@ -291,13 +294,41 @@ class ApplyDeferredUploads {
                     FileIndex.fileVersionKey: .int32(applyResult.newFileVersion),
                     FileIndex.updateDateKey: .dateTime(Date())
                  ])
-                
+
                 guard updateSuccess else {
                     completion(.failure(Errors.failedUpdatingFileIndex))
                     return
                 }
                 
-                // Remove Upload records from db (uploadsForFileUUID)
+                // Add FileIndexClientUI records if needed per upload. Doing this separately from the Upload record removal below because there is a (slim) chance (*) that multiple uploads originate from the same signed in user: And we can't have multiple FileIndexClientUI records with the same `informAllButUserId`.
+                var informAllButUserIdsAdded = Set<UserId>()
+                for upload in uploadsForFileUUID {
+                    guard let informAllButUserId = upload.informAllButUserId else {
+                        // Not an error. Some uploads just don't have the informAllButUserId field.
+                        continue
+                    }
+                    
+                    if informAllButUserIdsAdded.contains(informAllButUserId) {
+                        // Dealing with slim chance edge case described above (*).
+                        continue
+                    }
+                    
+                    informAllButUserIdsAdded.insert(informAllButUserId)
+                    
+                    // Haven't yet given the upload a version. Do it now or `addIfNeeded` will fail.
+                    upload.fileVersion = applyResult.newFileVersion
+                    let addIfNeededResult = self.fileIndexClientUIRepo.addIfNeeded(from: upload)
+                    switch addIfNeededResult {
+                    case .error, .notNeeded:
+                        // Including `notNeeded` as an error because we already checked above for `informAllButUserId`-- so the add should have been needed.
+                        completion(.failure(Errors.failedOnAddToFileIndexClientUIRepo))
+                        return
+                    case .success:
+                        break
+                    }
+                }
+                
+                // Remove Upload records from db (uploadsForFileUUID).
                 for upload in uploadsForFileUUID {
                     let key = UploadRepository.LookupKey.uploadId(upload.uploadId)
                     let result = self.uploadRepo.retry {

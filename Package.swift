@@ -16,7 +16,7 @@ let package = Package(
 
         // .package(path: "../ServerShared"),
         // .package(url: "../ServerShared", .branch("master")),
-        .package(url: "https://github.com/SyncServerII/ServerShared.git", from: "0.2.0"),
+        .package(url: "https://github.com/SyncServerII/ServerShared.git", from: "0.9.0"),
         //.package(url: "https://github.com/SyncServerII/ServerShared.git", .branch("master")),
         
         .package(url: "https://github.com/SyncServerII/ChangeResolvers.git", from: "0.0.1"),

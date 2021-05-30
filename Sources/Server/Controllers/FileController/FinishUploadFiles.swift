@@ -162,11 +162,11 @@ class FinishUploadFiles {
         }
         
         // Else: v0 uploads-- files have already been uploaded. Just need to do the transfer to the FileIndex.
-        return transfer(batchUUID: batchUUID, currentUploads: currentUploads)
+        return transfer(batchUUID: batchUUID)
     }
     
     // For v0 uploads only.
-    private func transfer(batchUUID: String, currentUploads: [Upload]) -> UploadsResponse {
+    private func transfer(batchUUID: String) -> UploadsResponse {
        // Deferring computation of `effectiveOwningUserId` because: (a) don't always need it in the `transferUploads` below, and (b) it will cause unecessary failures in some cases where a sharing owner user has been removed. effectiveOwningUserId is only needed when v0 of a file is being uploaded.
         var effectiveOwningUserId: UserId?
         func getEffectiveOwningUserId() -> FileIndexRepository.EffectiveOwningUser {
@@ -194,7 +194,7 @@ class FinishUploadFiles {
         let numberTransferredResult =
             params.repos.fileIndex.transferUploads(uploadUserId: params.currentSignedInUser!.userId, owningUserId: getEffectiveOwningUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID,
                 uploadingDeviceUUID: deviceUUID,
-                uploadRepo: params.repos.upload)
+                uploadRepo: params.repos.upload, fileIndexClientUIRepo: params.repos.fileIndexClientUI)
         
         var numberTransferred: Int32!
         switch numberTransferredResult {

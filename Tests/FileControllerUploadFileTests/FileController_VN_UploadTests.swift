@@ -20,7 +20,8 @@ import ServerAccount
 class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     var accountManager: AccountManager!
     var services: Services!
-    
+    var fileIndexClientUIRepo: FileIndexClientUIRepository!
+
     override func setUp() {
         super.setUp()
         HeliumLogger.use(.debug)
@@ -43,6 +44,8 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             XCTFail("\(error)")
             return
         }
+        
+        fileIndexClientUIRepo = FileIndexClientUIRepository(db)
     }
     
     func runUploadVNFile(withMimeType: Bool) {
@@ -108,7 +111,9 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         XCTAssert(result2 == nil)
     }
     
-    func runUploadOneV1TextFileWorks(withFileGroup: Bool) {
+    // Returns the first `UploadFileResult?`
+    @discardableResult
+    func runUploadOneV1TextFileWorks(withFileGroup: Bool, informAllButSelf: Bool? = nil) -> UploadFileResult? {
         let changeResolverName = CommentFile.changeResolverName
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
@@ -123,10 +128,10 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
          
         // First upload the v0 file.
   
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName, informAllButSelf: informAllButSelf),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
-            return
+            return nil
         }
                 
         // Next, upload v1 of the file -- i.e., upload just the specific change to the file.
@@ -139,21 +144,23 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             let uploadCount1 = upload.count(),
             let deferredUploadCount1 = deferredUploads.count() else {
             XCTFail()
-            return
+            return nil
         }
                 
         let v1ChangeData = exampleComment.updateContents
         
-        guard let result2 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: .primaryOwningAccount, mimeType: nil, deviceUUID: deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: nil, dataToUpload: v1ChangeData) else {
+        guard let result2 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: .primaryOwningAccount, mimeType: nil, deviceUUID: deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: nil, dataToUpload: v1ChangeData, informAllButSelf: informAllButSelf) else {
             XCTFail()
-            return
+            return nil
         }
         
         XCTAssert(result2.response?.deferredUploadId != nil)
         
         XCTAssert(fileIndexCount1 == fileIndex.count() )
-        XCTAssert(uploadCount1 == upload.count())
+        XCTAssert(uploadCount1 == upload.count(), "uploadCount1 (\(uploadCount1) == upload.count() \(String(describing: upload.count()))")
         XCTAssert(deferredUploadCount1 + 1 == deferredUploads.count())
+        
+        return result
     }
     
     func testUploadOneV1TextFileWorks() {
@@ -751,4 +758,182 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     func testUploadVNFileV0HadChangeResolverAndUploadedChangeIsGoodWorks() {
         runUploadVNFile(changeResolverTest: .v0HadChangeResolverAndUploadedChangeIsGood)
     }
+    
+    // MARK: Upload vN file(s) and check for FileIndexClientUI record(s).
+
+    func testUploadOneV1TextFileWithoutInformAllButSelf_checkFileIndexClientUI() {
+        guard let uploadResult = runUploadOneV1TextFileWorks(withFileGroup: true) else {
+            XCTFail()
+            return
+        }
+        
+        guard let sharingGroupUUID = uploadResult.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
+        let lookupResult = fileIndexClientUIRepo.lookup(key: key, modelInit: FileIndexClientUI.init)
+        switch lookupResult {
+        case .found:
+            XCTFail()
+        case .noObjectFound:
+            break
+        default:
+            XCTFail()
+            return
+        }
+    }
+    
+    func testUploadOneV1TextFileWithInformAllButSelf_checkFileIndexClientUI() {
+        guard let uploadResult = runUploadOneV1TextFileWorks(withFileGroup: true, informAllButSelf: true) else {
+            XCTFail()
+            return
+        }
+        
+        guard let sharingGroupUUID = uploadResult.sharingGroupUUID,
+            let fileGroupUUID = uploadResult.request.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
+        guard let fileIndexClientUIRecords = fileIndexClientUIRepo.lookupAll(key: key, modelInit: FileIndexClientUI.init) else {
+            XCTFail()
+            return
+        }
+        
+        // There are two records-- one for v0 of the file, the other for v1.
+        XCTAssert(fileIndexClientUIRecords.count == 2)
+        
+        let v0 = fileIndexClientUIRecords.filter { $0.fileVersion == 0}
+        guard v0.count == 1 else {
+            XCTFail()
+            return
+        }
+        XCTAssert(v0[0].fileGroupUUID == fileGroupUUID)
+        XCTAssert(v0[0].sharingGroupUUID == sharingGroupUUID)
+
+        let v1 = fileIndexClientUIRecords.filter { $0.fileVersion == 1}
+        guard v1.count == 1 else {
+            XCTFail()
+            return
+        }
+        XCTAssert(v1[0].fileGroupUUID == fileGroupUUID)
+        XCTAssert(v1[0].sharingGroupUUID == sharingGroupUUID)
+    }
+    
+    func testMultipleMutationsInBatchWithInformAllButSelf_checkFileIndexClientUI() throws {
+        let changeResolverName = CommentFile.changeResolverName
+        let deviceUUID = Foundation.UUID().uuidString
+        let fileUUID = Foundation.UUID().uuidString
+        let fileGroupUUID = Foundation.UUID().uuidString
+        
+        let comment1 = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
+        let comment2 = ExampleComment(messageString: "Goodbye!", id: Foundation.UUID().uuidString)
+
+        // First, do the v0 upload.
+        
+        let fileGroup = FileGroup(fileGroupUUID: fileGroupUUID, objectType: "ObjectType")
+  
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName, informAllButSelf: true),
+            let sharingGroupUUID1 = result.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        // Prepare the v1 uploads
+       guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID1, fileUUID: fileUUID) else {
+            XCTFail()
+            return
+        }
+        
+        // This upload needs to be with a different user. (We don't allow 2 rows in the Upload table with the same fileUUID and userId).
+        let otherUserId = fileIndex.userId + 1
+        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, status: .pendingChange),
+            let deferredUploadId1 = deferredUpload1.deferredUploadId else {
+            XCTFail()
+            return
+        }
+
+        let batchUUID = UUID().uuidString
+
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, fileGroup: fileGroup, sharingGroupUUID: sharingGroupUUID1, userId: otherUserId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, informAllButSelf: true) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, mimeType: nil, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID1), fileLabel: nil, dataToUpload: comment2.updateContents, informAllButSelf: true) else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID1)
+        guard let fileIndexClientUIRecords = fileIndexClientUIRepo.lookupAll(key: key, modelInit: FileIndexClientUI.init) else {
+            XCTFail()
+            return
+        }
+        
+        // One FileIndexClientUI record for the original v0 upload, and one additional FileIndexClientUI record for each upload in the v1 batch.
+        XCTAssert(fileIndexClientUIRecords.count == 3, "fileIndexClientUIRecords.count: \(fileIndexClientUIRecords.count)")
+        
+        let v0 = fileIndexClientUIRecords.filter { $0.fileVersion == 0}
+        XCTAssert(v0.count == 1)
+        
+        let v1 = fileIndexClientUIRecords.filter { $0.fileVersion == 1}
+        XCTAssert(v1.count == 2)
+    }
+    
+    // Multiple mutations across successive batches
+    func testMutationsSuccessiveBatchesWithInformAllButSelf_checkFileIndexClientUI() throws {
+        let changeResolverName = CommentFile.changeResolverName
+        let deviceUUID = Foundation.UUID().uuidString
+        let fileUUID = Foundation.UUID().uuidString
+        let fileGroupUUID = Foundation.UUID().uuidString
+        
+        let comment1 = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
+        let comment2 = ExampleComment(messageString: "Goodbye!", id: Foundation.UUID().uuidString)
+
+        // v0 upload.
+        
+        let fileGroup = FileGroup(fileGroupUUID: fileGroupUUID, objectType: "ObjectType")
+  
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName, informAllButSelf: true),
+            let sharingGroupUUID1 = result.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        // v1 upload.
+        // (We don't give a file group here b/c we only give a file group with v0 uploads.)
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, mimeType: nil, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID1), fileLabel: nil, dataToUpload: comment1.updateContents, informAllButSelf: true) else {
+            XCTFail()
+            return
+        }
+        
+        // v2 upload.
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, mimeType: nil, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID1), fileLabel: nil, dataToUpload: comment2.updateContents, informAllButSelf: true) else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID1)
+        guard let fileIndexClientUIRecords = fileIndexClientUIRepo.lookupAll(key: key, modelInit: FileIndexClientUI.init) else {
+            XCTFail()
+            return
+        }
+
+        // One FileIndexClientUI record for the original v0 upload, and one each for the additional two file versions.
+        XCTAssert(fileIndexClientUIRecords.count == 3, "fileIndexClientUIRecords.count: \(fileIndexClientUIRecords.count)")
+        
+        let v0 = fileIndexClientUIRecords.filter { $0.fileVersion == 0}
+        XCTAssert(v0.count == 1)
+        
+        let v1 = fileIndexClientUIRecords.filter { $0.fileVersion == 1}
+        XCTAssert(v1.count == 1)
+        
+        let v2 = fileIndexClientUIRecords.filter { $0.fileVersion == 2}
+        XCTAssert(v2.count == 1)
+    }
 }
+

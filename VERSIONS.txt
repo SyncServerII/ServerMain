@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.10.1 (5/30/21)
+	* Fixed issue with informAllButSelf result. Enable distinguishing between inform self
+		and inform others. Modify associated tests. 
+	
 Version 1.10.0 (5/30/21)
     * Added support for informAllButSelf. Affects file upload, index requests,
         and deferred uploads. As part of this, added new table: FileIndexClientUI.

@@ -322,7 +322,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         }
         
         let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
-        // There should be no  group summary here because there are no rows in `FileIndexClientUIRepository` for this sharingGroup.
+        // There should be no group summary here because there are no rows in `FileIndexClientUIRepository` for this sharingGroup.
         switch result {
         case .error:
             XCTFail()
@@ -391,13 +391,27 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         }
         
         let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
-        // There should be no  group summary here because of the userId mismatch.
         switch result {
         case .error:
             XCTFail()
             return
         case .summary(let summary):
-            XCTAssert(summary == nil)
+            guard let summary = summary, summary.count == 1 else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(!summary[0].deleted)
+            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            
+            guard let inform = summary[0].inform, inform.count == 1 else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(inform[0].fileUUID == fileUUID)
+            XCTAssert(inform[0].fileVersion == 0)
+            XCTAssert(inform[0].inform == .self)
         }
     }
     
@@ -446,16 +460,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary else {
-                XCTFail()
-                return
-            }
-            guard summary.count == 1 else {
+            guard let summary = summary, summary.count == 1 else {
                 XCTFail()
                 return
             }
             
-            XCTAssert(summary[0].informAllButSelf?.count == 1)
+            XCTAssert(!summary[0].deleted)
+            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            
+            guard let inform = summary[0].inform, inform.count == 1 else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(inform[0].fileUUID == fileUUID)
+            XCTAssert(inform[0].fileVersion == 0)
+            XCTAssert(inform[0].inform == .others)
         }
     }
     
@@ -510,15 +530,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary else {
+            guard let summary = summary, summary.count == 1 else {
                 XCTFail()
                 return
             }
-            guard summary.count == 1 else {
+            
+            XCTAssert(!summary[0].deleted)
+            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            
+            guard let inform = summary[0].inform, inform.count == 1 else {
                 XCTFail()
                 return
             }
-            XCTAssert(summary[0].informAllButSelf?.count == 1)
+            
+            XCTAssert(inform[0].fileUUID == fileUUID)
+            XCTAssert(inform[0].fileVersion == 0)
+            XCTAssert(inform[0].inform == .others)
         }
     }
     
@@ -573,15 +600,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary else {
+            guard let summary = summary, summary.count == 1 else {
                 XCTFail()
                 return
             }
-            guard summary.count == 1 else {
+            
+            XCTAssert(!summary[0].deleted)
+            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            
+            guard let inform = summary[0].inform, inform.count == 1 else {
                 XCTFail()
                 return
             }
-            XCTAssert(summary[0].informAllButSelf?.count == 1)
+            
+            XCTAssert(inform[0].fileUUID == fileUUID)
+            XCTAssert(inform[0].fileVersion == 0)
+            XCTAssert(inform[0].inform == .others)
         }
     }
     
@@ -642,15 +676,113 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary else {
+            guard let summary = summary, summary.count == 1 else {
                 XCTFail()
                 return
             }
-            guard summary.count == 1 else {
+            
+            XCTAssert(!summary[0].deleted)
+            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            
+            guard var inform = summary[0].inform, inform.count == 2 else {
                 XCTFail()
                 return
             }
-            XCTAssert(summary[0].informAllButSelf?.count == 2)
+            
+            inform.sort { i1, i2 in
+                i1.fileVersion < i2.fileVersion
+            }
+            
+            XCTAssert(inform[0].fileUUID == fileUUID)
+            XCTAssert(inform[0].fileVersion == 0)
+            XCTAssert(inform[0].inform == .others)
+            
+            XCTAssert(inform[1].fileUUID == fileUUID)
+            XCTAssert(inform[1].fileVersion == 1)
+            XCTAssert(inform[1].inform == .others)
+        }
+    }
+    
+    // One record with requesting userId another with a different userId
+    func testGetGroupSummary_withRequestingUserId4_oneOther() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileUUID = fileIndex1.fileUUID,
+            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false, fileGroupUUID: fileGroupUUID, fileLabel: "file2") else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileIndexClientUIRecord(userId: userId+1, fileVersion: 1, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let result = FileIndexRepository(db).getGroupSummary(forSharingGroupUUID: sharingGroupUUID, requestingUserId: userId)
+        switch result {
+        case .error:
+            XCTFail()
+            return
+        case .summary(let summary):
+            guard let summary = summary, summary.count == 1 else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(!summary[0].deleted)
+            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            
+            guard var inform = summary[0].inform, inform.count == 2 else {
+                XCTFail()
+                return
+            }
+            
+            inform.sort { i1, i2 in
+                i1.fileVersion < i2.fileVersion
+            }
+            
+            XCTAssert(inform[0].fileUUID == fileUUID)
+            XCTAssert(inform[0].fileVersion == 0)
+            XCTAssert(inform[0].inform == .others)
+            
+            XCTAssert(inform[1].fileUUID == fileUUID)
+            XCTAssert(inform[1].fileVersion == 1)
+            XCTAssert(inform[1].inform == .self)
         }
     }
     
@@ -705,7 +837,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID2, fileGroupUUID: fileGroupUUID2, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 1, fileUUID: fileUUID2, fileGroupUUID: fileGroupUUID2, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -716,16 +848,34 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary else {
+            guard let summary = summary, summary.count == 2 else {
                 XCTFail()
                 return
             }
-            guard summary.count == 2 else {
+            
+            let filter1 = summary.filter { $0.fileGroupUUID == fileGroupUUID }
+            guard filter1.count == 1,
+                let inform1 = filter1[0].inform,
+                inform1.count == 1 else {
                 XCTFail()
                 return
             }
-            XCTAssert(summary[0].informAllButSelf?.count == 1)
-            XCTAssert(summary[1].informAllButSelf?.count == 1)
+            
+            XCTAssert(inform1[0].fileVersion == 0, "filter1[0].fileVersion: \(inform1[0].fileVersion)")
+            XCTAssert(inform1[0].fileUUID == fileUUID)
+            XCTAssert(inform1[0].inform == .others)
+
+            let filter2 = summary.filter { $0.fileGroupUUID == fileGroupUUID2 }
+            guard filter2.count == 1,
+                let inform2 = filter2[0].inform,
+                inform2.count == 1 else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(inform2[0].fileVersion == 1)
+            XCTAssert(inform2[0].fileUUID == fileUUID2)
+            XCTAssert(inform2[0].inform == .others)
         }
     }
 }

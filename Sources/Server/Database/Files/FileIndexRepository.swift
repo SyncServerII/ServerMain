@@ -879,7 +879,6 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey)
         from \(tableName), \(FileIndexClientUIRepository.tableName)
         where \(tableName).\(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
-            and \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey) = \(requestingUserId)
             and \(tableName).\(FileIndex.sharingGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.sharingGroupUUIDKey)
             and \(tableName).\(FileIndex.fileGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileGroupUUIDKey)
             and \(tableName).\(FileIndex.fileUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileUUIDKey)
@@ -921,11 +920,10 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             summary.deleted = fileGroup[0].deleted ?? false
             summary.fileGroupUUID = fileGroup[0].fileGroupUUID
 
-            var informAllButSelf = [FileGroupSummary.InformAllButSelf]()
+            var fileGroupSummaryInform = [FileGroupSummary.Inform]()
             
             for model in fileGroup {
-                guard let informAllButUserId = model.informAllButUserId,
-                    requestingUserId == informAllButUserId else {
+                guard let informAllButUserId = model.informAllButUserId else {
                     continue
                 }
                 
@@ -935,16 +933,18 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                     continue
                 }
                 
-                let inform = FileGroupSummary.InformAllButSelf(fileVersion: fileVersion, fileUUID: fileUUID)
-                informAllButSelf += [inform]
+                let whoToInform: FileGroupSummary.Inform.WhoToInform = requestingUserId == informAllButUserId ? .others : .self
+                
+                let inform = FileGroupSummary.Inform(fileVersion: fileVersion, fileUUID: fileUUID, inform: whoToInform)
+                
+                fileGroupSummaryInform += [inform]
             }
             
-            // There may not be any `InformAllButSelf`'s to add. I.e., no presentation to exclude.
-            guard informAllButSelf.count > 0 else {
-                continue
+            // There may not be any `FileGroupSummary.Inform`'s to add. I.e., no presentation to exclude.
+            if fileGroupSummaryInform.count > 0 {
+                summary.inform = fileGroupSummaryInform
             }
-            
-            summary.informAllButSelf = informAllButSelf
+
             result += [summary]
         }
         

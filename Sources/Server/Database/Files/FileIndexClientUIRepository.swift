@@ -19,9 +19,6 @@ class FileIndexClientUI : NSObject, Model {
     static let fileUUIDKey = "fileUUID"
     var fileUUID: String!
     
-    static let fileGroupUUIDKey = "fileGroupUUID"
-    var fileGroupUUID:String!
-    
     static let sharingGroupUUIDKey = "sharingGroupUUID"
     var sharingGroupUUID: String!
     
@@ -42,9 +39,6 @@ class FileIndexClientUI : NSObject, Model {
                 
             case Self.fileUUIDKey:
                 fileUUID = newValue as? String
-
-            case Self.fileGroupUUIDKey:
-                fileGroupUUID = newValue as? String
                 
             case Self.sharingGroupUUIDKey:
                 sharingGroupUUID = newValue as? String
@@ -112,8 +106,8 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
             "fileIndexClientUIId BIGINT NOT NULL AUTO_INCREMENT, " +
                         
             "fileUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
-
-            "fileGroupUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
+            
+            // There is no need to store a field with the `fileGroupUUID` here. We can join to the FileIndex and get that.
             
             "sharingGroupUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
             
@@ -124,7 +118,7 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
             
             "expiry DATETIME NOT NULL, " +
 
-            // We can have multiple records for a given file version in a sharing group-- but the `informAllButUserId` field must make them unique. This is to accomodate vN uploads where multiple Uploads create a new file version. And these uploads originate from different (informAllButUserId) users. This is the expected case in this situation: E.g., Rod and Dany make a comment at the same time and both of those uploads combine to form the new file version.
+            // We can have multiple records for a given file version in a sharing group-- but the `informAllButUserId` field must make them unique. This is to accomodate vN uploads where multiple Uploads records create a new file version. And these uploads originate from different (informAllButUserId) users. This is the expected case in this situation: E.g., Rod and Dany make a comment at the same time and both of those uploads combine to form the new file version. NOTE: Client side we need to deal with this possibility: That we can have multiple inform records with the same file version. If at least one of them indicates that self should be informed we have to inform self.
             "UNIQUE (fileUUID, sharingGroupUUID, fileVersion, informAllButUserId), " +
             
             "UNIQUE (fileIndexClientUIId)" +
@@ -145,7 +139,6 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
     
     private func haveNilFieldForAdd(model:FileIndexClientUI) -> Bool {
         return model.fileUUID == nil
-            || model.fileGroupUUID == nil
             || model.sharingGroupUUID == nil
             || model.fileVersion == nil
             || model.informAllButUserId == nil
@@ -162,7 +155,6 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
         let insert = Database.PreparedStatement(repo: self, type: .insert)
 
         insert.add(fieldName: FileIndexClientUI.fileUUIDKey, value: .stringOptional(model.fileUUID))
-        insert.add(fieldName: FileIndexClientUI.fileGroupUUIDKey, value: .stringOptional(model.fileGroupUUID))
         insert.add(fieldName: FileIndexClientUI.sharingGroupUUIDKey, value: .stringOptional(model.sharingGroupUUID))
         insert.add(fieldName: FileIndexClientUI.fileVersionKey, value: .int32Optional(model.fileVersion))
         insert.add(fieldName: FileIndexClientUI.informAllButUserIdKey, value: .int64Optional(model.informAllButUserId))
@@ -198,12 +190,11 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
         
         let model = FileIndexClientUI()
         model.fileUUID = upload.fileUUID
-        model.fileGroupUUID = upload.fileGroupUUID
         model.sharingGroupUUID = upload.sharingGroupUUID
         model.fileVersion = upload.fileVersion
         model.informAllButUserId = informAllButUserId
         
-        Log.debug("addIfNeeded: upload.fileUUID: \(String(describing: upload.fileUUID)); upload.fileGroupUUID: \(String(describing: upload.fileGroupUUID)); upload.sharingGroupUUID: \(String(describing: upload.sharingGroupUUID)); upload.fileVersion: \(String(describing: upload.fileVersion))")
+        Log.debug("addIfNeeded: upload.fileUUID: \(String(describing: upload.fileUUID)); upload.sharingGroupUUID: \(String(describing: upload.sharingGroupUUID)); upload.fileVersion: \(String(describing: upload.fileVersion))")
         
         let calendar = Calendar.current
         guard let expiryDate = calendar.date(byAdding: .day, value: Self.numberOfDaysUntilExpiry, to: Date()) else {

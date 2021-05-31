@@ -47,7 +47,7 @@ class FileIndex : NSObject, Model {
     var updateDate:Date!
     
     // OWNER
-    /// The userId of the (effective) owning user of v0 of the file. The userId doesn't change beyond that point-- the v0 owner is always the owner.
+    /// The userId of the (effective) owning user of v0 of the file. The userId doesn't change beyond that point-- the v0 owner is always the owner. This doesn't always correspond to the user that actually uploaded the file-- for social users.
     static let userIdKey = "userId"
     var userId: UserId!
     
@@ -232,7 +232,6 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             "fileUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
         
             // reference into User table
-            // TODO: *2* Make this a foreign reference.
             "userId BIGINT NOT NULL, " +
             
             // identifies a specific mobile device (assigned by app)
@@ -243,6 +242,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             "fileGroupUUID VARCHAR(\(Database.uuidLength)), " +
             
             // 9/12/20; Not making this NOT NULL to grandfather in earlier versions of Neebla and because not all files have file groups.
+            // A files in a specific file group must have the same `objectType` (should really have a db constraint for this).
             "objectType VARCHAR(\(FileGroup.maxLengthObjectTypeName)), " +
             
             "sharingGroupUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
@@ -275,7 +275,9 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             // Because file label's must be unique within file group's.
             "CONSTRAINT \(Self.uniqueFileLabelConstraintName) \(Self.uniqueFileLabelConstraint), " +
             
+            // A fileUUID must be unique within a sharing group.
             "UNIQUE (fileUUID, sharingGroupUUID), " +
+            
             "UNIQUE (fileIndexId))"
         
         let result = db.createTableIfNeeded(tableName: "\(tableName)", columnCreateQuery: createColumns)
@@ -868,9 +870,8 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     // `requestingUserId` is the UserId of the user doing the FileIndex request.
     func getGroupSummary(forSharingGroupUUID sharingGroupUUID: String, requestingUserId: UserId) -> GetGroupSummaryResult {
     
-        // We constrain the query by:
-        //  \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey) = "\(requestingUserId)
-        // because we are using `InformAllButSelf` to exclude presentation on the client. The normal case, in which we don't send this record to the client, is to include presentation.
+        // Do *not* compare, in this query, to the `userId` field in the FileIndex. That's the owning userId and won't let us account for social users.
+
         let selectQuery = """
         select \(tableName).\(FileIndex.deletedKey),
             \(tableName).\(FileIndex.fileGroupUUIDKey),
@@ -880,7 +881,6 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         from \(tableName), \(FileIndexClientUIRepository.tableName)
         where \(tableName).\(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
             and \(tableName).\(FileIndex.sharingGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.sharingGroupUUIDKey)
-            and \(tableName).\(FileIndex.fileGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileGroupUUIDKey)
             and \(tableName).\(FileIndex.fileUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileUUIDKey)
         """
 
@@ -924,6 +924,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             
             for model in fileGroup {
                 guard let informAllButUserId = model.informAllButUserId else {
+                    Log.error("Didn't have a informAllButUserId value; this should never happen. The `informAllButUserId` field is NON NULL in the table.")
                     continue
                 }
                 
@@ -933,6 +934,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                     continue
                 }
                 
+                // Note that this comparison is in terms of (a) the user making the request, and (b) the `informAllButUserId` user. And it's specifically *not* in terms of the `userId` from the FileIndex row. Since the `userId` in FileIndex is the *owning* user if we used the owning user id we couldn't deal with social users.
                 let whoToInform: FileGroupSummary.Inform.WhoToInform = requestingUserId == informAllButUserId ? .others : .self
                 
                 let inform = FileGroupSummary.Inform(fileVersion: fileVersion, fileUUID: fileUUID, inform: whoToInform)

@@ -796,6 +796,11 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
+
+        guard let fileUUID = uploadResult.request.fileUUID else {
+            XCTFail()
+            return
+        }
         
         let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
         guard let fileIndexClientUIRecords = fileIndexClientUIRepo.lookupAll(key: key, modelInit: FileIndexClientUI.init) else {
@@ -811,7 +816,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
-        XCTAssert(v0[0].fileGroupUUID == fileGroupUUID)
+        XCTAssert(v0[0].fileUUID == fileUUID)
         XCTAssert(v0[0].sharingGroupUUID == sharingGroupUUID)
 
         let v1 = fileIndexClientUIRecords.filter { $0.fileVersion == 1}
@@ -819,7 +824,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
-        XCTAssert(v1[0].fileGroupUUID == fileGroupUUID)
+        XCTAssert(v1[0].fileUUID == fileUUID)
         XCTAssert(v1[0].sharingGroupUUID == sharingGroupUUID)
     }
     

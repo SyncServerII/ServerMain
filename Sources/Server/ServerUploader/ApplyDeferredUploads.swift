@@ -300,7 +300,7 @@ class ApplyDeferredUploads {
                     return
                 }
                 
-                // Add FileIndexClientUI records if needed per upload. Doing this separately from the Upload record removal below because there is a (slim) chance (*) that multiple uploads originate from the same signed in user: And we can't have multiple FileIndexClientUI records with the same `informAllButUserId`.
+                // Add FileIndexClientUI records if needed per upload. Doing this separately from the Upload record removal below because there is a (slim) chance (see [1] below) that multiple uploads originate from the *same* signed in user: And we can't have multiple FileIndexClientUI records with the same `informAllButUserId`.
                 var informAllButUserIdsAdded = Set<UserId>()
                 for upload in uploadsForFileUUID {
                     guard let informAllButUserId = upload.informAllButUserId else {
@@ -309,7 +309,7 @@ class ApplyDeferredUploads {
                     }
                     
                     if informAllButUserIdsAdded.contains(informAllButUserId) {
-                        // Dealing with slim chance edge case described above (*).
+                        // Dealing with slim chance edge case described above [1].
                         continue
                     }
                     

@@ -332,11 +332,10 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         }
     }
     
-    func addFileIndexClientUIRecord(userId: UserId, fileVersion:FileVersionInt, fileUUID: String, fileGroupUUID: String, sharingGroupUUID: String) -> FileIndexClientUI? {
+    func addFileIndexClientUIRecord(userId: UserId, fileVersion:FileVersionInt, fileUUID: String, sharingGroupUUID: String) -> FileIndexClientUI? {
         let model = FileIndexClientUI()
         
         model.fileUUID = fileUUID
-        model.fileGroupUUID = fileGroupUUID
         model.sharingGroupUUID = sharingGroupUUID
         model.fileVersion = fileVersion
         model.informAllButUserId = userId
@@ -385,7 +384,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId+1, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId+1, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -449,7 +448,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -519,7 +518,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -589,7 +588,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -660,12 +659,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 1, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 1, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -743,12 +742,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId+1, fileVersion: 1, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId+1, fileVersion: 1, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
@@ -832,12 +831,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 0, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }
         
-        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 1, fileUUID: fileUUID2, fileGroupUUID: fileGroupUUID2, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = addFileIndexClientUIRecord(userId: userId, fileVersion: 1, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID) else {
             XCTFail()
             return
         }

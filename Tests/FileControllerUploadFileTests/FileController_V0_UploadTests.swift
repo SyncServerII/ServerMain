@@ -100,7 +100,7 @@ class FileController_V0_UploadTests: ServerTestCase {
         let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
         let lookupResult = fileIndexClientUIRepo.lookup(key: key, modelInit: FileIndexClientUI.init)
         switch lookupResult {
-        case .found(let model):
+        case .found:
             XCTFail()
             return
         case .noObjectFound:
@@ -627,6 +627,11 @@ class FileController_V0_UploadTests: ServerTestCase {
             return
         }
         
+        guard let fileUUID = uploadResult?.fileUUID else {
+            XCTFail()
+            return
+        }
+        
         let key = FileIndexClientUIRepository.LookupKey.sharingGroup(sharingGroupUUID: sharingGroupUUID)
         let lookupResult = fileIndexClientUIRepo.lookup(key: key, modelInit: FileIndexClientUI.init)
         switch lookupResult {
@@ -636,7 +641,7 @@ class FileController_V0_UploadTests: ServerTestCase {
                 return
             }
             
-            XCTAssert(model.fileGroupUUID == fileGroup.fileGroupUUID)
+            XCTAssert(model.fileUUID == fileUUID)
         default:
             XCTFail()
             return

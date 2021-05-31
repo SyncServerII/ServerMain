@@ -31,11 +31,9 @@ class SpecificDatabaseTests_FileIndexClientUIRepository: ServerTestCase {
         let fileVersion:FileVersionInt = 12
         let userId:UserId = 54
         let fileUUID = UUID().uuidString
-        let fileGroupUUID = UUID().uuidString
         let sharingGroupUUID = UUID().uuidString
         
         model.fileUUID = fileUUID
-        model.fileGroupUUID = fileGroupUUID
         model.sharingGroupUUID = sharingGroupUUID
         model.fileVersion = fileVersion
         model.informAllButUserId = userId
@@ -66,7 +64,6 @@ class SpecificDatabaseTests_FileIndexClientUIRepository: ServerTestCase {
         }
 
         XCTAssert(fileIndexClientUI.fileUUID == fileUUID)
-        XCTAssert(fileIndexClientUI.fileGroupUUID == fileGroupUUID)
         XCTAssert(fileIndexClientUI.sharingGroupUUID == sharingGroupUUID)
         XCTAssert(fileIndexClientUI.fileVersion == fileVersion)
         XCTAssert(fileIndexClientUI.informAllButUserId == userId)

@@ -220,6 +220,8 @@ class SharingGroupRepository: Repository, RepositoryLookup {
                 case .summary(let summary):
                     clientSharingGroup.contentsSummary = summary
                 }
+                
+                clientSharingGroup.mostRecentDate = fileIndexRepo.getMostRecentDate(forSharingGroupUUID: sharingGroup.sharingGroupUUID)                
             }
             
             // If user removed from sharing group, mark the sharing group itself as deleted. This is a convenience for the user/client-- to make it easier for them to know when they should treat a sharing group as removed.

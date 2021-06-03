@@ -1502,7 +1502,7 @@ class ServerTestCase : XCTestCase {
         return false
     }
     
-    func doAddFileIndex(userId:UserId = 1, sharingGroupUUID:String, createSharingGroup: Bool, fileUUID: String? = nil, fileGroupUUID: String? = nil, fileLabel: String? = nil, changeResolverName: String? = nil) -> FileIndex? {
+    func doAddFileIndex(creationDate: Date? = Date(), updateDate: Date? = Date(),  userId:UserId = 1, sharingGroupUUID:String, createSharingGroup: Bool, fileUUID: String? = nil, fileGroupUUID: String? = nil, fileLabel: String? = nil, changeResolverName: String? = nil) -> FileIndex? {
 
         if createSharingGroup {
             guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
@@ -1541,8 +1541,8 @@ class ServerTestCase : XCTestCase {
         fileIndex.mimeType = "text/plain"
         fileIndex.userId = userId
         fileIndex.appMetaData = "{ \"foo\": \"bar\" }"
-        fileIndex.creationDate = Date()
-        fileIndex.updateDate = Date()
+        fileIndex.creationDate = creationDate
+        fileIndex.updateDate = updateDate
         fileIndex.sharingGroupUUID = sharingGroupUUID
         fileIndex.changeResolverName = changeResolverName
         

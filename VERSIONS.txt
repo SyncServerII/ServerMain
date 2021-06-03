@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.10.3 (6/2/21)
+	* Added `mostRecentDate` to SharingGroup return with a contentSummary.
+	* Moved `numberOfDaysUntilInformAllButSelfExpiry` to ServerConstants.
+
 Version 1.10.2 (5/31/21)
 	* Removed `fileGroupUUID` field from the FileIndexClientUIRepository table.
 		It could easily be obtained in the join with the FileIndex.

@@ -83,8 +83,6 @@ class FileIndexClientUI : NSObject, Model {
 class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
     static var indexIdKey = FileIndexClientUI.fileIndexClientUIIdKey
     
-    static let numberOfDaysUntilExpiry = 3
-
     private(set) var db:Database!
     
     required init(_ db:Database) {
@@ -197,7 +195,7 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
         Log.debug("addIfNeeded: upload.fileUUID: \(String(describing: upload.fileUUID)); upload.sharingGroupUUID: \(String(describing: upload.sharingGroupUUID)); upload.fileVersion: \(String(describing: upload.fileVersion))")
         
         let calendar = Calendar.current
-        guard let expiryDate = calendar.date(byAdding: .day, value: Self.numberOfDaysUntilExpiry, to: Date()) else {
+        guard let expiryDate = calendar.date(byAdding: .day, value: ServerConstants.numberOfDaysUntilInformAllButSelfExpiry, to: Date()) else {
             return .error
         }
 

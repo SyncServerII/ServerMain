@@ -791,8 +791,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let sharingGroupUUID = uploadResult.sharingGroupUUID,
-            let fileGroupUUID = uploadResult.request.fileGroupUUID else {
+        guard let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }

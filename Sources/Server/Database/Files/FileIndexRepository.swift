@@ -345,7 +345,8 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     private func haveNilFieldForAdd(fileIndex:FileIndex) -> Bool {
-        return fileIndex.fileUUID == nil || fileIndex.userId == nil || fileIndex.mimeType == nil || fileIndex.deviceUUID == nil || fileIndex.deleted == nil || fileIndex.fileVersion == nil || fileIndex.lastUploadedCheckSum == nil || fileIndex.creationDate == nil || fileIndex.updateDate == nil || fileIndex.fileLabel == nil
+        return fileIndex.fileUUID == nil || fileIndex.userId == nil || fileIndex.mimeType == nil || fileIndex.deviceUUID == nil || fileIndex.deleted == nil || fileIndex.fileVersion == nil || fileIndex.lastUploadedCheckSum == nil || fileIndex.creationDate == nil || fileIndex.fileLabel == nil
+        // Not including `updateDate` here: It should be nil in a record creation as we're not updating we're creating.
     }
     
     enum AddFileIndexResponse: RetryRequest {
@@ -951,5 +952,47 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         }
         
         return .summary(result)
+    }
+    
+    func getMostRecentDate(forSharingGroupUUID sharingGroupUUID: String) -> Date? {
+        let selectQuery = """
+            select
+                MAX(\(FileIndex.creationDateKey)) AS \(FileIndex.creationDateKey),
+                MAX(\(FileIndex.updateDateKey)) AS \(FileIndex.updateDateKey)
+            from \(tableName)
+            where \(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
+        """
+        
+        guard let select = Select(db:db, query: selectQuery, modelInit: FileIndex.init, ignoreErrors:false) else {
+            Log.error("Failed on select: \(selectQuery)")
+            return nil
+        }
+        
+        var maxDateResult: Date?
+
+        select.forEachRow { rowModel in
+            guard maxDateResult == nil else {
+                Log.error("More than one row!")
+                return
+            }
+            
+            guard let rowModel = rowModel as? FileIndex else {
+                Log.error("Bad row model!")
+                return
+            }
+
+            maxDateResult = rowModel.creationDate
+            
+            if let maxUpdateDate = rowModel.updateDate {
+                if let result = maxDateResult {
+                    maxDateResult = max(maxUpdateDate, result)
+                }
+                else {
+                    maxDateResult = maxUpdateDate
+                }
+            }
+        }
+        
+        return maxDateResult
     }
 }

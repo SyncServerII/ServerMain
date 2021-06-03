@@ -877,5 +877,188 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTAssert(inform2[0].inform == .others)
         }
     }
+    
+    func testGetMostRecentDate_withNoData() {
+        let sharingGroupUUID = UUID()
+        let result = FileIndexRepository(db).getMostRecentDate(forSharingGroupUUID: sharingGroupUUID.uuidString)
+        XCTAssert(result == nil)
+    }
+    
+    func testGetMostRecentDate_withOneFileIndexRow_onlyCreationDate() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        let date = Date()
+        guard let _ = doAddFileIndex(creationDate: date, updateDate: nil, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = FileIndexRepository(db).getMostRecentDate(forSharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(DateExtras.equals(result, date))
+    }
+    
+    func testGetMostRecentDate_withOneFileIndexRow_bothDates() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        let creationDate = Date()
+        
+        let calendar = Calendar.current
+        guard let updateDate = calendar.date(byAdding: .day, value: 1, to: creationDate) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(creationDate: creationDate, updateDate: updateDate, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = FileIndexRepository(db).getMostRecentDate(forSharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(DateExtras.equals(result, updateDate))
+    }
+    
+    func testGetMostRecentDate_withOneFileIndexRow_bothDates_otherOrder() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+
+        let updateDate = Date()
+        
+        let calendar = Calendar.current
+        guard let creationDate = calendar.date(byAdding: .day, value: 1, to: updateDate) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(creationDate: creationDate, updateDate: updateDate, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = FileIndexRepository(db).getMostRecentDate(forSharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(DateExtras.equals(result, creationDate))
+    }
+
+    func testGetMostRecentDate_withTwoIndexRows() {
+        let user1 = User()
+        user1.username = "Chris"
+        user1.accountType = AccountScheme.google.accountName
+        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
+        user1.credsId = "100"
+        let sharingGroupUUID = UUID().uuidString
+
+        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
+            XCTFail()
+            return
+        }
+        
+        let calendar = Calendar.current
+        guard let creationDate1 = calendar.date(byAdding: .day, value: 1, to: Date()) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(creationDate: creationDate1, updateDate: nil, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let creationDate2 = calendar.date(byAdding: .day, value: 2, to: Date()) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(creationDate: creationDate2, updateDate: nil, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = FileIndexRepository(db).getMostRecentDate(forSharingGroupUUID: sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(DateExtras.equals(result, creationDate2))
+    }
 }
 

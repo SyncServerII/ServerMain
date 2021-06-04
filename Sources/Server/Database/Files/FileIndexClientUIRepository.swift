@@ -31,6 +31,9 @@ class FileIndexClientUI : NSObject, Model {
     static let expiryKey = "expiry"
     var expiry:Date!
     
+    // Deprecated, but needed for migration
+    static let fileGroupUUIDKey = "fileGroupUUID"
+    
     subscript(key:String) -> Any? {
         set {
             switch key {
@@ -126,10 +129,18 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
         let result = db.createTableIfNeeded(tableName: "\(tableName)", columnCreateQuery: createColumns)
         switch result {
         case .success(.alreadyPresent):
+            // Migration
+            if db.columnExists(FileIndexClientUI.fileGroupUUIDKey, in: tableName) == true {
+                if !db.removeColumn(FileIndexClientUI.fileGroupUUIDKey, from: tableName) {
+                    return .failure(.columnRemoval)
+                }
+            }
+            
+        case .success:
             break
             
-        default:
-            break
+        case .failure(let error):
+            Log.error("Failed creating table: \(error)")
         }
         
         return result

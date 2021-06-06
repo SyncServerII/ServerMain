@@ -1,5 +1,11 @@
 SyncServer
 
+[DEPLOYMENT UPDATE]
+	* I just fixed an issue by going to
+		"Rolling with Additional Batch deployment policy"
+		- See the configure.yml change with this commit and see
+			https://github.com/SyncServerII/ServerMain/issues/14
+
 Version 1.10.5 (6/5/21)
 	* Only return .self with inform records-- only .self is applicable to the user signed
 		 in to the client.

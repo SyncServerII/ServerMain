@@ -13,6 +13,10 @@ option_settings:
     ListenerEnabled: 'false'
   aws:elasticbeanstalk:healthreporting:system:
     SystemType: enhanced
+  aws:elasticbeanstalk:command:
+    DeploymentPolicy: RollingWithAdditionalBatch
+    BatchSizeType: Fixed
+    BatchSize: 1
   aws:autoscaling:launchconfiguration:
     IamInstanceProfile: aws-elasticbeanstalk-ec2-role
     InstanceType: t2.micro

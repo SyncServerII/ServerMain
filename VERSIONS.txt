@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.10.5 (6/5/21)
+	* Only return .self with inform records-- only .self is applicable to the user signed
+		 in to the client.
+
 Version 1.10.4 (6/3/21)
 	* Added actual migration for removing fileGroupUUID column if present.
 	 

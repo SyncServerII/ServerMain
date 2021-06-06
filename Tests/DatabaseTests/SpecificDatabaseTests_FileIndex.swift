@@ -442,8 +442,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
         }
@@ -459,22 +458,10 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary, summary.count == 1 else {
+            guard summary == nil else {
                 XCTFail()
                 return
             }
-            
-            XCTAssert(!summary[0].deleted)
-            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
-            
-            guard let inform = summary[0].inform, inform.count == 1 else {
-                XCTFail()
-                return
-            }
-            
-            XCTAssert(inform[0].fileUUID == fileUUID)
-            XCTAssert(inform[0].fileVersion == 0)
-            XCTAssert(inform[0].inform == .others)
         }
     }
     
@@ -507,8 +494,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
         }
@@ -529,22 +515,10 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary, summary.count == 1 else {
+            guard summary == nil else {
                 XCTFail()
                 return
             }
-            
-            XCTAssert(!summary[0].deleted)
-            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
-            
-            guard let inform = summary[0].inform, inform.count == 1 else {
-                XCTFail()
-                return
-            }
-            
-            XCTAssert(inform[0].fileUUID == fileUUID)
-            XCTAssert(inform[0].fileVersion == 0)
-            XCTAssert(inform[0].inform == .others)
         }
     }
     
@@ -599,22 +573,10 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary, summary.count == 1 else {
+            guard summary == nil else {
                 XCTFail()
                 return
             }
-            
-            XCTAssert(!summary[0].deleted)
-            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
-            
-            guard let inform = summary[0].inform, inform.count == 1 else {
-                XCTFail()
-                return
-            }
-            
-            XCTAssert(inform[0].fileUUID == fileUUID)
-            XCTAssert(inform[0].fileVersion == 0)
-            XCTAssert(inform[0].inform == .others)
         }
     }
     
@@ -675,30 +637,10 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary, summary.count == 1 else {
+            guard summary == nil else {
                 XCTFail()
                 return
             }
-            
-            XCTAssert(!summary[0].deleted)
-            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
-            
-            guard var inform = summary[0].inform, inform.count == 2 else {
-                XCTFail()
-                return
-            }
-            
-            inform.sort { i1, i2 in
-                i1.fileVersion < i2.fileVersion
-            }
-            
-            XCTAssert(inform[0].fileUUID == fileUUID)
-            XCTAssert(inform[0].fileVersion == 0)
-            XCTAssert(inform[0].inform == .others)
-            
-            XCTAssert(inform[1].fileUUID == fileUUID)
-            XCTAssert(inform[1].fileVersion == 1)
-            XCTAssert(inform[1].inform == .others)
         }
     }
     
@@ -766,22 +708,14 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTAssert(!summary[0].deleted)
             XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
             
-            guard var inform = summary[0].inform, inform.count == 2 else {
+            guard let inform = summary[0].inform, inform.count == 1 else {
                 XCTFail()
                 return
             }
             
-            inform.sort { i1, i2 in
-                i1.fileVersion < i2.fileVersion
-            }
-            
             XCTAssert(inform[0].fileUUID == fileUUID)
-            XCTAssert(inform[0].fileVersion == 0)
-            XCTAssert(inform[0].inform == .others)
-            
-            XCTAssert(inform[1].fileUUID == fileUUID)
-            XCTAssert(inform[1].fileVersion == 1)
-            XCTAssert(inform[1].inform == .self)
+            XCTAssert(inform[0].fileVersion == 1)
+            XCTAssert(inform[0].inform == .self)
         }
     }
     
@@ -814,8 +748,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
         }
@@ -825,8 +758,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let fileUUID2 = fileIndex2.fileUUID,
-            let fileGroupUUID2 = fileIndex2.fileGroupUUID else {
+        guard let fileUUID2 = fileIndex2.fileUUID else {
             XCTFail()
             return
         }
@@ -847,34 +779,10 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             XCTFail()
             return
         case .summary(let summary):
-            guard let summary = summary, summary.count == 2 else {
+            guard summary == nil else {
                 XCTFail()
                 return
             }
-            
-            let filter1 = summary.filter { $0.fileGroupUUID == fileGroupUUID }
-            guard filter1.count == 1,
-                let inform1 = filter1[0].inform,
-                inform1.count == 1 else {
-                XCTFail()
-                return
-            }
-            
-            XCTAssert(inform1[0].fileVersion == 0, "filter1[0].fileVersion: \(inform1[0].fileVersion)")
-            XCTAssert(inform1[0].fileUUID == fileUUID)
-            XCTAssert(inform1[0].inform == .others)
-
-            let filter2 = summary.filter { $0.fileGroupUUID == fileGroupUUID2 }
-            guard filter2.count == 1,
-                let inform2 = filter2[0].inform,
-                inform2.count == 1 else {
-                XCTFail()
-                return
-            }
-            
-            XCTAssert(inform2[0].fileVersion == 1)
-            XCTAssert(inform2[0].fileUUID == fileUUID2)
-            XCTAssert(inform2[0].inform == .others)
         }
     }
     

@@ -129,7 +129,7 @@ class FileIndexClientUIRepository : Repository, RepositoryLookup, ModelIndexId {
         let result = db.createTableIfNeeded(tableName: "\(tableName)", columnCreateQuery: createColumns)
         switch result {
         case .success(.alreadyPresent):
-            // Migration
+            // Migration, 5/31/21
             if db.columnExists(FileIndexClientUI.fileGroupUUIDKey, in: tableName) == true {
                 if !db.removeColumn(FileIndexClientUI.fileGroupUUIDKey, from: tableName) {
                     return .failure(.columnRemoval)

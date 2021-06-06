@@ -79,9 +79,6 @@ class FileIndex : NSObject, Model {
     static let accountTypeKey = "accountType"
     var accountType: String!
     
-    static let informAllButUserIdKey = FileIndexClientUI.informAllButUserIdKey
-    var informAllButUserId: UserId!
-    
     subscript(key:String) -> Any? {
         set {
             switch key {
@@ -135,9 +132,6 @@ class FileIndex : NSObject, Model {
                 
             case User.accountTypeKey:
                 accountType = newValue as! String?
-                
-            case FileIndexClientUI.informAllButUserIdKey:
-                informAllButUserId = newValue as? UserId
                 
             default:
                 Log.debug("key: \(key)")
@@ -870,19 +864,21 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     
     // `requestingUserId` is the UserId of the user doing the FileIndex request.
     func getGroupSummary(forSharingGroupUUID sharingGroupUUID: String, requestingUserId: UserId) -> GetGroupSummaryResult {
-    
-        // Do *not* compare, in this query, to the `userId` field in the FileIndex. That's the owning userId and won't let us account for social users.
+            
+        // [2] In this query, I only want results that affect "self". In the client we only want to deal changes that affect the current signed in user, or `self`. This is the reason for the constraint:
+        // \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileUUIDKey) <> \(requestingUserId)
+        // Note that this comparison is in terms of (a) the user making the request, and (b) the `informAllButUserId` user. And it's specifically *not* in terms of the `userId` from the FileIndex row. Since the `userId` in FileIndex is the *owning* user if we used the owning user id we couldn't deal with social users. We also couldn't deal with changes made to files by non-owning users.
 
         let selectQuery = """
         select \(tableName).\(FileIndex.deletedKey),
             \(tableName).\(FileIndex.fileGroupUUIDKey),
             \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileVersionKey),
-            \(tableName).\(FileIndex.fileUUIDKey),
-            \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey)
+            \(tableName).\(FileIndex.fileUUIDKey)
         from \(tableName), \(FileIndexClientUIRepository.tableName)
         where \(tableName).\(FileIndex.sharingGroupUUIDKey) = '\(sharingGroupUUID)'
             and \(tableName).\(FileIndex.sharingGroupUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.sharingGroupUUIDKey)
             and \(tableName).\(FileIndex.fileUUIDKey) = \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileUUIDKey)
+            and \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.informAllButUserIdKey) <> \(requestingUserId)
         """
 
         guard let select = Select(db:db, query: selectQuery, modelInit: FileIndex.init, ignoreErrors:false) else {
@@ -923,20 +919,15 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
 
             var fileGroupSummaryInform = [FileGroupSummary.Inform]()
             
-            for model in fileGroup {
-                guard let informAllButUserId = model.informAllButUserId else {
-                    Log.error("Didn't have a informAllButUserId value; this should never happen. The `informAllButUserId` field is NON NULL in the table.")
-                    continue
-                }
-                
+            for model in fileGroup {                
                 guard let fileVersion = model.fileVersion,
                     let fileUUID = model.fileUUID else {
                     Log.error("Nil model.fileVersion")
                     continue
                 }
                 
-                // Note that this comparison is in terms of (a) the user making the request, and (b) the `informAllButUserId` user. And it's specifically *not* in terms of the `userId` from the FileIndex row. Since the `userId` in FileIndex is the *owning* user if we used the owning user id we couldn't deal with social users.
-                let whoToInform: FileGroupSummary.Inform.WhoToInform = requestingUserId == informAllButUserId ? .others : .self
+                // This must be `self` because of [2] above.
+                let whoToInform: FileGroupSummary.Inform.WhoToInform = .self
                 
                 let inform = FileGroupSummary.Inform(fileVersion: fileVersion, fileUUID: fileUUID, inform: whoToInform)
                 

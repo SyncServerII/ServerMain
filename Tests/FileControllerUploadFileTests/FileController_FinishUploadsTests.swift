@@ -90,7 +90,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         let batchUUID = UUID().uuidString
 
         let params = Params(repos: repos, currentSignedInUser: user)
-        guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader: fakeUploader,  params: params) else {
+        guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, fileOwnerUserId: userId, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader: fakeUploader, params: params) else {
             XCTFail()
             return
         }
@@ -198,7 +198,7 @@ class FileController_FinishUploadsTests: ServerTestCase, UploaderCommon {
         let batchUUID2 = UUID().uuidString
         
         let params = Params(repos: repos, currentSignedInUser: user)
-        guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID2, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader:fakeUploader, params: params) else {
+        guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID2, fileOwnerUserId: userId, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, uploader:fakeUploader, params: params) else {
             XCTFail()
             return
         }

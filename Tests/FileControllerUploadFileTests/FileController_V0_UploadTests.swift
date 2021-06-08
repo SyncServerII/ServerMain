@@ -14,13 +14,18 @@ import HeliumLogger
 import Foundation
 import ServerShared
 import ChangeResolvers
+import ServerGoogleAccount
+import ServerAccount
+import KituraNet
 
 class FileController_V0_UploadTests: ServerTestCase {
     var fileIndexClientUIRepo: FileIndexClientUIRepository!
+    var userRepo: UserRepository!
 
     override func setUp() {
         super.setUp()
         fileIndexClientUIRepo = FileIndexClientUIRepository(db)
+        userRepo = UserRepository(db)
     }
     
     override func tearDown() {
@@ -43,7 +48,7 @@ class FileController_V0_UploadTests: ServerTestCase {
     }
     
     @discardableResult
-    func uploadSingleV0File(changeResolverName: String? = nil, uploadSingleFile:(_ deviceUUID: String, _ fileUUID: String, _ changeResolverName: String?)->(ServerTestCase.UploadFileResult?)) -> UploadResult? {
+    func uploadSingleV0File(changeResolverName: String? = nil, expectError: Bool = false, uploadSingleFile:(_ deviceUUID: String, _ fileUUID: String, _ changeResolverName: String?)->(ServerTestCase.UploadFileResult?)) -> UploadResult? {
         let fileIndex = FileIndexRepository(db)
         let upload = UploadRepository(db)
         
@@ -58,9 +63,13 @@ class FileController_V0_UploadTests: ServerTestCase {
         }
         
         let deviceUUID = Foundation.UUID().uuidString
+        
         let fileUUID = Foundation.UUID().uuidString
         
         guard let result = uploadSingleFile(deviceUUID, fileUUID, changeResolverName) else {
+            if expectError {
+                return nil
+            }
             XCTFail()
             return nil
         }
@@ -673,6 +682,160 @@ class FileController_V0_UploadTests: ServerTestCase {
         guard fileIndexClientUIes.count == 2 else {
             XCTFail("fileIndexClientUIes.count: \(fileIndexClientUIes.count)")
             return
+        }
+    }
+    
+    // https://github.com/SyncServerII/Neebla/issues/15#issuecomment-855324838
+    func testUploadV0InExistingFileGroupByOtherUser_newFileLabel() {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "example")
+        let sharingGroupUUID = UUID().uuidString
+        let owningAccount: TestAccount = .primaryOwningAccount
+        
+        let uploadResult = uploadSingleV0File { deviceUUID, fileUUID, changeResolverName in
+            return uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: owningAccount, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup, sharingGroup: sharingGroupUUID)
+        }
+        
+        guard let deviceUUID1 = uploadResult?.deviceUUID,
+            let fileUUID1 = uploadResult?.fileUUID else {
+            XCTFail()
+            return
+        }
+        
+        let sharingPermission:Permission = .write
+        
+        // Have that newly created user create a sharing invitation.
+        guard let sharingInvitationUUID = createSharingInvitation(testAccount: owningAccount, permission: sharingPermission, sharingGroupUUID:sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingAccount: TestAccount = .secondaryOwningAccount
+        
+        // Redeem that sharing invitation with a new user
+        guard let redeemResponse = redeemSharingInvitation(sharingUser: sharingAccount, sharingInvitationUUID:sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let uploadResult2 = uploadSingleV0File { deviceUUID, fileUUID, changeResolverName in
+            return uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: sharingAccount,  deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup, sharingGroup: sharingGroupUUID)
+        }
+
+        guard let deviceUUID2 = uploadResult2?.deviceUUID,
+            let fileUUID2 = uploadResult2?.fileUUID  else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexRepository.LookupKey.sharingGroupUUID( sharingGroupUUID: sharingGroupUUID)
+        
+        guard let fileIndexResult = FileIndexRepository(db).lookupAll(key: key, modelInit: FileIndex.init) else {
+            XCTFail()
+            return
+        }
+        
+        guard fileIndexResult.count == 2 else {
+            XCTFail()
+            return
+        }
+        
+        guard let userId = fileIndexResult[0].userId else {
+            XCTFail()
+            return
+        }
+        
+        let filter = fileIndexResult.filter { $0.userId == userId }
+        guard filter.count == 2 else {
+            XCTFail()
+            return
+        }
+                
+        // Read the file from cloud storage using the first user's account and make sure neither fail.
+        
+        let accountManager = AccountManager()
+        accountManager.addAccountType(GoogleCreds.self)
+        
+        guard let owningUserCreds = FileController.getCreds(forUserId: userId, userRepo: userRepo, accountManager: accountManager, accountDelegate: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let cloudStorage = owningUserCreds.cloudStorage(mock: nil) else {
+            XCTFail()
+            return
+        }
+        
+        let options1 = CloudStorageFileNameOptions(cloudFolderName: owningUserCreds.cloudFolderName, mimeType: fileIndexResult[0].mimeType)
+
+        let cloudFileName1 = Filename.inCloud(deviceUUID: deviceUUID1, fileUUID: fileUUID1, mimeType: fileIndexResult[0].mimeType, fileVersion: fileIndexResult[0].fileVersion)
+
+        let exp1 = expectation(description: "download")
+        
+        cloudStorage.downloadFile(cloudFileName: cloudFileName1, options:options1) { result in
+        
+            switch result {
+            case .success:
+                break
+            default:
+                XCTFail()
+                return
+            }
+            
+            exp1.fulfill()
+        }
+        
+        waitExpectation(timeout: 10, handler: nil)
+        
+        let exp2 = expectation(description: "download")
+
+        let options2 = CloudStorageFileNameOptions(cloudFolderName: owningUserCreds.cloudFolderName, mimeType: fileIndexResult[1].mimeType)
+
+        let cloudFileName2 = Filename.inCloud(deviceUUID: deviceUUID2, fileUUID: fileUUID2, mimeType: fileIndexResult[1].mimeType, fileVersion: fileIndexResult[1].fileVersion)
+        
+        cloudStorage.downloadFile(cloudFileName: cloudFileName2, options:options2) { result in
+        
+            switch result {
+            case .success:
+                break
+            default:
+                XCTFail()
+                return
+            }
+            
+            exp2.fulfill()
+        }
+        
+        waitExpectation(timeout: 10, handler: nil)
+    }
+    
+    func testUploadV0InExistingFileGroupByOtherUser_existingFileLabel() {
+       let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "example")
+        let sharingGroupUUID = UUID().uuidString
+        let owningAccount: TestAccount = .primaryOwningAccount
+        let fileLabel = UUID().uuidString
+        
+        let uploadResult = uploadSingleV0File { deviceUUID, fileUUID, changeResolverName in
+            return uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: owningAccount, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: fileLabel, fileGroup: fileGroup, sharingGroup: sharingGroupUUID)
+        }
+        
+        let sharingPermission:Permission = .write
+        
+        // Have that newly created user create a sharing invitation.
+        guard let sharingInvitationUUID = createSharingInvitation(testAccount: owningAccount, permission: sharingPermission, sharingGroupUUID:sharingGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let sharingAccount: TestAccount = .secondaryOwningAccount
+        
+        // Redeem that sharing invitation with a new user
+        guard let redeemResponse = redeemSharingInvitation(sharingUser: sharingAccount, sharingInvitationUUID:sharingInvitationUUID) else {
+            XCTFail()
+            return
+        }
+        
+        let uploadResult2 = uploadSingleV0File(expectError: true) { deviceUUID, fileUUID, changeResolverName in
+            return uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: sharingAccount,  deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: fileLabel, errorExpected: true, fileGroup: fileGroup, statusCodeExpected: HTTPStatusCode.conflict, sharingGroup: sharingGroupUUID)
         }
     }
 }

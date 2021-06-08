@@ -74,6 +74,7 @@ public class RequestProcessingParameters: FinishUploadsParameters {
     
     // [1]. These reflect the effectiveOwningUserId of the User, if any. They will be nil if (a) the user was invited, (b) they redeemed their sharing invitation with a non-owning account, and (c) their original inviting user removed their own account.
     let effectiveOwningUserCreds: Account?
+    let effectiveOwningUserId: UserId?
 
     // These are used only when we don't yet have database creds-- e.g., for endpoints that are creating users in the database.
     let profileCreds: Account?
@@ -99,12 +100,13 @@ public class RequestProcessingParameters: FinishUploadsParameters {
     
     let completion: (Response)->()
     
-    init(request: RequestMessage, ep:ServerEndpoint, creds: Account?, effectiveOwningUserCreds: Account?, profileCreds: Account?, userProfile: UserProfile?, accountProperties: AccountProperties?, currentSignedInUser: User?, db:Database, repos:Repositories, routerResponse:RouterResponse, deviceUUID: String?, services: Services, accountDelegate: AccountDelegate, completion: @escaping (Response)->()) {
+    init(request: RequestMessage, ep:ServerEndpoint, creds: Account?, effectiveOwningUserCreds: Account?, effectiveOwningUserId: UserId?, profileCreds: Account?, userProfile: UserProfile?, accountProperties: AccountProperties?, currentSignedInUser: User?, db:Database, repos:Repositories, routerResponse:RouterResponse, deviceUUID: String?, services: Services, accountDelegate: AccountDelegate, completion: @escaping (Response)->()) {
     
         self.request = request
         self.ep = ep
         self.creds = creds
         self.effectiveOwningUserCreds = effectiveOwningUserCreds
+        self.effectiveOwningUserId = effectiveOwningUserId
         self.profileCreds = profileCreds
         self.userProfile = userProfile
         self.accountProperties = accountProperties

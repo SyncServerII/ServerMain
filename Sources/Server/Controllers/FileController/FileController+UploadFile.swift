@@ -28,6 +28,11 @@ import ServerAccount
         * Only one instance of it will occur across possibly multiple server instances, so as to serialize the DeferredUpload processing.
         * It uses the ChangeResolvers to do conflict free application of the changes in the Upload records to the files.
  */
+ 
+struct FileOwner {
+    let account: Account
+    let userId: UserId
+}
 
 extension FileController {
     private struct Cleanup {
@@ -134,6 +139,8 @@ extension FileController {
         
         let todaysDate = Date()
         
+        var fileOwner: FileOwner!
+        
         var newFile = true
         if let existingFileInFileIndex = existingFileInFileIndex {
             guard uploadRequest.fileLabel == nil else {
@@ -196,10 +203,13 @@ extension FileController {
                 switch lookupFileIndex {
                 case .noObjectFound:
                     break
+                    
                 case .found:
+                    // Returns `HTTPStatusCode.conflict` if have an existing fileLabel in the file group.
                     let message = "Already have fileLabel in FileIndex!"
-                    finish(.errorMessage(message), params: params)
+                    finish(.errorResponse(.failure(.messageWithStatus(message, .conflict))), params: params)
                     return
+                    
                 case .error:
                     let message = "Error looking up fileLabel in FileIndex"
                     finish(.errorMessage(message), params: params)
@@ -213,36 +223,71 @@ extension FileController {
                     break
                 case .found:
                     let message = "Already have fileLabel in Upload!"
-                    finish(.errorMessage(message), params: params)
+                    finish(.errorResponse(.failure(.messageWithStatus(message, .conflict))), params: params)
                     return
                 case .error:
                     let message = "Error looking up fileLabel in Upload"
                     finish(.errorMessage(message), params: params)
                     return
                 }
+                
+                // Handle case of (a) existing file group, but (b) different uploading user than the other files in the file group. Want all the files to have the same owning user.
+                let result = getExistingOwningUser(fileGroupUUID: fileGroupUUID, sharingGroupUUID: uploadRequest.sharingGroupUUID, params: params)
+                switch result {
+                case .fileGroupNotFound:
+                    // Must just be a new file group.
+                    break
+                    
+                case .userId(let userId):
+                    guard let account = FileController.getCreds(forUserId: userId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate) else {
+                        let message = "Could not get account for userId"
+                        finish(.errorMessage(message), params: params)
+                        return
+                    }
+                    fileOwner = FileOwner(account: account, userId: userId)
+                    
+                case .error(let error):
+                    let message = "Error: getExistingOwningUser: \(error)"
+                    finish(.errorMessage(message), params: params)
+                    return
+                }
             }
         }
-        
-        var ownerCloudStorage:CloudStorage!
-        var ownerAccount:Account!
-        
+
         if newFile {
             // OWNER
             // establish the v0 owner of the file.
-            ownerAccount = params.effectiveOwningUserCreds
+            if fileOwner == nil {
+                guard let account = params.effectiveOwningUserCreds,
+                    let userId = params.effectiveOwningUserId else {
+                    let message = "Could not obtain creds for v0 file: Assuming this means owning user is no longer on system."
+                    Log.error(message)
+                    finish(.errorResponse(.failure(
+                        .goneWithReason(message: message, .userRemoved))), params: params)
+                    return
+                }
+                
+                fileOwner = FileOwner(account: account, userId: userId)
+            }
         }
         else {
             // OWNER
-            // Need to get creds for the user that uploaded the v0 file.
-            ownerAccount = FileController.getCreds(forUserId: existingFileInFileIndex!.userId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate)
+            // Uploading vN file. Need to get creds for the user that uploaded the v0 file.
+            guard let userId = existingFileInFileIndex?.userId,
+                let account = FileController.getCreds(forUserId: userId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate) else {
+                let message = "Trying to upload vN file but no owning user creds"
+                finish(.errorMessage(message), params: params)
+                return
+            }
+            
+            fileOwner = FileOwner(account: account, userId: existingFileInFileIndex!.userId)
         }
         
-        ownerCloudStorage = ownerAccount?.cloudStorage(mock: params.services.mockStorage)
-        guard ownerCloudStorage != nil && ownerAccount != nil else {
-            let message = "Could not obtain creds for v0 file: Assuming this means owning user is no longer on system."
+        let ownerCloudStorage:CloudStorage! = fileOwner.account.cloudStorage(mock: params.services.mockStorage)
+        guard ownerCloudStorage != nil else {
+            let message = "Could not get cloud storage for account."
             Log.error(message)
-            finish(.errorResponse(.failure(
-                .goneWithReason(message: message, .userRemoved))), params: params)
+            finish(.errorMessage(message), params: params)
             return
         }
         
@@ -322,7 +367,7 @@ extension FileController {
             let cloudFileName = Filename.inCloud(deviceUUID:deviceUUID, fileUUID: uploadRequest.fileUUID, mimeType:mimeType, fileVersion: 0)
             
             // This also does addUploadEntry.
-            uploadV0File(cloudFileName: cloudFileName, mimeType: mimeType, contents: fileContents, creationDate: creationDate, todaysDate: todaysDate, params: params, ownerCloudStorage: ownerCloudStorage, ownerAccount: ownerAccount, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, deviceUUID: deviceUUID, signedInUserId: signedInUserId)
+            uploadV0File(cloudFileName: cloudFileName, mimeType: mimeType, contents: fileContents, creationDate: creationDate, todaysDate: todaysDate, params: params, ownerCloudStorage: ownerCloudStorage, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, deviceUUID: deviceUUID, signedInUserId: signedInUserId, fileOwner: fileOwner)
         }
         else {
             guard uploadRequest.mimeType ==  nil else {
@@ -337,15 +382,15 @@ extension FileController {
                 return
             }
             
-            addUploadEntry(newFile: false, creationDate: nil, todaysDate: todaysDate, uploadedCheckSum: nil, cleanup: nil, params: params, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, existingObjectType: existingFileInFileIndex?.objectType, deviceUUID: deviceUUID, uploadContents: fileContents, signedInUserId: signedInUserId)
+            addUploadEntry(newFile: false, creationDate: nil, todaysDate: todaysDate, uploadedCheckSum: nil, cleanup: nil, params: params, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, existingObjectType: existingFileInFileIndex?.objectType, deviceUUID: deviceUUID, uploadContents: fileContents, signedInUserId: signedInUserId, fileOwner: fileOwner)
         }
     }
     
-    private func uploadV0File(cloudFileName: String, mimeType: String, contents: Data, creationDate: Date, todaysDate: Date, params:RequestProcessingParameters, ownerCloudStorage: CloudStorage, ownerAccount: Account, uploadRequest:UploadFileRequest, existingFileGroupUUID: String?, deviceUUID: String, signedInUserId: UserId) {
+    private func uploadV0File(cloudFileName: String, mimeType: String, contents: Data, creationDate: Date, todaysDate: Date, params:RequestProcessingParameters, ownerCloudStorage: CloudStorage, uploadRequest:UploadFileRequest, existingFileGroupUUID: String?, deviceUUID: String, signedInUserId: UserId, fileOwner: FileOwner) {
         
         Log.info("File being sent to cloud storage: \(cloudFileName)")
 
-        let options = CloudStorageFileNameOptions(cloudFolderName: ownerAccount.cloudFolderName, mimeType: mimeType)
+        let options = CloudStorageFileNameOptions(cloudFolderName: fileOwner.account.cloudFolderName, mimeType: mimeType)
         
         let cleanup = Cleanup(cloudFileName: cloudFileName, options: options, ownerCloudStorage: ownerCloudStorage)
         
@@ -356,7 +401,7 @@ extension FileController {
             case .success(let checkSum):
                 Log.debug("File with checkSum \(checkSum) successfully uploaded!")
                 
-                self.addUploadEntry(newFile: true, creationDate: creationDate, todaysDate: todaysDate, uploadedCheckSum: checkSum, cleanup: cleanup, params: params, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, existingObjectType: nil, deviceUUID: deviceUUID, signedInUserId: signedInUserId)
+                self.addUploadEntry(newFile: true, creationDate: creationDate, todaysDate: todaysDate, uploadedCheckSum: checkSum, cleanup: cleanup, params: params, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, existingObjectType: nil, deviceUUID: deviceUUID, signedInUserId: signedInUserId, fileOwner: fileOwner)
 
             case .accessTokenRevokedOrExpired:
                 // Not going to do any cleanup. The access token has expired/been revoked. Presumably, the file wasn't uploaded.
@@ -373,7 +418,7 @@ extension FileController {
     }
     
     // This also calls finishUploads. `newFile` true means v0 upload; false means vN upload.
-    private func addUploadEntry(newFile: Bool, creationDate: Date?, todaysDate: Date?, uploadedCheckSum: String?, cleanup: Cleanup?, params:RequestProcessingParameters, uploadRequest: UploadFileRequest, existingFileGroupUUID: String?, existingObjectType: String?, deviceUUID: String, uploadContents: Data? = nil, signedInUserId: UserId) {
+    private func addUploadEntry(newFile: Bool, creationDate: Date?, todaysDate: Date?, uploadedCheckSum: String?, cleanup: Cleanup?, params:RequestProcessingParameters, uploadRequest: UploadFileRequest, existingFileGroupUUID: String?, existingObjectType: String?, deviceUUID: String, uploadContents: Data? = nil, signedInUserId: UserId, fileOwner: FileOwner) {
         
         if !newFile && uploadContents == nil {
             let message = "vN file and uploadContents were nil"
@@ -495,7 +540,7 @@ extension FileController {
 
         switch addUploadResult {
         case .success:
-            guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
+            guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, fileOwnerUserId: fileOwner.userId, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
                 finish(.errorCleanup(message: "Could not FinishUploads: FinishUploadFiles", cleanup: cleanup), params: params)
                 return
             }

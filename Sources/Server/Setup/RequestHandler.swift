@@ -481,9 +481,12 @@ class RequestHandler {
         // For secondary authentication, we'll have a current signed in user.
         // Not treating a nil effectiveOwningUserId for the same reason as the `.noObjectFound` case below.
         
+        var eouid: UserId?
+        
         if let user = currentSignedInUser, let sharingGroupUUID = sharingGroupUUID,
             case .found(let effectiveOwningUserId) = Controllers.getEffectiveOwningUserId(user: user, sharingGroupUUID: sharingGroupUUID, sharingGroupUserRepo: repositories.sharingGroupUser) {
-
+            eouid = effectiveOwningUserId
+            
             let effectiveOwningUserKey = UserRepository.LookupKey.userId(effectiveOwningUserId)
             Log.debug("effectiveOwningUserId: \(effectiveOwningUserId)")
             
@@ -512,7 +515,7 @@ class RequestHandler {
             }
         }
         
-        let params = RequestProcessingParameters(request: requestObject, ep:endpoint, creds: dbCreds, effectiveOwningUserCreds: effectiveOwningUserCreds, profileCreds: profileCreds, userProfile: profile, accountProperties: accountProperties, currentSignedInUser: currentSignedInUser, db:db, repos:repositories, routerResponse:response, deviceUUID: deviceUUID, services: services, accountDelegate: accountDelegate) { response in
+        let params = RequestProcessingParameters(request: requestObject, ep:endpoint, creds: dbCreds, effectiveOwningUserCreds: effectiveOwningUserCreds, effectiveOwningUserId: eouid, profileCreds: profileCreds, userProfile: profile, accountProperties: accountProperties, currentSignedInUser: currentSignedInUser, db:db, repos:repositories, routerResponse:response, deviceUUID: deviceUUID, services: services, accountDelegate: accountDelegate) { response in
         
             var message:ResponseMessage!
             var postCommitRunner: RequestHandler.PostRequestRunner?

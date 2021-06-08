@@ -603,9 +603,9 @@ class ServerTestCase : XCTestCase {
     // If dataToUpload is present, `file` is not used.
     // `vNUpload` signals whether or not to wait for Uploader run to complete.
     @discardableResult
-    func uploadServerFile(uploadIndex: Int32, uploadCount: Int32, batchUUID: String, testAccount:TestAccount = .primaryOwningAccount, fileLabel: String?, mimeType: String? = nil, owningAccountType: AccountScheme.AccountName? = nil, deviceUUID:String = Foundation.UUID().uuidString, fileUUID:String? = nil, addUser:AddUser = .yes, cloudFolderName:String? = ServerTestCase.cloudFolderName, appMetaData:String? = nil, errorExpected:Bool = false, undelete: Int32 = 0, file: TestFile? = .test1, dataToUpload: Data? = nil, fileGroup:FileGroup? = nil, changeResolverName: String? = nil, vNUpload: Bool = false, statusCodeExpected: HTTPStatusCode? = nil, informAllButSelf: Bool? = nil) -> UploadFileResult? {
+    func uploadServerFile(uploadIndex: Int32, uploadCount: Int32, batchUUID: String, testAccount:TestAccount = .primaryOwningAccount, fileLabel: String?, mimeType: String? = nil, owningAccountType: AccountScheme.AccountName? = nil, deviceUUID:String = Foundation.UUID().uuidString, fileUUID:String? = nil, addUser:AddUser = .yes, cloudFolderName:String? = ServerTestCase.cloudFolderName, appMetaData:String? = nil, errorExpected:Bool = false, undelete: Int32 = 0, file: TestFile? = .test1, dataToUpload: Data? = nil, fileGroup:FileGroup? = nil, changeResolverName: String? = nil, vNUpload: Bool = false, statusCodeExpected: HTTPStatusCode? = nil, informAllButSelf: Bool? = nil, sharingGroup: String = UUID().uuidString) -> UploadFileResult? {
     
-        var sharingGroupUUID = UUID().uuidString
+        var sharingGroupUUID = sharingGroup
         var uploadingUserId: UserId?
         
         switch addUser {
@@ -711,12 +711,12 @@ class ServerTestCase : XCTestCase {
     }
     
     @discardableResult
-    func uploadTextFile(uploadIndex: Int32 = 1, uploadCount: Int32 = 1, batchUUID: String, testAccount:TestAccount = .primaryOwningAccount, mimeType: MimeType? = TestFile.test1.mimeType, owningAccountType: AccountScheme.AccountName? = nil, deviceUUID:String = Foundation.UUID().uuidString, fileUUID:String? = nil, addUser:AddUser = .yes, fileLabel: String?, cloudFolderName:String? = ServerTestCase.cloudFolderName, appMetaData:String? = nil, errorExpected:Bool = false, undelete: Int32 = 0, stringFile: TestFile? = .test1, dataToUpload: Data? = nil, fileGroup:FileGroup? = nil, changeResolverName: String? = nil, statusCodeExpected: HTTPStatusCode? = nil, informAllButSelf: Bool? = nil) -> UploadFileResult? {
+    func uploadTextFile(uploadIndex: Int32 = 1, uploadCount: Int32 = 1, batchUUID: String, testAccount:TestAccount = .primaryOwningAccount, mimeType: MimeType? = TestFile.test1.mimeType, owningAccountType: AccountScheme.AccountName? = nil, deviceUUID:String = Foundation.UUID().uuidString, fileUUID:String? = nil, addUser:AddUser = .yes, fileLabel: String?, cloudFolderName:String? = ServerTestCase.cloudFolderName, appMetaData:String? = nil, errorExpected:Bool = false, undelete: Int32 = 0, stringFile: TestFile? = .test1, dataToUpload: Data? = nil, fileGroup:FileGroup? = nil, changeResolverName: String? = nil, statusCodeExpected: HTTPStatusCode? = nil, informAllButSelf: Bool? = nil, sharingGroup: String = UUID().uuidString) -> UploadFileResult? {
     
         // This signals whether or not to wait for Uploader run to complete.
         let vNUpload = dataToUpload != nil && uploadIndex == uploadCount && !errorExpected
     
-        return uploadServerFile(uploadIndex: uploadIndex, uploadCount: uploadCount, batchUUID: batchUUID, testAccount:testAccount, fileLabel: fileLabel, mimeType: mimeType?.rawValue, owningAccountType: owningAccountType, deviceUUID:deviceUUID, fileUUID:fileUUID, addUser:addUser, cloudFolderName:cloudFolderName, appMetaData:appMetaData, errorExpected:errorExpected, undelete: undelete, file: stringFile, dataToUpload: dataToUpload, fileGroup: fileGroup, changeResolverName: changeResolverName, vNUpload: vNUpload, statusCodeExpected: statusCodeExpected, informAllButSelf: informAllButSelf)
+        return uploadServerFile(uploadIndex: uploadIndex, uploadCount: uploadCount, batchUUID: batchUUID, testAccount:testAccount, fileLabel: fileLabel, mimeType: mimeType?.rawValue, owningAccountType: owningAccountType, deviceUUID:deviceUUID, fileUUID:fileUUID, addUser:addUser, cloudFolderName:cloudFolderName, appMetaData:appMetaData, errorExpected:errorExpected, undelete: undelete, file: stringFile, dataToUpload: dataToUpload, fileGroup: fileGroup, changeResolverName: changeResolverName, vNUpload: vNUpload, statusCodeExpected: statusCodeExpected, informAllButSelf: informAllButSelf, sharingGroup: sharingGroup)
     }
     
     // Returns true iff the file could be uploaded.

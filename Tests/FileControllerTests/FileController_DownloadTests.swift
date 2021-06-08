@@ -298,6 +298,6 @@ class FileController_DownloadTests: ServerTestCase {
         
         let downloadedCommentFile = try CommentFile(with: downloadedData)
         
-        XCTAssert(initialCommentFile == downloadedCommentFile)
+        XCTAssert(initialCommentFile == downloadedCommentFile, "initialCommentFile: \(initialCommentFile) == downloadedCommentFile: \(downloadedCommentFile)")
     }
 }

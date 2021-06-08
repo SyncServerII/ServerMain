@@ -560,11 +560,9 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     }
          
     // This is for v0 uploads only.
-    func transferUploads(uploadUserId: UserId,
-        owningUserId: @escaping ()->(EffectiveOwningUser), batchUUID: String, sharingGroupUUID: String, uploadingDeviceUUID:String, uploadRepo:UploadRepository, fileIndexClientUIRepo: FileIndexClientUIRepository) -> TransferUploadsResult {
+    func transferUploads(uploadUserId: UserId, fileOwnerUserId: UserId, batchUUID: String, sharingGroupUUID: String, uploadingDeviceUUID:String, uploadRepo:UploadRepository, fileIndexClientUIRepo: FileIndexClientUIRepository) -> TransferUploadsResult {
         
         var error = false
-        var failureResult:RequestHandler.FailureResult?
         var numberTransferred:Int32 = 0
         
         // [1] Fetch the uploaded files for the user, device, and sharing group.
@@ -611,14 +609,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                 
                 // OWNER
                 // version 0 of a file establishes the owning user. The owning user doesn't change if new versions are uploaded.
-                switch owningUserId() {
-                case .success(let userId):
-                    fileIndex.userId = userId
-                case .failure(let failure):
-                    failureResult = failure
-                    error = true
-                    return
-                }
+                fileIndex.userId = fileOwnerUserId
 
                 // Similarly, the sharing group id and fileLabel do not change over time.
                 fileIndex.sharingGroupUUID = upload.sharingGroupUUID
@@ -716,7 +707,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         }
         
         if error {
-            return .failure(failureResult)
+            return .failure(nil)
         }
         
         if uploadSelect.forEachRowStatus == nil {

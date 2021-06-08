@@ -22,9 +22,10 @@ class FinishUploadFiles {
     private let sharingGroupUUID: String
     private let deviceUUID: String
     private var params:FinishUploadsParameters
-    private let currentSignedInUser: UserId
+    private let currentSignedInUserId: UserId
     private let uploader: UploaderProtocol
     private let batchUUID: String
+    private let fileOwnerUserId: UserId
     
     /** This is for both file uploads, and upload deletions.
      * Specific upload use cases:
@@ -44,21 +45,22 @@ class FinishUploadFiles {
      *  b) More than one file in batch, but they have different fileGroupUUID's.
      */
     
-    init?(batchUUID: String, sharingGroupUUID: String, deviceUUID: String, uploader: UploaderProtocol, params:FinishUploadsParameters) {
+    init?(batchUUID: String, fileOwnerUserId: UserId, sharingGroupUUID: String, deviceUUID: String, uploader: UploaderProtocol, params:FinishUploadsParameters) {
         self.sharingGroupUUID = sharingGroupUUID
         self.deviceUUID = deviceUUID
         self.params = params
         self.uploader = uploader
         self.batchUUID = batchUUID
+        self.fileOwnerUserId = fileOwnerUserId
         
         // Get uploads for the current signed in user -- uploads are identified by userId, not effectiveOwningUserId, because we want to organize uploads by specific user.
-        guard let currentSignedInUser = params.currentSignedInUser?.userId else {
+        guard let currentSignedInUserId = params.currentSignedInUser?.userId else {
             let message = "Could not get userId"
             Log.error(message)
             return nil
         }
         
-        self.currentSignedInUser = currentSignedInUser
+        self.currentSignedInUserId = currentSignedInUserId
     }
     
     enum UploadsResponse {
@@ -78,7 +80,7 @@ class FinishUploadFiles {
         let currentUploads: [Upload]
         
         // deferredUploadIdNull true because once these rows have a non-null  deferredUploadId they are pending deferred transfer and we should not deal with them here.
-        let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: currentSignedInUser, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true)
+        let fileUploadsResult = params.repos.upload.uploadedFiles(forUserId: currentSignedInUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID, deviceUUID: deviceUUID, deferredUploadIdNull: true)
         
         switch fileUploadsResult {
         case .uploads(let uploads):
@@ -150,7 +152,7 @@ class FinishUploadFiles {
         
         if vNUploads {
             // Mark the uploads to indicate they are ready for deferred transfer.
-            guard let deferredUploadId = markUploadsAsDeferred(signedInUserId: currentSignedInUser, fileGroupUUID: fileGroupUUID, uploads: currentUploads) else {
+            guard let deferredUploadId = markUploadsAsDeferred(signedInUserId: currentSignedInUserId, fileGroupUUID: fileGroupUUID, uploads: currentUploads) else {
                 let message = "Failed markUploadsAsDeferred"
                 Log.error(message)
                 return .error(message: message)
@@ -167,32 +169,9 @@ class FinishUploadFiles {
     
     // For v0 uploads only.
     private func transfer(batchUUID: String) -> UploadsResponse {
-       // Deferring computation of `effectiveOwningUserId` because: (a) don't always need it in the `transferUploads` below, and (b) it will cause unecessary failures in some cases where a sharing owner user has been removed. effectiveOwningUserId is only needed when v0 of a file is being uploaded.
-        var effectiveOwningUserId: UserId?
-        func getEffectiveOwningUserId() -> FileIndexRepository.EffectiveOwningUser {
-            if let effectiveOwningUserId = effectiveOwningUserId {
-                return .success(effectiveOwningUserId)
-            }
-            
-            let geouiResult = Controllers.getEffectiveOwningUserId(user: params.currentSignedInUser!, sharingGroupUUID: sharingGroupUUID, sharingGroupUserRepo: params.repos.sharingGroupUser)
-            switch geouiResult {
-            case .found(let userId):
-                effectiveOwningUserId = userId
-                return .success(userId)
-            case .noObjectFound, .gone:
-                let message = "No effectiveOwningUserId: \(geouiResult)"
-                Log.debug(message)
-                return .failure(.goneWithReason(message: message, .userRemoved))
-            case .error:
-                let message = "Failed to getEffectiveOwningUserId"
-                Log.error(message)
-                return .failure(.message(message))
-            }
-        }
-        
         // Transfer info to the FileIndex repository from Upload.
         let numberTransferredResult =
-            params.repos.fileIndex.transferUploads(uploadUserId: params.currentSignedInUser!.userId, owningUserId: getEffectiveOwningUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID,
+            params.repos.fileIndex.transferUploads(uploadUserId: params.currentSignedInUser!.userId, fileOwnerUserId: fileOwnerUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID,
                 uploadingDeviceUUID: deviceUUID,
                 uploadRepo: params.repos.upload, fileIndexClientUIRepo: params.repos.fileIndexClientUI)
         

@@ -1,5 +1,17 @@
 SyncServer
 
+Version 1.11.0
+	* Add support for upload requests creating files in other owning users accounts.
+		- This to support migrations of file groups-- 
+			i.e., adding files to existing file groups
+		- If another user uploads a file to an existing file group, it creates the file
+			in the other users account. i.e., the user owning the v0 file.
+		- Returns HTTPStatusCode.conflict now if an attempt is made to create the same
+			fileLabel in a file group.
+		- Removed `getEffectiveOwningUserId` function in FinishUploadFiles.swift
+			 because I could pass this in as a parameter.
+		- See https://github.com/SyncServerII/Neebla/issues/15
+			
 [DEPLOYMENT UPDATE]
 	* I just fixed an issue by going to
 		"Rolling with Additional Batch deployment policy"

@@ -1,6 +1,6 @@
 SyncServer
 
-Version 1.11.0
+Version 1.11.0 (6/7/21)
 	* Add support for upload requests creating files in other owning users accounts.
 		- This to support migrations of file groups-- 
 			i.e., adding files to existing file groups

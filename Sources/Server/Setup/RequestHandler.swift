@@ -67,7 +67,6 @@ class RequestHandler {
         let code: HTTPStatusCode
         var result: [String: Any]
         let errorKey = "error"
-        let goneReasonKey = "goneReason"
 
         switch failureResult {
         case .message(let message):
@@ -89,8 +88,25 @@ class RequestHandler {
             code = .gone
             result = [
                 errorKey: message,
-                goneReasonKey: goneReason.rawValue
+                GoneReason.goneReasonKey: goneReason.rawValue
             ]
+            
+        case .conflictWithReason(let message, let reason):
+            Log.warning("Conflict: \(reason)")
+            
+            result = [
+                errorKey: message
+            ]
+            
+            // See https://github.com/SyncServerII/ServerMain/issues/15
+            // This is a little goofy. Should convert over the entire messaging to Codables. I'm converting a dictionary and it throws an error if given data in the dictionary. So, I'm giving a string.
+            let encoder = JSONEncoder()
+            if let data = try? encoder.encode(reason),
+                let string = String(data: data, encoding: .utf8) {
+                result[ConflictReason.conflictReasonKey] = string
+            }
+
+            code = .conflict
         }
 
         self.response.statusCode = code
@@ -169,6 +185,7 @@ class RequestHandler {
         case message(String)
         case messageWithStatus(String, HTTPStatusCode)
         case goneWithReason(message: String, GoneReason)
+        case conflictWithReason(message: String, ConflictReason)
     }
     
     enum ServerResult {

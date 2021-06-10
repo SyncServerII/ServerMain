@@ -204,10 +204,17 @@ extension FileController {
                 case .noObjectFound:
                     break
                     
-                case .found:
+                case .found(let model):
+                    guard let fileIndex = model as? FileIndex else {
+                        let message = "Could not convert from model to FileIndex"
+                        finish(.errorMessage(message), params: params)
+                        return
+                    }
+                    
                     // Returns `HTTPStatusCode.conflict` if have an existing fileLabel in the file group.
                     let message = "Already have fileLabel in FileIndex!"
-                    finish(.errorResponse(.failure(.messageWithStatus(message, .conflict))), params: params)
+                    let reason = ConflictReason(replacingUUID: fileIndex.fileUUID)
+                    finish(.errorResponse(.failure(.conflictWithReason(message: message, reason))), params: params)
                     return
                     
                 case .error:
@@ -221,10 +228,19 @@ extension FileController {
                 switch uploadIndex {
                 case .noObjectFound:
                     break
-                case .found:
+                    
+                case .found(let model):
+                    guard let upload = model as? Upload else {
+                        let message = "Could not convert from model to Upload"
+                        finish(.errorMessage(message), params: params)
+                        return
+                    }
+
                     let message = "Already have fileLabel in Upload!"
-                    finish(.errorResponse(.failure(.messageWithStatus(message, .conflict))), params: params)
+                    let reason = ConflictReason(replacingUUID: upload.fileUUID)
+                    finish(.errorResponse(.failure(.conflictWithReason(message: message, reason))), params: params)
                     return
+                    
                 case .error:
                     let message = "Error looking up fileLabel in Upload"
                     finish(.errorMessage(message), params: params)

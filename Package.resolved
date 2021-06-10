@@ -321,8 +321,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerShared.git",
         "state": {
           "branch": null,
-          "revision": "1c4fa160eb7b9a44ac84fa4d0a2c457de8c1736d",
-          "version": "0.10.6"
+          "revision": "0cb37a8683b287c82762dd5375eb3e880f8c5398",
+          "version": "0.10.7"
         }
       },
       {

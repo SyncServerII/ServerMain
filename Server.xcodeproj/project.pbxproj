@@ -44,8 +44,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		2D86C0E87551C4081F703592 /* ServerTests.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = A6B6A589669B456155884F64 /* ServerTests.json */; };
-		B6908B0F1AAD1DED79B905A8 /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 240E6DBAF5F8F71D2CA2E9E0 /* Server.json */; };
+		057AC68D900C3DF996082D8B /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = D26543CE7DBF0324AB04EC82 /* Server.json */; };
+		919BB2836E1981363EA53101 /* ServerTests.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B09DAA1F5459E1BCB566F19 /* ServerTests.json */; };
 		OBJ_1028 /* AppleClaims.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_366 /* AppleClaims.swift */; };
 		OBJ_1029 /* ApplePublicKey+HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_367 /* ApplePublicKey+HTTP.swift */; };
 		OBJ_1030 /* ApplePublicKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_368 /* ApplePublicKey.swift */; };
@@ -1541,22 +1541,21 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		49749FD8DC86EBD5BF92B581 /* CopyFiles */ = {
+		0D0BEE666001151A882DCBB1 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				B6908B0F1AAD1DED79B905A8 /* Server.json in CopyFiles */,
-				2D86C0E87551C4081F703592 /* ServerTests.json in CopyFiles */,
+				057AC68D900C3DF996082D8B /* Server.json in CopyFiles */,
+				919BB2836E1981363EA53101 /* ServerTests.json in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		240E6DBAF5F8F71D2CA2E9E0 /* Server.json */ = {isa = PBXFileReference; includeInIndex = 1; path = Server.json; sourceTree = SOURCE_ROOT; };
-		A6B6A589669B456155884F64 /* ServerTests.json */ = {isa = PBXFileReference; includeInIndex = 1; path = ServerTests.json; sourceTree = SOURCE_ROOT; };
+		7B09DAA1F5459E1BCB566F19 /* ServerTests.json */ = {isa = PBXFileReference; includeInIndex = 1; path = ServerTests.json; sourceTree = SOURCE_ROOT; };
 		AppleJWTDecoder::AppleJWTDecoder::Product /* AppleJWTDecoder.framework */ = {isa = PBXFileReference; path = AppleJWTDecoder.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		ChangeResolvers::ChangeResolvers::Product /* ChangeResolvers.framework */ = {isa = PBXFileReference; path = ChangeResolvers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CredentialsAppleSignIn::CredentialsAppleSignIn::Product /* CredentialsAppleSignIn.framework */ = {isa = PBXFileReference; path = CredentialsAppleSignIn.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1566,6 +1565,7 @@
 		Cryptor::Cryptor::Product /* Cryptor.framework */ = {isa = PBXFileReference; path = Cryptor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CryptorECC::CryptorECC::Product /* CryptorECC.framework */ = {isa = PBXFileReference; path = CryptorECC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CryptorRSA::CryptorRSA::Product /* CryptorRSA.framework */ = {isa = PBXFileReference; path = CryptorRSA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D26543CE7DBF0324AB04EC82 /* Server.json */ = {isa = PBXFileReference; includeInIndex = 1; path = Server.json; sourceTree = SOURCE_ROOT; };
 		HeliumLogger::HeliumLogger::Product /* HeliumLogger.framework */ = {isa = PBXFileReference; path = HeliumLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		Kitura-Credentials::Credentials::Product /* Credentials.framework */ = {isa = PBXFileReference; path = Credentials.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		Kitura-CredentialsFacebook::CredentialsFacebook::Product /* CredentialsFacebook.framework */ = {isa = PBXFileReference; path = CredentialsFacebook.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3619,7 +3619,7 @@
 				OBJ_459 /* HeliumLogger 1.9.200 */,
 				OBJ_465 /* Kitura-Credentials 2.5.200 */,
 				OBJ_477 /* Kitura-Session 3.3.201 */,
-				OBJ_491 /* ServerShared 0.10.6 */,
+				OBJ_491 /* ServerShared 0.10.7 */,
 				OBJ_541 /* SwiftyAWSSNS 0.3.1 */,
 				OBJ_545 /* SwiftAWSSignatureV4 1.2.1 */,
 				OBJ_552 /* Cryptor 1.0.200 */,
@@ -4493,13 +4493,13 @@
 			path = Database;
 			sourceTree = "<group>";
 		};
-		OBJ_491 /* ServerShared 0.10.6 */ = {
+		OBJ_491 /* ServerShared 0.10.7 */ = {
 			isa = PBXGroup;
 			children = (
 				OBJ_492 /* ServerShared */,
 				OBJ_540 /* Package.swift */,
 			);
-			name = "ServerShared 0.10.6";
+			name = "ServerShared 0.10.7";
 			path = "";
 			sourceTree = SOURCE_ROOT;
 		};
@@ -6790,7 +6790,7 @@
 			buildPhases = (
 				OBJ_2747 /* Sources */,
 				OBJ_2815 /* Frameworks */,
-				49749FD8DC86EBD5BF92B581 /* CopyFiles */,
+				0D0BEE666001151A882DCBB1 /* CopyFiles */,
 			);
 			buildRules = (
 			);

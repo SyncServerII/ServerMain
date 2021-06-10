@@ -213,7 +213,7 @@ extension FileController {
                     
                     // Returns `HTTPStatusCode.conflict` if have an existing fileLabel in the file group.
                     let message = "Already have fileLabel in FileIndex!"
-                    let reason = ConflictReason(replacingUUID: fileIndex.fileUUID)
+                    let reason = ConflictReason(replacingUUID: fileIndex.fileUUID, serverFileVersion: fileIndex.fileVersion)
                     finish(.errorResponse(.failure(.conflictWithReason(message: message, reason))), params: params)
                     return
                     
@@ -237,7 +237,7 @@ extension FileController {
                     }
 
                     let message = "Already have fileLabel in Upload!"
-                    let reason = ConflictReason(replacingUUID: upload.fileUUID)
+                    let reason = ConflictReason(replacingUUID: upload.fileUUID, serverFileVersion: upload.fileVersion)
                     finish(.errorResponse(.failure(.conflictWithReason(message: message, reason))), params: params)
                     return
                     

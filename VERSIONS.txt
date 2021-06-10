@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.11.2 (6/9/21)
+	* Added file version to ConflictReason.
+	
 Version 1.11.1 (6/9/21)
 	* Improved error response on conflict.
 

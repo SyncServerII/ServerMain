@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.11.4 (6/13/21)
+    * Update to latest ChangeResolvers package.
+    
 Version 1.11.3 (6/13/21)
     * Registered MediaItemAttributes change resolver.
     

@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.11.3 (6/13/21)
+    * Registered MediaItemAttributes change resolver.
+    
 Version 1.11.2 (6/9/21)
 	* Added file version to ConflictReason.
 	

@@ -11,5 +11,6 @@ import ChangeResolvers
 extension ChangeResolverManager {
     func setupResolvers() throws {
         try addResolverType(CommentFile.self)
+        try addResolverType(MediaItemAttributes.self)
     }
 }

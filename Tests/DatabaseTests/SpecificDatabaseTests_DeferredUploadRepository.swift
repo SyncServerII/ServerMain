@@ -120,7 +120,7 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
             return
         }
         
-        let key1 = DeferredUploadRepository.LookupKey.deferredAndBatch(deferredUploadId: nil, batchUUID: batchUUID)
+        let key1 = DeferredUploadRepository.LookupKey.batchUUID(batchUUID: batchUUID)
         let result1 = repo.lookup(key: key1, modelInit: DeferredUpload.init)
         switch result1 {
         case .found(let model):
@@ -140,7 +140,7 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
             return
         }
         
-        let key2 = DeferredUploadRepository.LookupKey.deferredAndBatch(deferredUploadId: deferredUploadId, batchUUID: batchUUID)
+        let key2 = DeferredUploadRepository.LookupKey.deferredUploadId(deferredUploadId)
         let result2 = repo.lookup(key: key2, modelInit: DeferredUpload.init)
         switch result2 {
         case .found(let model):

@@ -231,4 +231,52 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
     func testGetUploadsResultWithDeferredUploadIdWorks() throws {
         try runGetUploadsResult(withDeferredUploadId: true)
     }
+    
+    func testGetUploadsResultWithBatchUUIDWorks() throws {
+        let file:TestFile = .commentFile
+        let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
+
+        guard case .string(let initialFileString) = file.contents,
+            let initialData = initialFileString.data(using: .utf8) else {
+            XCTFail()
+            return
+        }
+        
+        var initialCommentFile = try CommentFile(with: initialData)
+        try initialCommentFile.add(newRecord: comment.updateContents)
+        
+        let deviceUUID = Foundation.UUID().uuidString
+        let fileUUID = Foundation.UUID().uuidString
+        let changeResolverName = CommentFile.changeResolverName
+        let batchUUID = UUID().uuidString
+        
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+            let sharingGroupUUID = result.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let userId = result.uploadingUserId else {
+            XCTFail()
+            return
+        }
+        
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
+            let deferredUploadId1 = deferredUpload1.deferredUploadId else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
+            XCTFail()
+            return
+        }
+        
+        let request = GetUploadsResultsRequest()
+        request.batchUUID = batchUUID
+        
+        let getUploadsResult = getUploadsResults(request: request, deviceUUID: deviceUUID)
+        XCTAssert(getUploadsResult != nil)
+        XCTAssert(getUploadsResult?.status == .pendingChange)
+    }
 }

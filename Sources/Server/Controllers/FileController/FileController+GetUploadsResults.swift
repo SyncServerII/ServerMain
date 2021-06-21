@@ -18,19 +18,21 @@ extension FileController {
             return
         }
         
-        let deferredUploadId = getUploadsRequest.deferredUploadId
+        let key:DeferredUploadRepository.LookupKey
         
-        // Only allowing this to be optional for now due to possibly having an older client that can't
-        let batchUUID = getUploadsRequest.batchUUID
-        
-        
-        guard let deferredUploadId = getUploadsRequest.deferredUploadId else {
-            let message = "Could not get deferredUploadId."
+        if let deferredUploadId = getUploadsRequest.deferredUploadId {
+            key = DeferredUploadRepository.LookupKey.deferredUploadId(deferredUploadId)
+        }
+        else if let batchUUID = getUploadsRequest.batchUUID {
+            key = DeferredUploadRepository.LookupKey.batchUUID(batchUUID: batchUUID)
+        }
+        else {
+            let message = "Did not have deferredUploadId or batchUUID."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
         }
-        
+
         guard let signedInUserId = params.currentSignedInUser?.userId else {
             let message = "Could not get signedInUserId."
             Log.error(message)
@@ -38,7 +40,6 @@ extension FileController {
             return
         }
 
-        let key = DeferredUploadRepository.LookupKey.deferredUploadId(deferredUploadId)
         let deferredUploadResult = params.repos.deferredUpload.lookup(key: key, modelInit: DeferredUpload.init)
         
         switch deferredUploadResult {

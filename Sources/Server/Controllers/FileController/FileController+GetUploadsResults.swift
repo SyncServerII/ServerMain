@@ -18,6 +18,12 @@ extension FileController {
             return
         }
         
+        let deferredUploadId = getUploadsRequest.deferredUploadId
+        
+        // Only allowing this to be optional for now due to possibly having an older client that can't
+        let batchUUID = getUploadsRequest.batchUUID
+        
+        
         guard let deferredUploadId = getUploadsRequest.deferredUploadId else {
             let message = "Could not get deferredUploadId."
             Log.error(message)

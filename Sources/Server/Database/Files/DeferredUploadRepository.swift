@@ -116,6 +116,9 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
         return "DeferredUpload"
     }
     
+    static let uniqueBatchUUIDConstraintName = "UniqueBatchUUID"
+    static let uniqueBatchUUIDConstraint = "UNIQUE (batchUUID)"
+    
     func upcreate() -> Database.TableUpcreateResult {
         let createColumns =
             "(deferredUploadId BIGINT NOT NULL AUTO_INCREMENT, " +
@@ -133,6 +136,9 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
             "batchUUID VARCHAR(\(Database.uuidLength)), " +
 
             "status VARCHAR(\(DeferredUploadStatus.maxCharacterLength)) NOT NULL, " +
+            
+            // Because batchUUID's must be unique across all rows
+            "CONSTRAINT \(Self.uniqueBatchUUIDConstraintName) \(Self.uniqueBatchUUIDConstraint), " +
 
             "UNIQUE (deferredUploadId))"
         
@@ -147,6 +153,13 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
                 }
             }
             
+            if db.namedConstraintExists(Self.uniqueBatchUUIDConstraintName, in: tableName) == false {
+                if !db.createConstraint(constraint:
+                    "\(Self.uniqueBatchUUIDConstraintName) \(Self.uniqueBatchUUIDConstraint)", tableName: tableName) {
+                    return .failure(.constraintCreation)
+                }
+            }
+            
         default:
             break
         }
@@ -155,15 +168,15 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     enum LookupKey : CustomStringConvertible {
-        case deferredAndBatch(deferredUploadId:Int64?, batchUUID: String)
+        case batchUUID(batchUUID: String)
         case deferredUploadId(Int64)
         case fileGroupUUIDWithStatus(fileGroupUUID: String, status: DeferredUploadStatus)
         case userId(UserId)
         
         var description : String {
             switch self {
-            case .deferredAndBatch(let deferredUploadId, let batchUUID):
-                return "deferredAndBatch(\(String(describing: deferredUploadId)); batchUUID: \(batchUUID))"
+            case .batchUUID(let batchUUID):
+                return "batchUUID(\(batchUUID))"
             case .deferredUploadId(let deferredUploadId):
                 return "deferredUploadId(\(deferredUploadId))"
             case .fileGroupUUIDWithStatus(let fileGroupUUID, let status):
@@ -176,13 +189,8 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
     
     func lookupConstraint(key:LookupKey) -> String {
         switch key {
-        case .deferredAndBatch(let deferredUploadId, let batchUUID):
-            if let deferredUploadId = deferredUploadId {
-                return "deferredUploadId = \(deferredUploadId) and batchUUID = '\(batchUUID)'"
-            }
-            else {
-                return "batchUUID = '\(batchUUID)'"
-            }
+        case .batchUUID(let batchUUID):
+            return "batchUUID = '\(batchUUID)'"
             
         case .deferredUploadId(let deferredUploadId):
             return "deferredUploadId = '\(deferredUploadId)'"

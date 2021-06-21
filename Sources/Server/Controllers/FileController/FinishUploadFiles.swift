@@ -152,7 +152,7 @@ class FinishUploadFiles {
         
         if vNUploads {
             // Mark the uploads to indicate they are ready for deferred transfer.
-            guard let deferredUploadId = markUploadsAsDeferred(signedInUserId: currentSignedInUserId, fileGroupUUID: fileGroupUUID, uploads: currentUploads) else {
+            guard let deferredUploadId = markUploadsAsDeferred(signedInUserId: currentSignedInUserId, fileGroupUUID: fileGroupUUID, batchUUID: batchUUID, uploads: currentUploads) else {
                 let message = "Failed markUploadsAsDeferred"
                 Log.error(message)
                 return .error(message: message)
@@ -215,12 +215,13 @@ class FinishUploadFiles {
     }
     
     // This is called only for vN files. These files will already be in the FileIndex.
-    private func markUploadsAsDeferred(signedInUserId: UserId, fileGroupUUID: String?, uploads: [Upload]) -> Int64? {
+    private func markUploadsAsDeferred(signedInUserId: UserId, fileGroupUUID: String?, batchUUID:String, uploads: [Upload]) -> Int64? {
         let deferredUpload = DeferredUpload()
         deferredUpload.status = .pendingChange
         deferredUpload.sharingGroupUUID = sharingGroupUUID
         deferredUpload.fileGroupUUID = fileGroupUUID
         deferredUpload.userId = signedInUserId
+        deferredUpload.batchUUID = batchUUID
         
         let result = params.repos.deferredUpload.retry {[unowned self] in
             return self.params.repos.deferredUpload.add(deferredUpload)

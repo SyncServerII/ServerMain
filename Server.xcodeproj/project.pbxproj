@@ -44,8 +44,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		057AC68D900C3DF996082D8B /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = D26543CE7DBF0324AB04EC82 /* Server.json */; };
-		919BB2836E1981363EA53101 /* ServerTests.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B09DAA1F5459E1BCB566F19 /* ServerTests.json */; };
+		94821ABAAC95E85F84C20C29 /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6FA1BDAC1BC275152D545C5 /* Server.json */; };
+		A4A8C2E9FC01140259B1AE1D /* ServerTests.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = F92660F14D720968C4A37EF5 /* ServerTests.json */; };
 		OBJ_1028 /* AppleClaims.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_366 /* AppleClaims.swift */; };
 		OBJ_1029 /* ApplePublicKey+HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_367 /* ApplePublicKey+HTTP.swift */; };
 		OBJ_1030 /* ApplePublicKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_368 /* ApplePublicKey.swift */; };
@@ -1541,22 +1541,22 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		0D0BEE666001151A882DCBB1 /* CopyFiles */ = {
+		F5BD3124C64C74AD2C356307 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				057AC68D900C3DF996082D8B /* Server.json in CopyFiles */,
-				919BB2836E1981363EA53101 /* ServerTests.json in CopyFiles */,
+				94821ABAAC95E85F84C20C29 /* Server.json in CopyFiles */,
+				A4A8C2E9FC01140259B1AE1D /* ServerTests.json in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		7B09DAA1F5459E1BCB566F19 /* ServerTests.json */ = {isa = PBXFileReference; includeInIndex = 1; path = ServerTests.json; sourceTree = SOURCE_ROOT; };
 		AppleJWTDecoder::AppleJWTDecoder::Product /* AppleJWTDecoder.framework */ = {isa = PBXFileReference; path = AppleJWTDecoder.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6FA1BDAC1BC275152D545C5 /* Server.json */ = {isa = PBXFileReference; includeInIndex = 1; path = Server.json; sourceTree = SOURCE_ROOT; };
 		ChangeResolvers::ChangeResolvers::Product /* ChangeResolvers.framework */ = {isa = PBXFileReference; path = ChangeResolvers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CredentialsAppleSignIn::CredentialsAppleSignIn::Product /* CredentialsAppleSignIn.framework */ = {isa = PBXFileReference; path = CredentialsAppleSignIn.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CredentialsDropbox::CredentialsDropbox::Product /* CredentialsDropbox.framework */ = {isa = PBXFileReference; path = CredentialsDropbox.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1565,7 +1565,7 @@
 		Cryptor::Cryptor::Product /* Cryptor.framework */ = {isa = PBXFileReference; path = Cryptor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CryptorECC::CryptorECC::Product /* CryptorECC.framework */ = {isa = PBXFileReference; path = CryptorECC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CryptorRSA::CryptorRSA::Product /* CryptorRSA.framework */ = {isa = PBXFileReference; path = CryptorRSA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D26543CE7DBF0324AB04EC82 /* Server.json */ = {isa = PBXFileReference; includeInIndex = 1; path = Server.json; sourceTree = SOURCE_ROOT; };
+		F92660F14D720968C4A37EF5 /* ServerTests.json */ = {isa = PBXFileReference; includeInIndex = 1; path = ServerTests.json; sourceTree = SOURCE_ROOT; };
 		HeliumLogger::HeliumLogger::Product /* HeliumLogger.framework */ = {isa = PBXFileReference; path = HeliumLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		Kitura-Credentials::Credentials::Product /* Credentials.framework */ = {isa = PBXFileReference; path = Credentials.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		Kitura-CredentialsFacebook::CredentialsFacebook::Product /* CredentialsFacebook.framework */ = {isa = PBXFileReference; path = CredentialsFacebook.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3614,7 +3614,7 @@
 				OBJ_429 /* ServerMicrosoftAccount 0.0.2 */,
 				OBJ_435 /* ServerGoogleAccount 0.0.2 */,
 				OBJ_440 /* ServerDropboxAccount 0.0.5 */,
-				OBJ_446 /* ChangeResolvers 0.2.0 */,
+				OBJ_446 /* ChangeResolvers 0.2.2 */,
 				OBJ_453 /* ServerAccount 0.0.8 */,
 				OBJ_459 /* HeliumLogger 1.9.200 */,
 				OBJ_465 /* Kitura-Credentials 2.5.200 */,
@@ -4344,13 +4344,13 @@
 			path = .build/checkouts/ServerDropboxAccount/Sources/ServerDropboxAccount;
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_446 /* ChangeResolvers 0.2.0 */ = {
+		OBJ_446 /* ChangeResolvers 0.2.2 */ = {
 			isa = PBXGroup;
 			children = (
 				OBJ_447 /* ChangeResolvers */,
 				OBJ_452 /* Package.swift */,
 			);
-			name = "ChangeResolvers 0.2.0";
+			name = "ChangeResolvers 0.2.2";
 			path = "";
 			sourceTree = SOURCE_ROOT;
 		};
@@ -6790,7 +6790,7 @@
 			buildPhases = (
 				OBJ_2747 /* Sources */,
 				OBJ_2815 /* Frameworks */,
-				0D0BEE666001151A882DCBB1 /* CopyFiles */,
+				F5BD3124C64C74AD2C356307 /* CopyFiles */,
 			);
 			buildRules = (
 			);

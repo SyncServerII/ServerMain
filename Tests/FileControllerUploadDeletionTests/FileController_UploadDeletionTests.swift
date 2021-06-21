@@ -153,7 +153,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         if fileGroup == nil {
             // Fake an earlier pending deletion, so that in this case we can actually run two non-file group deletions when the request is received.
 
-            guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, status: .pendingDeletion),
+            guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
                 let deferredUploadId = deferredUpload.deferredUploadId else {
                 XCTFail()
                 return
@@ -266,7 +266,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         }
         
         // Fake pending deletion for a non-file group.
-        guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, status: .pendingDeletion),
+        guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -453,7 +453,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, status: .pendingDeletion),
+        guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return

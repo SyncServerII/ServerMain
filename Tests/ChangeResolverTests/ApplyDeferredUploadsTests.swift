@@ -80,7 +80,7 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -149,13 +149,13 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -242,13 +242,13 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -338,13 +338,13 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
             return
         }
 
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup1?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup1?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup2?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup2?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return

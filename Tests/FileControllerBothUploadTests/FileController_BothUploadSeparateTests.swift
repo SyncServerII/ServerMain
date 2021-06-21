@@ -70,7 +70,7 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
 
-        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID2, status: .pendingChange),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -154,7 +154,9 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID3, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile) else {
+        let batchUUID = Foundation.UUID().uuidString
+        
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID3, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile) else {
             XCTFail()
             return
         }
@@ -162,13 +164,11 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
         }
-
-        let batchUUID = UUID().uuidString
 
         guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
             XCTFail()

@@ -55,7 +55,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             return
         }
                 
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -131,7 +131,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             actualUserId += 1
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: actualUserId, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: actualUserId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -193,7 +193,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return

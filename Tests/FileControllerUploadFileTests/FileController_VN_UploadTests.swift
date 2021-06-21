@@ -473,7 +473,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -536,7 +536,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         
         // This upload needs to be with a different user. (We don't allow 2 rows in the Upload table with the same fileUUID and userId).
         let otherUserId = fileIndex.userId + 1
-        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, sharingGroupUUID: sharingGroupUUID1, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -854,7 +854,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         
         // This upload needs to be with a different user. (We don't allow 2 rows in the Upload table with the same fileUUID and userId).
         let otherUserId = fileIndex.userId + 1
-        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return

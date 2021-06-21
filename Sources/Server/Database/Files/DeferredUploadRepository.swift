@@ -8,6 +8,7 @@
 import Foundation
 import LoggerAPI
 import ServerShared
+import HeliumLogger
 
 /* This table represents two kinds of things:
 1) In pending states, it represents an upload that needs to be processed asynchronously by the Uploader.
@@ -34,6 +35,11 @@ class DeferredUpload : NSObject, Model {
     
     static let sharingGroupUUIDKey = "sharingGroupUUID"
     var sharingGroupUUID:String!
+
+    // A secondary key-- if we don't have the deferredUploadId.
+    // Only required for file uploads; set to nil for upload deletions.
+    static let batchUUIDKey = "batchUUID"
+    var batchUUID:String?
     
     /* For a pendingDeletion:
         a) if this is non-nil, then there is no associated Upload record. It indicates we're deleting all files in a file group;
@@ -63,6 +69,9 @@ class DeferredUpload : NSObject, Model {
 
             case DeferredUpload.statusKey:
                 status = newValue as? DeferredUploadStatus
+
+            case DeferredUpload.batchUUIDKey:
+                batchUUID = newValue as? String
                 
             default:
                 assert(false)
@@ -119,6 +128,9 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
             "completionDate DATETIME," +
 
             "fileGroupUUID VARCHAR(\(Database.uuidLength)), " +
+            
+            // Since this is only required for file uploads, not for upload deletions, I don't have "NOT NULL" here.
+            "batchUUID VARCHAR(\(Database.uuidLength)), " +
 
             "status VARCHAR(\(DeferredUploadStatus.maxCharacterLength)) NOT NULL, " +
 
@@ -128,7 +140,12 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
         
         switch result {
         case .success(.alreadyPresent):
-            break
+            // Migration, 6/20/21
+            if db.columnExists(DeferredUpload.batchUUIDKey, in: tableName) == false {
+                if !db.addColumn("\(DeferredUpload.batchUUIDKey) VARCHAR(\(Database.uuidLength))", to: tableName) {
+                    return .failure(.columnCreation)
+                }
+            }
             
         default:
             break
@@ -138,19 +155,19 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     enum LookupKey : CustomStringConvertible {
+        case deferredAndBatch(deferredUploadId:Int64?, batchUUID: String)
         case deferredUploadId(Int64)
         case fileGroupUUIDWithStatus(fileGroupUUID: String, status: DeferredUploadStatus)
-        case resultsUUID(String)
         case userId(UserId)
         
         var description : String {
             switch self {
+            case .deferredAndBatch(let deferredUploadId, let batchUUID):
+                return "deferredAndBatch(\(String(describing: deferredUploadId)); batchUUID: \(batchUUID))"
             case .deferredUploadId(let deferredUploadId):
                 return "deferredUploadId(\(deferredUploadId))"
             case .fileGroupUUIDWithStatus(let fileGroupUUID, let status):
                 return "fileGroupUUID(\(fileGroupUUID); status: \(status.rawValue))"
-            case .resultsUUID(let resultsUUID):
-                return "resultsUUID(\(resultsUUID))"
             case .userId(let userId):
                 return "userId(\(userId))"
             }
@@ -159,12 +176,18 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
     
     func lookupConstraint(key:LookupKey) -> String {
         switch key {
+        case .deferredAndBatch(let deferredUploadId, let batchUUID):
+            if let deferredUploadId = deferredUploadId {
+                return "deferredUploadId = \(deferredUploadId) and batchUUID = '\(batchUUID)'"
+            }
+            else {
+                return "batchUUID = '\(batchUUID)'"
+            }
+            
         case .deferredUploadId(let deferredUploadId):
             return "deferredUploadId = '\(deferredUploadId)'"
         case .fileGroupUUIDWithStatus(let fileGroupUUID, let status):
             return "fileGroupUUID = '\(fileGroupUUID)' and status = '\(status.rawValue)'"
-        case .resultsUUID(let resultsUUID):
-            return "resultsUUID = '\(resultsUUID)'"
         case .userId(let userId):
             return "userId = \(userId)"
         }
@@ -190,7 +213,7 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
         }
     }
     
-    // deferredUploadId in the model is ignored and the automatically generated deferredUploadId is returned if the add is successful. Adds a new UUID for resultsUUID.
+    // deferredUploadId in the model is ignored and the automatically generated deferredUploadId is returned if the add is successful.
     func add(_ deferredUpload:DeferredUpload) -> AddResult {
         let insert = Database.PreparedStatement(repo: self, type: .insert)
         
@@ -201,6 +224,7 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
         insert.add(fieldName: DeferredUpload.sharingGroupUUIDKey, value: .stringOptional(deferredUpload.sharingGroupUUID))
         insert.add(fieldName: DeferredUpload.fileGroupUUIDKey, value: .stringOptional(deferredUpload.fileGroupUUID))
         insert.add(fieldName: DeferredUpload.statusKey, value: .stringOptional(deferredUpload.status?.rawValue))
+        insert.add(fieldName: DeferredUpload.batchUUIDKey, value: .stringOptional(deferredUpload.batchUUID))
         insert.add(fieldName: DeferredUpload.userIdKey, value: .int64(userId))
 
         do {
@@ -226,16 +250,21 @@ class DeferredUploadRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     func update(_ deferredUpload: DeferredUpload) -> Bool {
-        guard let deferredUploadId = deferredUpload.deferredUploadId else {
-            Log.error("update: Nil deferredUploadId")
+        guard deferredUpload.deferredUploadId != nil || deferredUpload.batchUUID != nil else {
+            Log.error("update: Nil deferredUploadId and nil batchUUID")
             return false
         }
-        
+
         let update = Database.PreparedStatement(repo: self, type: .update)
         
         update.add(fieldName: DeferredUpload.statusKey, value: .stringOptional(deferredUpload.status?.rawValue))
-        
-        update.where(fieldName: DeferredUpload.deferredUploadIdKey, value: .int64(deferredUploadId))
+
+        if let deferredUploadId = deferredUpload.deferredUploadId {
+            update.where(fieldName: DeferredUpload.deferredUploadIdKey, value: .int64(deferredUploadId))
+        }
+        else if let batchUUID = deferredUpload.batchUUID {
+            update.where(fieldName: DeferredUpload.batchUUIDKey, value: .string(batchUUID))
+        }
         
         do {
             try update.run()

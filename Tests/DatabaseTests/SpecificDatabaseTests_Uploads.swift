@@ -501,7 +501,7 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
     
     // MARK: select(forDeferredUploadIds
     
-    func doAddDeferredUpload(userId: UserId, status: DeferredUploadStatus, sharingGroupUUID: String, fileGroupUUID: String? = nil) -> DeferredUpload? {
+    func doAddDeferredUpload(userId: UserId, status: DeferredUploadStatus, sharingGroupUUID: String, batchUUID: String? = nil, fileGroupUUID: String? = nil) -> DeferredUpload? {
         let repo = DeferredUploadRepository(db)
 
         let deferredUpload = DeferredUpload()
@@ -510,6 +510,7 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         deferredUpload.fileGroupUUID = fileGroupUUID
         deferredUpload.sharingGroupUUID = sharingGroupUUID
         deferredUpload.userId = userId
+        deferredUpload.batchUUID = batchUUID
         
         let result = repo.add(deferredUpload)
         

@@ -22,13 +22,14 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
         repo = DeferredUploadRepository(db)
     }
     
-    func doAddDeferredUpload(userId: UserId, status: DeferredUploadStatus, sharingGroupUUID: String, fileGroupUUID: String? = nil) -> DeferredUpload? {
+    func doAddDeferredUpload(userId: UserId, status: DeferredUploadStatus, sharingGroupUUID: String, batchUUID: String?, fileGroupUUID: String? = nil) -> DeferredUpload? {
         let deferredUpload = DeferredUpload()
 
         deferredUpload.status = status
         deferredUpload.fileGroupUUID = fileGroupUUID
         deferredUpload.sharingGroupUUID = sharingGroupUUID
         deferredUpload.userId = userId
+        deferredUpload.batchUUID = batchUUID
         
         let result = repo.add(deferredUpload)
         
@@ -47,7 +48,7 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
     }
     
     func testAddDeferredUploadWorks() {
-        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: Foundation.UUID().uuidString) else {
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: Foundation.UUID().uuidString, batchUUID: Foundation.UUID().uuidString) else {
             XCTFail()
             return
         }
@@ -57,7 +58,7 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
         let fileGroupUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
         
-        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroupUUID) else {
+        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, fileGroupUUID: fileGroupUUID) else {
             XCTFail()
             return
         }
@@ -92,10 +93,77 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
             XCTFail()
         }
     }
+    
+    func testUpdateDeferredUploadWithBatchUUIDWorks() {
+        let fileGroupUUID = Foundation.UUID().uuidString
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        let batchUUID = Foundation.UUID().uuidString
+        
+        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, fileGroupUUID: fileGroupUUID) else {
+            XCTFail()
+            return
+        }
+
+        guard let deferredUploadId = deferredUpload.deferredUploadId else {
+            XCTFail()
+            return
+        }
+        
+        let newStatus = DeferredUploadStatus.completed
+        deferredUpload.status = newStatus
+        
+        // Should work with just the batchUUID and not the deferredUploadId to key the update
+        deferredUpload.deferredUploadId = nil
+        
+        guard repo.update(deferredUpload) else {
+            XCTFail()
+            return
+        }
+        
+        let key1 = DeferredUploadRepository.LookupKey.deferredAndBatch(deferredUploadId: nil, batchUUID: batchUUID)
+        let result1 = repo.lookup(key: key1, modelInit: DeferredUpload.init)
+        switch result1 {
+        case .found(let model):
+            guard let model = model as? DeferredUpload else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(model.deferredUploadId == deferredUploadId)
+            XCTAssert(model.status == newStatus)
+            XCTAssert(model.fileGroupUUID == fileGroupUUID)
+            XCTAssert(model.sharingGroupUUID == sharingGroupUUID)
+            XCTAssert(model.batchUUID == batchUUID)
+
+        default:
+            XCTFail()
+            return
+        }
+        
+        let key2 = DeferredUploadRepository.LookupKey.deferredAndBatch(deferredUploadId: deferredUploadId, batchUUID: batchUUID)
+        let result2 = repo.lookup(key: key2, modelInit: DeferredUpload.init)
+        switch result2 {
+        case .found(let model):
+            guard let model = model as? DeferredUpload else {
+                XCTFail()
+                return
+            }
+            
+            XCTAssert(model.deferredUploadId == deferredUploadId)
+            XCTAssert(model.status == newStatus)
+            XCTAssert(model.fileGroupUUID == fileGroupUUID)
+            XCTAssert(model.sharingGroupUUID == sharingGroupUUID)
+            XCTAssert(model.batchUUID == batchUUID)
+
+        default:
+            XCTFail()
+            return
+        }
+    }
 
     func testUpdateDeferredUploadWithNilStatusFails() {
         let sharingGroupUUID = Foundation.UUID().uuidString
-        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID) else {
+        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
@@ -108,9 +176,26 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
         }
     }
     
-    func testUpdateDeferredUploadWithNilIdFails() {
+    // This doesn't fail because it has a batchUUID with which to do a query.
+    func testUpdateDeferredUploadWithNilIdAndBatchDoesNotFail() {
         let sharingGroupUUID = Foundation.UUID().uuidString
-        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID) else {
+        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: Foundation.UUID().uuidString) else {
+            XCTFail()
+            return
+        }
+        
+        deferredUpload.deferredUploadId = nil
+        
+        guard repo.update(deferredUpload) else {
+            XCTFail()
+            return
+        }
+    }
+    
+    // This *does* fail because it has neither deferredUploadId nor a batchUUID with which to do the query.
+    func testUpdateDeferredUploadWithNilIdAndNilBatchFails() {
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        guard let deferredUpload = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
@@ -134,7 +219,7 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
     
     func testSelectWithOneRowWorks() {
         let sharingGroupUUID = Foundation.UUID().uuidString
-        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
@@ -149,12 +234,12 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
     
     func testSelectWithTwoRowsWorks() {
         let sharingGroupUUID = Foundation.UUID().uuidString
-        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
@@ -169,12 +254,12 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
     
     func testSelectWithTwoRowsButOnlyOnePendingWorks() {
         let sharingGroupUUID = Foundation.UUID().uuidString
-        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddDeferredUpload(userId: 1, status: .completed, sharingGroupUUID: sharingGroupUUID) else {
+        guard let _ = doAddDeferredUpload(userId: 1, status: .completed, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
             XCTFail()
             return
         }
@@ -185,5 +270,47 @@ class SpecificDatabaseTests_DeferredUploadRepository: ServerTestCase {
         }
         
         XCTAssert(result.count == 1)
+    }
+    
+    func testDeferredUploadWithNilBatchUUID() {
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = repo.select(rowsWithStatus: [.pendingChange]) else {
+            XCTFail()
+            return
+        }
+        
+        guard result.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(result[0].batchUUID == nil)
+    }
+    
+    func testDeferredUploadWithNonNilBatchUUID() {
+        let sharingGroupUUID = Foundation.UUID().uuidString
+        let batchUUID = Foundation.UUID().uuidString
+
+        guard let _ = doAddDeferredUpload(userId: 1, status: .pendingChange, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let result = repo.select(rowsWithStatus: [.pendingChange]) else {
+            XCTFail()
+            return
+        }
+        
+        guard result.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(result[0].batchUUID == batchUUID)
     }
 }

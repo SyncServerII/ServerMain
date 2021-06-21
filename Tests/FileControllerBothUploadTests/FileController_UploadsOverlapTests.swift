@@ -57,7 +57,9 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         }
         
-        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup:fileGroup, changeResolverName: changeResolverName),
+        let batchUUID = UUID().uuidString
+        
+        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -70,14 +72,12 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
 
-        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
         }
-        
-        let batchUUID = UUID().uuidString
-            
+                    
         guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, fileGroup: fileGroup, sharingGroupUUID: sharingGroupUUID,  userId: userId, deferredUploadId:deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
             XCTFail()
             return
@@ -254,7 +254,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -267,7 +267,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -371,7 +371,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         let comment2 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment3 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -384,7 +384,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -396,7 +396,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         }
         
         // Upload change for other file-- expecting this to *not* be pruned
-        guard let deferredUpload3 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, status: .pendingChange),
+        guard let deferredUpload3 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId3 = deferredUpload3.deferredUploadId else {
             XCTFail()
             return

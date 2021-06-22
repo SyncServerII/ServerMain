@@ -1,6 +1,6 @@
 SyncServer
 
-Version 1.11.5
+Version 1.11.5 (6/21/21)
     * Added batchUUID to DeferredUploads as an alternative key
     	See https://github.com/SyncServerII/Neebla/issues/20
     * Also removed resultsUUID from DeferredUploads

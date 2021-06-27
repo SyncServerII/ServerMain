@@ -24,6 +24,9 @@ class User : NSObject, Model, UserData {
     static let usernameKey = "username"
     var username: String!
     
+    static let emailKey = "email"
+    var email: String?
+    
     static let accountTypeKey = "accountType"
     var accountType: AccountScheme.AccountName!
 
@@ -53,6 +56,9 @@ class User : NSObject, Model, UserData {
 
             case User.usernameKey:
                 username = newValue as! String?
+
+            case User.emailKey:
+                email = newValue as? String
                 
             case User.accountTypeKey:
                 accountType = newValue as! AccountScheme.AccountName?
@@ -124,7 +130,10 @@ class UserRepository : Repository, RepositoryLookup {
             
             // Just a displayable/UI textual name for the user. Not a login name or email address.
             "username VARCHAR(\(usernameMaxLength)) NOT NULL, " +
-        
+
+            // Not `NOT NULL` because (a) we are adding this after having added users, and need to grandfather them in, and (b) because I'm not sure we'll be able to get email addreses for all new users.
+            "email VARCHAR(\(AddUserRequest.emailAddessMaxLength)), " +
+            
             "accountType VARCHAR(\(accountTypeMaxLength)) NOT NULL, " +
             
             // An id specific to the particular type of credentials, e.g., Google.
@@ -153,6 +162,13 @@ class UserRepository : Repository, RepositoryLookup {
             // 2/25/18; Evolution 2: Add cloudFolderName column
             if db.columnExists(User.cloudFolderNameKey, in: tableName) == false {
                 if !db.addColumn("\(User.cloudFolderNameKey) VARCHAR(\(AddUserRequest.maxCloudFolderNameLength))", to: tableName) {
+                    return .failure(.columnCreation)
+                }
+            }
+            
+            // 6/26/21, evolution
+            if db.columnExists(User.emailKey, in: tableName) == false {
+                if !db.addColumn("\(User.emailKey) VARCHAR(\(AddUserRequest.emailAddessMaxLength))", to: tableName) {
                     return .failure(.columnCreation)
                 }
             }
@@ -206,7 +222,9 @@ class UserRepository : Repository, RepositoryLookup {
 
         let (cloudFolderNameFieldValue, cloudFolderNameFieldName) = getInsertFieldValueAndName(fieldValue: user.cloudFolderName, fieldName: User.cloudFolderNameKey)
         
-        let query = "INSERT INTO \(tableName) (username, accountType, credsId, creds \(cloudFolderNameFieldName)) VALUES('\(user.username!)', '\(user.accountType!)', '\(user.credsId!)', '\(user.creds!)' \(cloudFolderNameFieldValue));"
+        let (emailFieldValue, emailFieldName) = getInsertFieldValueAndName(fieldValue: user.email, fieldName: User.emailKey)
+        
+        let query = "INSERT INTO \(tableName) (username, accountType, credsId, creds \(cloudFolderNameFieldName) \(emailFieldName)) VALUES('\(user.username!)', '\(user.accountType!)', '\(user.credsId!)', '\(user.creds!)' \(cloudFolderNameFieldValue) \(emailFieldValue));"
         
         if db.query(statement: query) {
             return db.lastInsertId()
@@ -258,9 +276,24 @@ class UserRepository : Repository, RepositoryLookup {
         return true
     }
     
-    func updateUser(name: String, forUser userId: UserId) -> Bool {
+    // Returns true iff success.
+    // Must pass at least one of name or email as non-nil.
+    func updateUser(name: String? = nil, email: String? = nil, forUser userId: UserId) -> Bool {
+        guard name != nil || email != nil else {
+            Log.error("Must pass one of email or name as non-nil")
+            return false
+        }
+        
         let update = Database.PreparedStatement(repo: self, type: .update)
-        update.add(fieldName: User.usernameKey, value: .string(name))
+        
+        if let name = name {
+            update.add(fieldName: User.usernameKey, value: .string(name))
+        }
+
+        if let email = email {
+            update.add(fieldName: User.emailKey, value: .string(email))
+        }
+        
         update.where(fieldName: User.userIdKey, value: .int64(userId))
         
         do {

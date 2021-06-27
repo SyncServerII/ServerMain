@@ -101,6 +101,7 @@ class UserController : ControllerProtocol {
         user.accountType = accountScheme.accountName
         user.credsId = userProfile.id
         user.creds = profileCreds.toJSON()
+        user.email = addUserRequest.emailAddress
         
         if profileCreds.owningAccountsNeedCloudFolderName {
             guard addUserRequest.cloudFolderName != nil else {
@@ -185,6 +186,21 @@ class UserController : ControllerProtocol {
     
     func checkCreds(params:RequestProcessingParameters) {
         assert(params.ep.authenticationLevel == .secondary)
+
+        var userEmailAddress: String?
+
+        // 6/27/21; Making this a weak test-- since up until now clients didn't send this request. And providing an email address is the only reason for this overt request and email addresses are optional.
+        if let request = params.request {
+            // If there is a request, it *must* be a CheckCredsRequest.
+            guard let checkCredsRequest = request as? CheckCredsRequest else {
+                let message = "Did not receive CheckCredsRequest"
+                Log.error(message)
+                params.completion(.failure(.message(message)))
+                return
+            }
+            
+            userEmailAddress = checkCredsRequest.emailAddress
+        }
         
         guard let currentUser = params.currentSignedInUser else {
             let message = "No current user!"
@@ -198,6 +214,16 @@ class UserController : ControllerProtocol {
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
+        }
+        
+        // This is for migration purposes. We can remove this once we have emails for all existing users stored in the database. See https://github.com/SyncServerII/ServerMain/issues/16
+        if let emailAddress = userEmailAddress {
+            guard populateEmailAddressIfNeeded(userId: userId, emailAddress: emailAddress, params: params) else {
+                let message = "Failed in populateEmailAddressIfNeeded"
+                Log.error(message)
+                params.completion(.failure(.message(message)))
+                return
+            }
         }
         
         var fullUserName: String? = currentUser.username
@@ -383,5 +409,40 @@ class UserController : ControllerProtocol {
         }
         
         completion(.success(successResponseMessage))
+    }
+}
+
+extension UserController {
+    // Returns false iff a failure occurred. False is *not* returned just if the db didn't need updating. i.e., if there was already an email address for the user-- the db is only updated if there is no existing email address for the user. See https://github.com/SyncServerII/ServerMain/issues/16
+    func populateEmailAddressIfNeeded(userId: UserId, emailAddress: String, params:RequestProcessingParameters) -> Bool {
+        let key = UserRepository.LookupKey.userId(userId)
+        let result = params.repos.user.lookup(key: key, modelInit: User.init)
+        
+        switch result {
+        case .noObjectFound:
+            let message = "Could not get User object!"
+            Log.error(message)
+            return false
+            
+        case .error(let errorString):
+            let message = "Could not get User model: \(errorString)"
+            Log.error(message)
+            return false
+        
+        case .found(let model):
+            guard let userModel = model as? User else {
+                let message = "Could not get User model."
+                Log.error(message)
+                return false
+            }
+            
+            if userModel.email != nil {
+                // Already have email address for user. Not a failure.
+                return true
+            }
+        }
+        
+        // User has no email address in db. Add one.
+        return params.repos.user.updateUser(email: emailAddress, forUser: userId)
     }
 }

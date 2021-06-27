@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ChangeResolvers.git",
         "state": {
           "branch": null,
-          "revision": "b8f222a0d11b3d859e73f9eeee9b313c5a9938b7",
-          "version": "0.2.2"
+          "revision": "716d8b283083e7e5b90505c52ac66d8eb58c7b3d",
+          "version": "0.2.3"
         }
       },
       {
@@ -321,8 +321,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerShared.git",
         "state": {
           "branch": null,
-          "revision": "e2669df3641318ae906a9060849ec35c0f993794",
-          "version": "0.10.8"
+          "revision": "b387f6ff86ebaf3fad4feb532d49be5f36a2f0c8",
+          "version": "0.11.3"
         }
       },
       {

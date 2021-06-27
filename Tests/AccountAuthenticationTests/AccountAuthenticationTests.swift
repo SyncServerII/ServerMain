@@ -82,8 +82,9 @@ class AccountAuthenticationTests: ServerTestCase {
         guard let testAccount = testAccount else { return }
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
+        let emailAddress = "foo@bar.com"
 
-        addNewUser(testAccount: testAccount, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID, cloudFolderName: cloudFolderName)
+        addNewUser(testAccount: testAccount, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID, cloudFolderName: cloudFolderName, emailAddress: emailAddress)
         
         self.performServerTest(testAccount: testAccount) { expectation, dbCreds in
             let headers = self.setupHeaders(testUser: self.testAccount, accessToken: dbCreds.accessToken, deviceUUID:deviceUUID)
@@ -92,6 +93,19 @@ class AccountAuthenticationTests: ServerTestCase {
                 XCTAssert(response!.statusCode == .OK, "Did not work on check creds request")
                 expectation.fulfill()
             }
+        }
+        
+        let result = UserRepository(db).lookup(key: .userId(1), modelInit:User.init)
+        switch result {
+        case .error(let error):
+            XCTFail("\(error)")
+            
+        case .found(let object):
+            let user = object as! User
+            XCTAssert(user.email == emailAddress)
+            
+        case .noObjectFound:
+            XCTFail("No User Found")
         }
     }
     

@@ -296,7 +296,7 @@ class ServerTestCase : XCTestCase {
     }
     
     @discardableResult
-    func addNewUser(testAccount:TestAccount = .primaryOwningAccount, sharingGroupUUID: String, deviceUUID:String, cloudFolderName: String? = ServerTestCase.cloudFolderName, sharingGroupName:String? = nil) -> AddUserResponse? {
+    func addNewUser(testAccount:TestAccount = .primaryOwningAccount, sharingGroupUUID: String, deviceUUID:String, cloudFolderName: String? = ServerTestCase.cloudFolderName, emailAddress: String? = nil, sharingGroupName:String? = nil) -> AddUserResponse? {
         var result:AddUserResponse?
 
         if let fileName = Configuration.server.owningUserAccountCreation.initialFileName {
@@ -304,22 +304,23 @@ class ServerTestCase : XCTestCase {
             let options = CloudStorageFileNameOptions(cloudFolderName: cloudFolderName, mimeType: "text/plain")
             Log.debug("About to delete file.")
             deleteFile(testAccount: testAccount, cloudFileName: fileName, options: options, fileNotFoundOK: true)
-            result = addNewUser2(testAccount:testAccount, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID, cloudFolderName: cloudFolderName, sharingGroupName: sharingGroupName)
+            result = addNewUser2(testAccount:testAccount, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID, cloudFolderName: cloudFolderName, emailAddress: emailAddress, sharingGroupName: sharingGroupName)
         }
         else {
-            result = addNewUser2(testAccount:testAccount, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID, cloudFolderName: cloudFolderName, sharingGroupName: sharingGroupName)
+            result = addNewUser2(testAccount:testAccount, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID, cloudFolderName: cloudFolderName, emailAddress: emailAddress, sharingGroupName: sharingGroupName)
         }
         
         return result
     }
     
-    private func addNewUser2(testAccount:TestAccount, sharingGroupUUID: String, deviceUUID:String, cloudFolderName: String?, sharingGroupName:String?) -> AddUserResponse? {
+    private func addNewUser2(testAccount:TestAccount, sharingGroupUUID: String, deviceUUID:String, cloudFolderName: String?, emailAddress: String? = nil, sharingGroupName:String?) -> AddUserResponse? {
         var result:AddUserResponse?
         
         let addUserRequest = AddUserRequest()
         addUserRequest.cloudFolderName = cloudFolderName
         addUserRequest.sharingGroupName = sharingGroupName
         addUserRequest.sharingGroupUUID = sharingGroupUUID
+        addUserRequest.emailAddress = emailAddress
         
         self.performServerTest(testAccount:testAccount) { [weak self] expectation, creds in
             guard let self = self else { return }

@@ -292,6 +292,7 @@ class SharingAccountsController : ControllerProtocol {
         user.accountType = accountScheme.accountName
         user.credsId = userProfile.id
         user.creds = profileCreds.toJSON()
+        user.email = request.emailAddress
         
         var createInitialOwningUserFile = false
         var owningUserId: UserId?

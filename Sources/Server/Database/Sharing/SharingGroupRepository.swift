@@ -21,7 +21,9 @@ class SharingGroup : NSObject, Model {
     static let deletedKey = "deleted"
     var deleted:Bool!
 
-    // Similarly, not part of this table. For doing joins.
+    // MARK: The following fields are not part of this table.
+    
+    // Not part of this table. For doing joins.
     public static let permissionKey = "permission"
     public var permission:Permission?
     

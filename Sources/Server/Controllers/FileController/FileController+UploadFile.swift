@@ -556,7 +556,7 @@ extension FileController {
 
         switch addUploadResult {
         case .success:
-            guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, fileOwnerUserId: fileOwner.userId, sharingGroupUUID: uploadRequest.sharingGroupUUID, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
+            guard let finishUploads = FinishUploadFiles(batchUUID: batchUUID, fileOwnerUserId: fileOwner.userId, sharingGroupUUID: uploadRequest.sharingGroupUUID, objectType: uploadRequest.objectType, deviceUUID: deviceUUID, uploader: uploader, params: params) else {
                 finish(.errorCleanup(message: "Could not FinishUploads: FinishUploadFiles", cleanup: cleanup), params: params)
                 return
             }

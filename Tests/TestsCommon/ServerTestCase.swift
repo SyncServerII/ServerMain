@@ -1137,13 +1137,13 @@ class ServerTestCase : XCTestCase {
             }
             
             self.performRequest(route: ServerEndpoints.redeemSharingInvitation, headers: headers, urlParameters: urlParameters, body:nil) { response, dict in
-                Log.info("Status code: \(response!.statusCode)")
+                Log.info("Status code: \(String(describing: response?.statusCode))")
                 
                 if errorExpected {
-                    XCTAssert(response!.statusCode != .OK, "Worked on request!")
+                    XCTAssert(response?.statusCode != .OK, "Worked on request!")
                 }
                 else {
-                    XCTAssert(response!.statusCode == .OK, "Did not work on request")
+                    XCTAssert(response?.statusCode == .OK, "Did not work on request")
                     
                     if let dict = dict,
                         let redeemSharingInvitationResponse = try? RedeemSharingInvitationResponse.decode(dict) {

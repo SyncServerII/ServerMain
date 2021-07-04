@@ -298,6 +298,25 @@ class FileController_DownloadTests: ServerTestCase {
         
         let downloadedCommentFile = try CommentFile(with: downloadedData)
         
-        XCTAssert(initialCommentFile == downloadedCommentFile, "initialCommentFile: \(initialCommentFile) == downloadedCommentFile: \(downloadedCommentFile)")
+        // TODO: The `==` operator on `CommentFile`'s appears broken. It failed with:
+        /*
+        /root/Apps/ServerMain/Tests/FileControllerTests/FileController_DownloadTests.swift:301: error: FileController_DownloadTests.testDownloadVNOfFileWorks : XCTAssertTrue failed - initialCommentFile: CommentFile(elementsKey: "elements", mainDictionary: ["elements": [["id": "9A52DB59-BC73-4FB7-A310-E645E9486039", "messageString": "Example"]]], ids: Set(["9A52DB59-BC73-4FB7-A310-E645E9486039"])) == downloadedCommentFile: CommentFile(elementsKey: "elements", mainDictionary: ["elements": [["messageString": "Example", "id": "9A52DB59-BC73-4FB7-A310-E645E9486039"]]], ids: Set(["9A52DB59-BC73-4FB7-A310-E645E9486039"]))
+         */
+        //XCTAssert(initialCommentFile == downloadedCommentFile, "initialCommentFile: \(initialCommentFile) == downloadedCommentFile: \(downloadedCommentFile)")
+        
+        XCTAssert(initialCommentFile ~~ downloadedCommentFile, "initialCommentFile: \(initialCommentFile) == downloadedCommentFile: \(downloadedCommentFile)")
+        
+        guard initialCommentFile.count == 1, downloadedCommentFile.count == 1 else {
+            XCTFail()
+            return
+        }
+        
+        guard let elements1 = initialCommentFile[0] as? [String: String],
+            let elements2 = downloadedCommentFile[0] as? [String: String] else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(elements1 == elements2)
     }
 }

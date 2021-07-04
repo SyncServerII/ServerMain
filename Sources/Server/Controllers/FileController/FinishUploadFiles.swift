@@ -26,6 +26,7 @@ class FinishUploadFiles {
     private let uploader: UploaderProtocol
     private let batchUUID: String
     private let fileOwnerUserId: UserId
+    private let objectType: String?
     
     /** This is for both file uploads, and upload deletions.
      * Specific upload use cases:
@@ -45,13 +46,15 @@ class FinishUploadFiles {
      *  b) More than one file in batch, but they have different fileGroupUUID's.
      */
     
-    init?(batchUUID: String, fileOwnerUserId: UserId, sharingGroupUUID: String, deviceUUID: String, uploader: UploaderProtocol, params:FinishUploadsParameters) {
+    // objectType must be non-nil for v0 upload.
+    init?(batchUUID: String, fileOwnerUserId: UserId, sharingGroupUUID: String, objectType: String?, deviceUUID: String, uploader: UploaderProtocol, params:FinishUploadsParameters) {
         self.sharingGroupUUID = sharingGroupUUID
         self.deviceUUID = deviceUUID
         self.params = params
         self.uploader = uploader
         self.batchUUID = batchUUID
         self.fileOwnerUserId = fileOwnerUserId
+        self.objectType = objectType
         
         // Get uploads for the current signed in user -- uploads are identified by userId, not effectiveOwningUserId, because we want to organize uploads by specific user.
         guard let currentSignedInUserId = params.currentSignedInUser?.userId else {
@@ -163,12 +166,35 @@ class FinishUploadFiles {
             return .deferred(deferredUploadId: deferredUploadId, runner: { try self.uploader.run() })
         }
         
-        // Else: v0 uploads-- files have already been uploaded. Just need to do the transfer to the FileIndex.
-        return transfer(batchUUID: batchUUID)
+        // Else: v0 uploads-- files have already been uploaded. Just need to do the transfer to the FileIndex. And create FileGroup record if needed.
+        //
+        return transfer(batchUUID: batchUUID, fileGroupUUID: fileGroupUUID)
     }
     
     // For v0 uploads only.
-    private func transfer(batchUUID: String) -> UploadsResponse {
+    // Transfer to the FileIndex. And create FileGroup record if needed.
+    private func transfer(batchUUID: String, fileGroupUUID: String?) -> UploadsResponse {
+        var needToAddFileGroupRecord = false
+        
+        if let fileGroupUUID = fileGroupUUID {
+            // See if this is the first upload of the file group.
+            let key = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
+            let result = params.repos.fileGroups.lookup(key: key, modelInit: FileGroups.init)
+            switch result {
+            case .error(let error):
+                let message = "Failed on lookup for fileGroupUUID: \(fileGroupUUID); \(error)"
+                Log.error(message)
+                return .error(message: message)
+                
+            case .noObjectFound:
+                needToAddFileGroupRecord = true
+                
+            case .found:
+                // FileGroup record present. Only need one. Don't add.
+                break
+            }
+        }
+        
         // Transfer info to the FileIndex repository from Upload.
         let numberTransferredResult =
             params.repos.fileIndex.transferUploads(uploadUserId: params.currentSignedInUser!.userId, fileOwnerUserId: fileOwnerUserId, batchUUID: batchUUID, sharingGroupUUID: sharingGroupUUID,
@@ -209,6 +235,31 @@ class FinishUploadFiles {
             let message = "Failed removing rows from Upload: \(removalResult)"
             Log.error(message)
             return .error(message: message)
+        }
+        
+        if needToAddFileGroupRecord {
+            guard let objectType = objectType else {
+                let message = "No objectType, but needToAddFileGroupRecord"
+                Log.error(message)
+                return .error(message: message)
+            }
+            
+            let fileGroup = FileGroups()
+            fileGroup.fileGroupUUID = fileGroupUUID
+            fileGroup.objectType = objectType
+            fileGroup.sharingGroupUUID = sharingGroupUUID
+
+            fileGroup.userId = currentSignedInUserId
+
+            if currentSignedInUserId != fileOwnerUserId {
+                fileGroup.owningUserId = fileOwnerUserId
+            }
+            
+            guard let _ = params.repos.fileGroups.add(model: fileGroup) else {
+                let message = "Failed adding file group record."
+                Log.error(message)
+                return .error(message: message)
+            }
         }
         
         return .success

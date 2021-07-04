@@ -1,5 +1,14 @@
 SyncServer
 
+Version 1.12.0
+	* Added new table: FileGroup
+		See https://github.com/SyncServerII/Neebla/issues/23
+		- Some fields in the FileIndex are now deprecated and need to be used from
+		the FileGroup table.
+		- Integrated usage of that table into v0 file uploads.
+		- Added tests to support the addition of this new table and its usage.
+	* Adding support for new endpoint: moveFileGroups
+	
 Version 1.11.6 (6/27/21)
 	* Add user email address to three requests:
 		Check creds, redeem sharing invitation, and add user.

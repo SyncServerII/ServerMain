@@ -183,6 +183,7 @@ class UserRepository : Repository, RepositoryLookup {
     enum LookupKey : CustomStringConvertible {
         case userId(UserId)
         case accountTypeInfo(accountType:AccountScheme.AccountName, credsId:String)
+        case credsId(String)
         
         var description : String {
             switch self {
@@ -190,6 +191,8 @@ class UserRepository : Repository, RepositoryLookup {
                 return "userId(\(userId))"
             case .accountTypeInfo(accountType: let accountType, credsId: let credsId):
                 return "accountTypeInfo(\(accountType), \(credsId))"
+            case .credsId(let credsId):
+                return "credsId(\(credsId))"
             }
         }
     }
@@ -201,6 +204,9 @@ class UserRepository : Repository, RepositoryLookup {
             
         case .accountTypeInfo(accountType: let accountType, credsId: let credsId):
             return "accountType = '\(accountType)' AND credsId = '\(credsId)'"
+            
+        case .credsId(let credsId):
+            return "credsId = '\(credsId)'"
         }
     }
 

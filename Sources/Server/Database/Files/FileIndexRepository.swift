@@ -226,6 +226,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             "fileUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
         
             // reference into User table
+            // DEPRECATED field: https://github.com/SyncServerII/Neebla/issues/23#issuecomment-873497762
             "userId BIGINT NOT NULL, " +
             
             // identifies a specific mobile device (assigned by app)
@@ -233,12 +234,15 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             "deviceUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
             
             // Optionally identifies a group of files (assigned by app). If NULL, the file is not in a file group (it's in a group of size 1).
+            // DEPRECATED field: https://github.com/SyncServerII/Neebla/issues/23#issuecomment-873497762
             "fileGroupUUID VARCHAR(\(Database.uuidLength)), " +
             
             // 9/12/20; Not making this NOT NULL to grandfather in earlier versions of Neebla and because not all files have file groups.
             // A files in a specific file group must have the same `objectType` (should really have a db constraint for this).
+            // DEPRECATED field: https://github.com/SyncServerII/Neebla/issues/23#issuecomment-873497762
             "objectType VARCHAR(\(FileGroup.maxLengthObjectTypeName)), " +
-            
+
+            // DEPRECATED field: https://github.com/SyncServerII/Neebla/issues/23#issuecomment-873497762
             "sharingGroupUUID VARCHAR(\(Database.uuidLength)) NOT NULL, " +
 
             // Not saying "NOT NULL" here only because in the first deployed version of the database, I didn't have these dates.

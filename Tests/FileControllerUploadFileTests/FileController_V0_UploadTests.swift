@@ -364,6 +364,28 @@ class FileController_V0_UploadTests: ServerTestCase {
         }
         else {
             XCTAssert(result2?.response?.allUploadsFinished == .v0UploadsFinished)
+            
+            guard let fileGroup = fileGroup else {
+                XCTFail()
+                return
+            }
+            
+            let fileGroupRepo = FileGroupRepository(db)
+            
+            let key = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            let lookupResult = fileGroupRepo.lookup(key: key, modelInit: FileGroups.init)
+
+            if case .found(let model) = lookupResult,
+                let fg = model as? FileGroups {
+                XCTAssert(fg.fileGroupUUID == fileGroup.fileGroupUUID)
+                XCTAssert(fg.userId != nil)
+                XCTAssert(fg.owningUserId == nil)
+                XCTAssert(fg.objectType == result2?.request.objectType)
+                XCTAssert(fg.sharingGroupUUID == result2?.request.sharingGroupUUID)
+            }
+            else {
+                XCTFail()
+            }
         }
     }
     

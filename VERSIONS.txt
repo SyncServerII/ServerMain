@@ -1,18 +1,24 @@
 SyncServer
 
-Version 1.12.0
+Version 1.12.0 (7/6/21)
 	* Added new table: FileGroup
 		See https://github.com/SyncServerII/Neebla/issues/23
-		- Some fields in the FileIndex are now deprecated and need to be used from
-		the FileGroup table.
+		- Migrations
+			Removing fields from FileIndex table:
+				userId, sharingGroupUUID, objectType
+			as these are used from the FileGroup table now.
 		- Integrated usage of that table into v0 file uploads.
 		- Added tests to support the addition of this new table and its usage.
-	* Migrations
-		- Removing fields from FileIndex table:
-			userId, sharingGroupUUID, objectType
-	* Deprecations
-		- No longer allowing uploads of files with no file group UUID.
+		- Updated other tests to deal with this change.
+		- Deprecations
+			No longer allowing uploads of v0 files with no file group UUID-- because
+			a fileGroupUUID is needed in the FileIndex table to reference the FileGroup
+			table. Need that to reference the other fields of the FileGroup (e.g., userId)
+			which are no longer in the FileIndex table.
 	* Adding support for new endpoint: moveFileGroups
+		See https://github.com/SyncServerII/Neebla/issues/23
+		- This endpoint is not yet working. Will deploy the changes to the FileGroup table
+		and then finish this endpoint.
 	
 Version 1.11.6 (6/27/21)
 	* Add user email address to three requests:

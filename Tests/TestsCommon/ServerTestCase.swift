@@ -1167,22 +1167,24 @@ class ServerTestCase : XCTestCase {
             guard let self = self else { return }
             var urlParameters:String?
             
-            if sharingInvitationUUID != nil {
+            if let sharingInvitationUUID = sharingInvitationUUID {
                 let request = GetSharingInvitationInfoRequest()
-                request.sharingInvitationUUID = sharingInvitationUUID!
-                urlParameters = "?" + request.urlParameters()!
+                request.sharingInvitationUUID = sharingInvitationUUID
+                if let requestParams = request.urlParameters() {
+                    urlParameters = "?" + requestParams
+                }
             }
             
             self.performRequest(route: ServerEndpoints.getSharingInvitationInfo, urlParameters: urlParameters) { response, dict in
-                Log.info("Status code: \(response!.statusCode)")
+                Log.info("Status code: \(response?.statusCode)")
 
                 var result: GetSharingInvitationInfoResponse?
                 
                 if errorExpected {
-                    XCTAssert(response!.statusCode == httpStatusCodeExpected, "ERROR: Worked on request!")
+                    XCTAssert(response?.statusCode == httpStatusCodeExpected, "ERROR: Worked on request!")
                 }
                 else {
-                    XCTAssert(response!.statusCode == .OK, "Did not work on request")
+                    XCTAssert(response?.statusCode == .OK, "Did not work on request")
                     
                     if let dict = dict,
                         let getSharingInvitationInfoResponse = try? GetSharingInvitationInfoResponse.decode(dict) {

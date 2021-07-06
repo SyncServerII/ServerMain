@@ -12,7 +12,7 @@ import LoggerAPI
 extension SharingGroupsController {
     func moveFileGroups(params:RequestProcessingParameters) {
         guard let request = params.request as? MoveFileGroupsRequest else {
-            let message = "Did not receive CreateSharingGroupRequest"
+            let message = "Did not receive MoveFileGroupsRequest"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
@@ -54,8 +54,13 @@ extension SharingGroupsController {
             return
         }
         
-        // Need to change the `sharingGroupUUID` field of each of the `FileGroupModel`'s.
-        // BUT: I've not completed the migration to the use of the FileGroup table. The file index still uses the sharingGroupUUID in the `FileIndex` table.
+        // TODO: Need to change the `sharingGroupUUID` field of each of the `FileGroupModel`'s and save 'em back to the database.
+        // And: I've not yet integrated this endpoint into Setup/ServerRoutes.swift.
+        // For now, fail this endpoint-- until we've completed this implementation.
+        let message = "YIKES: This endpoint isn't yet completed."
+        Log.error(message)
+        params.completion(.failure(.message(message)))
+        return
     }
 }
 

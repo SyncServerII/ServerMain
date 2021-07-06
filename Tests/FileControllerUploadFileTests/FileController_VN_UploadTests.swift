@@ -58,7 +58,9 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         let changeResolverName = CommentFile.changeResolverName
         let comment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
 
-        guard let result1 = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, changeResolverName: changeResolverName),
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+        
+        guard let result1 = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -97,10 +99,11 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         
         let changeResolverName = CommentFile.changeResolverName
         let comment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
 
         let fileLabel = UUID().uuidString
         
-        guard let result1 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: fileLabel, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, changeResolverName: changeResolverName),
+        guard let result1 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: fileLabel, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -113,16 +116,12 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     
     // Returns the first `UploadFileResult?`
     @discardableResult
-    func runUploadOneV1TextFileWorks(withFileGroup: Bool, informAllButSelf: Bool? = nil) -> UploadFileResult? {
+    func runUploadOneV1TextFileWorks(informAllButSelf: Bool? = nil) -> UploadFileResult? {
         let changeResolverName = CommentFile.changeResolverName
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
-        
-        var fileGroup: FileGroup?
-        
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         let exampleComment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
          
@@ -164,11 +163,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     }
     
     func testUploadOneV1TextFileWorks() {
-        runUploadOneV1TextFileWorks(withFileGroup: true)
-    }
-    
-    func testUploadOneV1TextFileWithNoFileGroupWorks() {
-        runUploadOneV1TextFileWorks(withFileGroup: false)
+        runUploadOneV1TextFileWorks()
     }
     
     enum FileGroupOption {
@@ -276,18 +271,14 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         XCTAssert(deferredUploadCount1 + 1 == deferredUploads.count())
     }
     
-    func runUploadTwoV1TextFilesInSameSharingGroupWorks(withFileGroup: Bool) {
+    func runUploadTwoV1TextFilesInSameSharingGroupWorks() {
         let changeResolverName = CommentFile.changeResolverName
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
         let batchUUID = Foundation.UUID().uuidString
 
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
-        
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         let exampleComment1 = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
         let exampleComment2 = ExampleComment(messageString: "Goodbye!", id: Foundation.UUID().uuidString)
 
@@ -340,7 +331,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     }
     
     func testUploadTwoV1TextFilesInSameSharingGroupWorks() {
-        runUploadTwoV1TextFilesInSameSharingGroupWorks(withFileGroup: true)
+        runUploadTwoV1TextFilesInSameSharingGroupWorks()
     }
     
     // Single changes for each of two files.
@@ -549,7 +540,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         
         // This upload needs to be with a different user. (We don't allow 2 rows in the Upload table with the same fileUUID and userId).
         let otherUserId = fg.owningUserId + 1
-        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -618,10 +609,11 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
         let comment = ExampleComment(messageString: "Goodbye!", id: Foundation.UUID().uuidString)
-
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobly")
+        
         // First, do the v0 uploads.
   
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -682,8 +674,9 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         let changeResolverName = CommentFile.changeResolverName
 
         let comment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
 
-        guard let result1 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, changeResolverName: changeResolverName),
+        guard let result1 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -719,6 +712,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
         var changeResolverName: String?
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
 
         let comment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
                 
@@ -726,7 +720,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             changeResolverName = CommentFile.changeResolverName
         }
 
-        guard let result1 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, changeResolverName: changeResolverName),
+        guard let result1 = uploadServerFile(uploadIndex: 1,  uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -775,7 +769,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     // MARK: Upload vN file(s) and check for FileIndexClientUI record(s).
 
     func testUploadOneV1TextFileWithoutInformAllButSelf_checkFileIndexClientUI() {
-        guard let uploadResult = runUploadOneV1TextFileWorks(withFileGroup: true) else {
+        guard let uploadResult = runUploadOneV1TextFileWorks() else {
             XCTFail()
             return
         }
@@ -799,7 +793,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
     }
     
     func testUploadOneV1TextFileWithInformAllButSelf_checkFileIndexClientUI() {
-        guard let uploadResult = runUploadOneV1TextFileWorks(withFileGroup: true, informAllButSelf: true) else {
+        guard let uploadResult = runUploadOneV1TextFileWorks(informAllButSelf: true) else {
             XCTFail()
             return
         }

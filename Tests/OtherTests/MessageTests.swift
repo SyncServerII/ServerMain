@@ -100,15 +100,15 @@ class MessageTests: ServerTestCase {
         let sharingGroupUUID = UUID().uuidString
         
         let uploadDeletionRequest = UploadDeletionRequest()
-        uploadDeletionRequest.fileUUID = uuidString
+        uploadDeletionRequest.fileGroupUUID = uuidString
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
         
         let result = uploadDeletionRequest.urlParameters()
 
         let expectedURLParams =
-            "fileUUID=\(uuidString)&" +
+            "fileGroupUUID=\(uuidString)&" +
             "sharingGroupUUID=\(sharingGroupUUID)"
-        
+
         XCTAssert(result == expectedURLParams, "Expected: \(String(describing: expectedURLParams)); actual: \(String(describing: result))")
     }
     

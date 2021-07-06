@@ -52,19 +52,9 @@ extension FileController {
             params.completion(.failure(.message(message)))
             return
         }
-        
-        // Do we have a fileUUID or a fileGroupUUID?
-        
-        // 7/4/21; No longer allowing deletion by fileUUID
-        guard uploadDeletionRequest.fileUUID == nil else {
-            let message = "No longer supporting fileUUID deletion."
-            Log.error(message)
-            params.completion(.failure(.message(message)))
-            return
-        }
 
         guard let fileGroupUUID = uploadDeletionRequest.fileGroupUUID else {
-            let message = "Did not have either a fileGroupUUID"
+            let message = "Did not have a fileGroupUUID"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return

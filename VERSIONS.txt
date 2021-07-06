@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.12.1 (7/6/21)
+	* Changed from a (fileUUID, fileGroupUUID) unique constraint on the FileIndex to a
+		fileUUID unique constraint-- to be consistent with the LookupKey for FileIndex.
+
 Version 1.12.0 (7/6/21)
 	* Added new table: FileGroup
 		See https://github.com/SyncServerII/Neebla/issues/23

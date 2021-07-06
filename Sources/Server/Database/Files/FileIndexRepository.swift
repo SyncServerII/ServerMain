@@ -195,7 +195,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     
     static let uniqueFileLabelConstraintName = "UniqueFileLabel"
     static let uniqueFileLabelConstraint = "UNIQUE (fileGroupUUID, fileLabel)"
-    
+
     func upcreate() -> Database.TableUpcreateResult {
         let createColumns =
             "(fileIndexId BIGINT NOT NULL AUTO_INCREMENT, " +
@@ -236,8 +236,8 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             // Because file label's must be unique within file group's.
             "CONSTRAINT \(Self.uniqueFileLabelConstraintName) \(Self.uniqueFileLabelConstraint), " +
 
-            // I used to have a constraint for fileUUID's to be unique within sharing groups. I no longer have a sharing group UUID in this table though. So just make them unique now within file group UUID.
-            "UNIQUE (fileUUID, fileGroupUUID), " +
+            // I used to have a constraint for fileUUID's to be unique within sharing groups. I no longer have a sharing group UUID in this table though. I could make make them unique now within file group UUID, but it seems simpler and less prone to error to just key by fileUUID (what *if* there is a duplicate fileUUID and you search by only it and don't include the fileGroupUUID).
+            "UNIQUE (fileUUID), " +
 
             "UNIQUE (fileIndexId))"
         

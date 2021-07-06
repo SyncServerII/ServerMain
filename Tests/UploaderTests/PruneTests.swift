@@ -48,7 +48,7 @@ class PruneTests: ServerTestCase, UploaderCommon {
     }
     
     // The upload change and deletion are for the same file.
-    func runPruneWithOneUploadChangeAndOneFileDeletion(withFileGroup: Bool) throws {
+    func runPruneWithOneUploadChangeAndOneFileDeletion() throws {
         let fileUUID1 = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
@@ -59,10 +59,7 @@ class PruneTests: ServerTestCase, UploaderCommon {
             return
         }
 
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
@@ -78,7 +75,7 @@ class PruneTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
         // Set up the upload change
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -93,20 +90,10 @@ class PruneTests: ServerTestCase, UploaderCommon {
         }
         
         // Set up the upload deletion
-        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
+        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
-        }
-            
-        // Upload deletions only have a DeferredUpload record when there is a file group.
-        if !withFileGroup {
-            let batchUUID = UUID().uuidString
-
-            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId2, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .deleteSingleFile) else {
-                XCTFail()
-                return
-            }
         }
         
         guard uploader.pruneFileUploads(deferredFileDeletions: [deferredUpload2]) else {
@@ -127,24 +114,13 @@ class PruneTests: ServerTestCase, UploaderCommon {
         
         XCTAssert(deferredCount + 2 == DeferredUploadRepository(db).count(), "\(deferredCount) + 2 != \(String(describing: DeferredUploadRepository(db).count()))")
         
-        if withFileGroup {
-            // The upload deletion has no Upload record
-            // The upload change Upload record has been removed.
-            XCTAssert(uploadCount == UploadRepository(db).count(), "\(uploadCount) != \(String(describing: UploadRepository(db).count()))")
-        }
-        else {
-            // The upload deletion has an Upload record
-            // The upload change Upload record has been removed.
-            XCTAssert(uploadCount + 1 == UploadRepository(db).count(), "\(uploadCount) + 1 != \(String(describing: UploadRepository(db).count()))")
-        }
+        // The upload deletion has no Upload record
+        // The upload change Upload record has been removed.
+        XCTAssert(uploadCount == UploadRepository(db).count(), "\(uploadCount) != \(String(describing: UploadRepository(db).count()))")
     }
     
     func testPruneWithOneUploadChangeAndOneFileDeletionWithFileGroup() throws {
-        try runPruneWithOneUploadChangeAndOneFileDeletion(withFileGroup: true)
-    }
-
-    func testPruneWithOneUploadChangeAndOneFileDeletionWithoutFileGroup() throws {
-        try runPruneWithOneUploadChangeAndOneFileDeletion(withFileGroup: false)
+        try runPruneWithOneUploadChangeAndOneFileDeletion()
     }
 }
 

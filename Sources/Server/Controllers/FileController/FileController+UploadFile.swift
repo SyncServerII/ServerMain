@@ -270,6 +270,8 @@ extension FileController {
             }
         }
 
+        var fileGroup: FileGroupModel!
+        
         if newFile {
             // OWNER
             // establish the v0 owner of the file.
@@ -289,14 +291,27 @@ extension FileController {
         else {
             // OWNER
             // Uploading vN file. Need to get creds for the user that uploaded the v0 file.
-            guard let userId = existingFileInFileIndex?.userId,
-                let account = FileController.getCreds(forUserId: userId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate) else {
+            guard let fileGroupUUID = existingFileInFileIndex?.fileGroupUUID else {
+                let message = "Trying to upload vN file but no existing file group."
+                finish(.errorMessage(message), params: params)
+                return
+            }
+
+            fileGroup = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileGroupUUID)
+
+            guard fileGroup != nil else {
+                let message = "Could not find FileGroup."
+                finish(.errorMessage(message), params: params)
+                return
+            }
+        
+            guard let account = FileController.getCreds(forUserId: fileGroup.owningUserId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate) else {
                 let message = "Trying to upload vN file but no owning user creds"
                 finish(.errorMessage(message), params: params)
                 return
             }
             
-            fileOwner = FileOwner(account: account, userId: existingFileInFileIndex!.userId)
+            fileOwner = FileOwner(account: account, userId: fileGroup.owningUserId)
         }
         
         let ownerCloudStorage:CloudStorage! = fileOwner.account.cloudStorage(mock: params.services.mockStorage)
@@ -398,7 +413,7 @@ extension FileController {
                 return
             }
             
-            addUploadEntry(newFile: false, creationDate: nil, todaysDate: todaysDate, uploadedCheckSum: nil, cleanup: nil, params: params, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, existingObjectType: existingFileInFileIndex?.objectType, deviceUUID: deviceUUID, uploadContents: fileContents, signedInUserId: signedInUserId, fileOwner: fileOwner)
+            addUploadEntry(newFile: false, creationDate: nil, todaysDate: todaysDate, uploadedCheckSum: nil, cleanup: nil, params: params, uploadRequest: uploadRequest, existingFileGroupUUID: existingFileGroupUUID, existingObjectType: fileGroup?.objectType, deviceUUID: deviceUUID, uploadContents: fileContents, signedInUserId: signedInUserId, fileOwner: fileOwner)
         }
     }
     

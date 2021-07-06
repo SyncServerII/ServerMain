@@ -38,14 +38,11 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         }
     }
     
-    func runDeletionOfOneFile(withFileGroup: Bool) throws {
+    func runDeletionOfOneFile() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let deferredCount = DeferredUploadRepository(db).count() else {
             XCTFail()
@@ -67,12 +64,8 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
         
-        if let fileGroupUUID = fileGroup?.fileGroupUUID {
-            uploadDeletionRequest.fileGroupUUID = fileGroupUUID
-        }
-        else {
-            uploadDeletionRequest.fileUUID = fileUUID
-        }
+        let fileGroupUUID = fileGroup.fileGroupUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroupUUID
         
         guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false) else {
             XCTFail()
@@ -84,7 +77,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID) else {
             XCTFail()
             return
         }
@@ -103,23 +96,16 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         XCTAssert(uploadCount == UploadRepository(db).count(), "\(uploadCount) != \(String(describing: UploadRepository(db).count())))")
     }
     
-    func testDeletionOfOneFileWithNoFileGroup() throws {
-        try runDeletionOfOneFile(withFileGroup: false)
-    }
-    
     func testDeletionOfOneFileWithFileGroup() throws {
-        try runDeletionOfOneFile(withFileGroup: true)
+        try runDeletionOfOneFile()
     }
     
-    func runTwoFileDeletions(withFileGroup: Bool) throws {
+    func runTwoFileDeletions() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
 
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let deferredCount = DeferredUploadRepository(db).count() else {
             XCTFail()
@@ -150,33 +136,11 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
 
         var deferredUploadId1: Int64?
         
-        if fileGroup == nil {
-            // Fake an earlier pending deletion, so that in this case we can actually run two non-file group deletions when the request is received.
-
-            guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
-                let deferredUploadId = deferredUpload.deferredUploadId else {
-                XCTFail()
-                return
-            }
-            
-            deferredUploadId1 = deferredUpload.deferredUploadId
-            let batchUUID = UUID().uuidString
-        
-            guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId, batchUUID: batchUUID, state: .deleteSingleFile) else {
-                XCTFail()
-                return
-            }
-        }
-        
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
         
-        if let fileGroupUUID = fileGroup?.fileGroupUUID {
-            uploadDeletionRequest.fileGroupUUID = fileGroupUUID
-        }
-        else {
-            uploadDeletionRequest.fileUUID = fileUUID2
-        }
+        let fileGroupUUID = fileGroup.fileGroupUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroupUUID
         
         guard let uploadDeletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId2 = uploadDeletionResult.deferredUploadId else {
@@ -196,12 +160,12 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID1) else {
             XCTFail()
             return
         }
         
-        guard let fileIndex2 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID2) else {
+        guard let fileIndex2 = getFileIndex(fileUUID: fileUUID2) else {
             XCTFail()
             return
         }
@@ -211,126 +175,17 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let found2 = try fileIsInCloudStorage(fileIndex: fileIndex2, services: services.uploaderServices)
         XCTAssert(!found2)
         
-        let extra: Int64 = (withFileGroup ? 1 : 2)
+        let extra: Int64 = 1
         XCTAssert(deferredCount + extra == DeferredUploadRepository(db).count(), "deferredCount - extra: \(deferredCount + extra) != DeferredUploadRepository(db).count(): \(String(describing: DeferredUploadRepository(db).count()))")
         
         XCTAssert(uploadCount == UploadRepository(db).count(), "\(uploadCount) != \(String(describing: UploadRepository(db).count())))")
     }
     
-    func testTwoFileDeletionWithoutFileGroup() throws {
-        try runTwoFileDeletions(withFileGroup: false)
-    }
-    
     func testTwoFileDeletionWithFileGroup() throws {
-        try runTwoFileDeletions(withFileGroup: true)
+        try runTwoFileDeletions()
     }
     
-    func testMixedFileGroupAndNonFileGroupDeletion() throws {
-        let deviceUUID = Foundation.UUID().uuidString
-        let fileUUID1 = Foundation.UUID().uuidString
-        let fileUUID2 = Foundation.UUID().uuidString
-        let fileUUID3 = Foundation.UUID().uuidString
-        
-        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        
-        guard let deferredCount = DeferredUploadRepository(db).count() else {
-            XCTFail()
-            return
-        }
-        
-        guard let uploadCount = UploadRepository(db).count() else {
-            XCTFail()
-            return
-        }
-
-        // These files are going to be deleted.
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, fileGroup: fileGroup),
-            let sharingGroupUUID = uploadResult.sharingGroupUUID else {
-            XCTFail()
-            return
-        }
-        
-        guard let userId = uploadResult.uploadingUserId else {
-            XCTFail()
-            return
-        }
-        
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
-            XCTFail()
-            return
-        }
-        
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID3, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: nil) else {
-            XCTFail()
-            return
-        }
-        
-        // Fake pending deletion for a non-file group.
-        guard let deferredUpload = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingDeletion),
-            let deferredUploadId1 = deferredUpload.deferredUploadId else {
-            XCTFail()
-            return
-        }
-
-        let batchUUID = UUID().uuidString
-
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID3, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId: deferredUploadId1, batchUUID: batchUUID, state: .deleteSingleFile) else {
-            XCTFail()
-            return
-        }
-
-        let uploadDeletionRequest = UploadDeletionRequest()
-        uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
-
-        guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
-            let deferredUploadId2 = deletionResult.deferredUploadId else {
-            XCTFail()
-            return
-        }
-
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
-            XCTFail()
-            return
-        }
-        
-        guard let fileIndex2 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID2) else {
-            XCTFail()
-            return
-        }
-
-        guard let fileIndex3 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID3) else {
-            XCTFail()
-            return
-        }
-        
-        guard let status1 = getUploadsResults(deviceUUID: deviceUUID, deferredUploadId: deferredUploadId1), status1 == .completed else {
-            XCTFail()
-            return
-        }
-        
-        guard let status2 = getUploadsResults(deviceUUID: deviceUUID, deferredUploadId: deferredUploadId2), status2 == .completed else {
-            XCTFail()
-            return
-        }
-        
-        let found1 = try fileIsInCloudStorage(fileIndex: fileIndex1, services: services.uploaderServices)
-        XCTAssert(!found1)
-        let found2 = try fileIsInCloudStorage(fileIndex: fileIndex2, services: services.uploaderServices)
-        XCTAssert(!found2)
-        let found3 = try fileIsInCloudStorage(fileIndex: fileIndex3, services: services.uploaderServices)
-        XCTAssert(!found3)
-        
-        XCTAssert(deferredCount + 2 == DeferredUploadRepository(db).count())
-        XCTAssert(uploadCount == UploadRepository(db).count(), "\(uploadCount) != \(String(describing: UploadRepository(db).count())))")
-    }
-    
-    enum FileGroupDeletion {
-        case deleteFileHavingFileGroupWithFileUUIDFails
-        case deleteFileHavingFileGroupWithFileGroupWorks
-    }
-    
-    func runUploadDeletion(withTest: FileGroupDeletion) throws {
+    func testUploadDeletionWithFileGroupWithFileGroupFileWorks() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
         let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
@@ -340,51 +195,27 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
             XCTFail()
             return
         }
-        
-        var expectError: Bool = false
-        
+                
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
-        switch withTest {
-        case .deleteFileHavingFileGroupWithFileUUIDFails:
-            uploadDeletionRequest.fileUUID = fileUUID
-            expectError = true
-            
-        case .deleteFileHavingFileGroupWithFileGroupWorks:
-            uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
+        guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false, expectError: false, expectingUploaderToRun: true),
+            let deferredUploadId = deletionResult.deferredUploadId else {
+            XCTFail()
+            return
         }
         
-        let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false, expectError: expectError, expectingUploaderToRun: !expectError)
-
-        switch withTest {
-        case .deleteFileHavingFileGroupWithFileUUIDFails:
-            XCTAssert(deletionResult == nil)
-        case .deleteFileHavingFileGroupWithFileGroupWorks:
-            guard let deletionResult = deletionResult,
-                let deferredUploadId = deletionResult.deferredUploadId else {
-                XCTFail()
-                return
-            }
-            
-            guard let status = getUploadsResults(deviceUUID: deviceUUID, deferredUploadId: deferredUploadId), status == .completed else {
-                XCTFail()
-                return
-            }
+        guard let status = getUploadsResults(deviceUUID: deviceUUID, deferredUploadId: deferredUploadId), status == .completed else {
+            XCTFail()
+            return
         }
-    }
-    
-    func testUploadDeletionWithFileUUIDWithFileGroupFileFails() throws {
-        try runUploadDeletion(withTest: .deleteFileHavingFileGroupWithFileUUIDFails)
-    }
-    
-    func testUploadDeletionWithFileGroupWithFileGroupFileWorks() throws {
-        try runUploadDeletion(withTest: .deleteFileHavingFileGroupWithFileGroupWorks)
     }
     
     func testThatUploadDeletionTwiceOfSameFileWorks() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let deferredCount = DeferredUploadRepository(db).count() else {
             XCTFail()
@@ -397,7 +228,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         }
 
         // This file is going to be deleted.
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -405,7 +236,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
 
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
         guard let deletionResult1 = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId = deletionResult1.deferredUploadId else {
@@ -418,7 +249,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID) else {
+        guard let fileIndex = getFileIndex(fileUUID: fileUUID) else {
             XCTFail()
             return
         }
@@ -442,8 +273,10 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let deviceUUID2 = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
 
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+
         let account = TestAccount.google2
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: account, deviceUUID:deviceUUID1, fileUUID: fileUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: account, deviceUUID:deviceUUID1, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -468,7 +301,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
         guard let deletionResult = uploadDeletion(testAccount: account, uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID2, addUser: false),
             let deferredUploadId2 = deletionResult.deferredUploadId else {
@@ -489,12 +322,14 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         }
     }
     
-    func testThatDeletionOfUnknownFileUUIDFails() {
+    func testThatDeletionOfUnknownFileGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
 
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+
         // Using this upload file only for creating a user.
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -503,8 +338,8 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
         
-        let unknownFileUUID = Foundation.UUID().uuidString
-        uploadDeletionRequest.fileUUID = unknownFileUUID
+        let unknownFileGroupUUID = Foundation.UUID().uuidString
+        uploadDeletionRequest.fileGroupUUID = unknownFileGroupUUID
         
         let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false, expectError: true, expectingUploaderToRun: false)
         XCTAssert(deletionResult == nil)
@@ -515,8 +350,10 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let deviceUUID2 = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
 
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+
         // Using this upload file only for creating a user.
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID1, fileUUID: fileUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID1, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -524,7 +361,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
 
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
         guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID2, addUser: false),
             let deferredUploadId = deletionResult.deferredUploadId else {
@@ -532,7 +369,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID) else {
+        guard let fileIndex = getFileIndex(fileUUID: fileUUID) else {
             XCTFail()
             return
         }
@@ -551,8 +388,10 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
 
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+
         // Using this upload file only for creating a user.
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString) else {
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
             XCTFail()
             return
         }
@@ -560,7 +399,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let uploadDeletionRequest = UploadDeletionRequest()
         let unknownSharingGroupUUID = Foundation.UUID().uuidString
         uploadDeletionRequest.sharingGroupUUID = unknownSharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
         let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false, expectError: true, expectingUploaderToRun: false)
         XCTAssert(deletionResult == nil)
@@ -570,12 +409,14 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         let changeResolverName = CommentFile.changeResolverName
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
-        
+
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+
         let exampleComment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
          
         // First upload the v0 file.
   
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, mimeType: TestFile.commentFile.mimeType, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, mimeType: TestFile.commentFile.mimeType, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -590,7 +431,7 @@ class FileController_UploadDeletionTests: ServerTestCase, UploaderCommon {
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
         guard let uploadResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId = uploadResult.deferredUploadId else {

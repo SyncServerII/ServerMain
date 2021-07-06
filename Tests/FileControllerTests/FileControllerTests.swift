@@ -77,14 +77,15 @@ class FileController_IndexTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let testAccount:TestAccount = .primaryOwningAccount
         let fileLabel = UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, testAccount: testAccount, deviceUUID:deviceUUID, fileLabel: fileLabel),
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, testAccount: testAccount, deviceUUID:deviceUUID, fileLabel: fileLabel, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }
         
-        let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, fileUUID: uploadResult.request.fileUUID)
+        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: uploadResult.request.fileUUID)
         
         let fileIndexResult = FileIndexRepository(db).lookup(key: key, modelInit: FileIndex.init)
         guard case .found(let obj) = fileIndexResult,
@@ -131,13 +132,15 @@ class FileController_IndexTests: ServerTestCase {
     
     func testIndexWithTwoFiles() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup1),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
         }
         
-        guard let uploadResult2 = uploadJPEGFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser:.no(sharingGroupUUID: sharingGroupUUID)) else {
+        guard let uploadResult2 = uploadJPEGFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser:.no(sharingGroupUUID: sharingGroupUUID), fileGroup: fileGroup1) else {
             XCTFail()
             return
         }
@@ -147,7 +150,9 @@ class FileController_IndexTests: ServerTestCase {
     
     func testIndexWithFakeSharingGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString), let _ = uploadResult.sharingGroupUUID else {
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup1), let _ = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }
@@ -159,7 +164,9 @@ class FileController_IndexTests: ServerTestCase {
     
     func testIndexWithBadSharingGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString) else {
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup1) else {
             XCTFail()
             return
         }
@@ -177,12 +184,13 @@ class FileController_IndexTests: ServerTestCase {
         let changeResolverName = CommentFile.changeResolverName
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
         let exampleComment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
          
         // First upload the v0 file.
   
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup1, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -223,11 +231,12 @@ class FileController_IndexTests: ServerTestCase {
         let changeResolverName = CommentFile.changeResolverName
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
                  
         // First upload a v0 file, with change resolver name and app meta data
         let appMetaData = "Foobly."
         
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, appMetaData: appMetaData, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, appMetaData: appMetaData, stringFile: .commentFile, fileGroup: fileGroup1, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return

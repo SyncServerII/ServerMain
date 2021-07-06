@@ -17,13 +17,14 @@ class FileController : ControllerProtocol {
     enum CheckError : Error {
         case couldNotConvertModelObject
         case errorLookingUpInFileIndex
+        case errorLookingUpFileGroup
+        case sharingGroupMismatch
     }
     
     // Result is nil only if there is no existing file in the FileIndex. Throws an error if there is an error.
     static func checkForExistingFile(params:RequestProcessingParameters, sharingGroupUUID: String, fileUUID: String) throws -> FileIndex? {
         
-        let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID)
-
+        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: fileUUID)
         let lookupResult = params.repos.fileIndex.lookup(key: key, modelInit: FileIndex.init)
 
         switch lookupResult {
@@ -31,6 +32,14 @@ class FileController : ControllerProtocol {
             guard let fileIndexObj = modelObj as? FileIndex else {
                 Log.error("Could not convert model object to FileIndex")
                 throw CheckError.couldNotConvertModelObject
+            }
+            
+            guard let fileGroup = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileIndexObj.fileGroupUUID) else {
+                throw CheckError.errorLookingUpFileGroup
+            }
+            
+            guard fileGroup.sharingGroupUUID == sharingGroupUUID else {
+                throw CheckError.sharingGroupMismatch
             }
             
             return fileIndexObj

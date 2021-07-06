@@ -347,7 +347,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID1, createSharingGroup: false) else {
+        guard let _ = doAddFileIndex() else {
             XCTFail()
             return
         }
@@ -357,7 +357,7 @@ class SpecificDatabaseTests_SharingGroupUsers: ServerTestCase {
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID2, createSharingGroup: false) else {
+        guard let _ = doAddFileIndex() else {
             XCTFail()
             return
         }

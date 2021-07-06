@@ -39,7 +39,7 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         }
     }
     
-    func runOneUploadFileChangeAndOneUploadDeletion(withFileGroup: Bool) {
+    func runOneUploadFileChangeAndOneUploadDeletion() {
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
@@ -47,10 +47,8 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         let batchUUID2 = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+        let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID1, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
@@ -63,14 +61,14 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID2, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile) else {
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID2, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup2) else {
             XCTFail()
             return
         }
         
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
 
-        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID2, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID2, status: .pendingChange),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -85,7 +83,7 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID2
+        uploadDeletionRequest.fileGroupUUID = fileGroup2.fileGroupUUID
         
         guard let uploadResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId2 = uploadResult.deferredUploadId else {
@@ -103,16 +101,12 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
             return
         }
     }
-    
-    func testOneUploadFileChangeAndOneUploadDeletionWithoutFileGroup() {
-        runOneUploadFileChangeAndOneUploadDeletion(withFileGroup: false)
-    }
 
     func testOneUploadFileChangeAndOneUploadDeletionWithFileGroup() {
-        runOneUploadFileChangeAndOneUploadDeletion(withFileGroup: true)
+        runOneUploadFileChangeAndOneUploadDeletion()
     }
     
-    func runTwoUploadFileChangesAndOneUploadDeletion(withFileGroup: Bool) throws {
+    func runTwoUploadFileChangesAndOneUploadDeletion() throws {
         // Upload changes
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
@@ -123,10 +117,7 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         let deviceUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let deferredCount = DeferredUploadRepository(db).count() else {
             XCTFail()
@@ -155,8 +146,9 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         }
         
         let batchUUID = Foundation.UUID().uuidString
-        
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID3, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile) else {
+        let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo2")
+
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID3, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup2) else {
             XCTFail()
             return
         }
@@ -164,7 +156,7 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -182,7 +174,7 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        uploadDeletionRequest.fileUUID = fileUUID3
+        uploadDeletionRequest.fileGroupUUID = fileGroup2.fileGroupUUID
         
         guard let uploadResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId2 = uploadResult.deferredUploadId else {
@@ -190,9 +182,9 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1),
-            let fileIndex2 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID2),
-            let fileIndex3 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID3) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID1),
+            let fileIndex2 = getFileIndex(fileUUID: fileUUID2),
+            let fileIndex3 = getFileIndex(fileUUID: fileUUID3) else {
             XCTFail()
             return
         }
@@ -219,10 +211,6 @@ class FileController_BothUploadSeparateTests: ServerTestCase, UploaderCommon {
     }
     
     func testTwoUploadFileChangesAndOneUploadDeletionWithFileGroup() throws {
-        try runTwoUploadFileChangesAndOneUploadDeletion(withFileGroup: true)
-    }
-    
-    func testTwoUploadFileChangesAndOneUploadDeletionWithoutFileGroup() throws {
-        try runTwoUploadFileChangesAndOneUploadDeletion(withFileGroup: false)
+        try runTwoUploadFileChangesAndOneUploadDeletion()
     }
 }

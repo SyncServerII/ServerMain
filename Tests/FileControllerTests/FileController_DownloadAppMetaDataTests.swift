@@ -30,7 +30,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
         
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData),
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+        
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
@@ -45,7 +47,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
 
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData), let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup), let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
         }
@@ -59,8 +63,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         let appMetaData = "Test1"
 
         Log.debug("About to uploadTextFile")
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData) else {
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup) else {
             XCTFail()
             return
         }
@@ -84,8 +89,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
     func testDownloadValidAppMetaData0() {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData),
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
@@ -102,8 +108,10 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
     func testDownloadValidAppMetaData1() {
         let deviceUUID = Foundation.UUID().uuidString
         var appMetaData = "Test1"
-        
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData),
+
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
@@ -126,8 +134,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
         let file: TestFile = .commentFile
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, stringFile: file, changeResolverName: CommentFile.changeResolverName),
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, stringFile: file, fileGroup: fileGroup, changeResolverName: CommentFile.changeResolverName),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
@@ -151,8 +160,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
     func testDownloadAppMetaDataWithFakeSharingGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData) else {
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup) else {
             XCTFail()
             return
         }
@@ -164,8 +174,9 @@ class FileController_DownloadAppMetaDataTests: ServerTestCase {
     func testDownloadAppMetaDataWithBadSharingGroupUUIDFails() {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Test1"
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
-        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData) else {
+        guard let uploadResult1 = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData:appMetaData, fileGroup: fileGroup) else {
             XCTFail()
             return
         }

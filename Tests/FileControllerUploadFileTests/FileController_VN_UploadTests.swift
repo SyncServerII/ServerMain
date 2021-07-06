@@ -468,12 +468,22 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
 
         // Next, prepare the vN uploads-- not using the upload file endpoint for the first one-- faking that another server instance uploaded it and it didn't have an Uploader run occurring.
         
-       guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID1, fileUUID: fileUUID1) else {
+       guard let fileIndex = getFileIndex(fileUUID: fileUUID1) else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
+        guard let fileGroupModel1 = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup1.fileGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileGroupModel2 = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup2.fileGroupUUID) else {
+            XCTFail()
+            return
+        }
+        
+        guard let deferredUpload1 = createDeferredUpload(userId: fileGroupModel1.userId, fileGroupUUID: fileGroup1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -481,7 +491,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         
         let batchUUID = UUID().uuidString
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID1, userId: fileIndex.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID1, userId: fileGroupModel1.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID) else {
             XCTFail()
             return
         }
@@ -493,14 +503,14 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID1, fileUUID: fileUUID1) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID1) else {
             XCTFail()
             return
         }
         
         XCTAssert(fileIndex1.fileVersion == 1, "\(String(describing: fileIndex1.fileVersion))")
         
-        guard let fileIndex2 = getFileIndex(sharingGroupUUID: sharingGroupUUID2, fileUUID: fileUUID2) else {
+        guard let fileIndex2 = getFileIndex(fileUUID: fileUUID2) else {
             XCTFail()
             return
         }
@@ -521,21 +531,24 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         let comment2 = ExampleComment(messageString: "Goodbye!", id: Foundation.UUID().uuidString)
 
         // First, do the v0 uploads.
-  
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        
+        let fileGroup:FileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+        
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID1 = result.sharingGroupUUID else {
             XCTFail()
             return
         }
         
         // Prepare the v1 uploads
-       guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID1, fileUUID: fileUUID) else {
+        
+        guard let fg = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup.fileGroupUUID) else {
             XCTFail()
             return
         }
         
         // This upload needs to be with a different user. (We don't allow 2 rows in the Upload table with the same fileUUID and userId).
-        let otherUserId = fileIndex.userId + 1
+        let otherUserId = fg.owningUserId + 1
         guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
@@ -559,7 +572,7 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        let (_, cloudStorage) = try fileIndex.getCloudStorage(userRepo: UserRepository(db), services: services.uploaderServices)
+        let (_, cloudStorage) = try UserRepository(db).getCloudStorage(owningUserId: fg.owningUserId, services: services.uploaderServices)
         let cloudFileName = Filename.inCloud(deviceUUID: deviceUUID, fileUUID: fileUUID, mimeType: mimeType, fileVersion: 1)
         let options = CloudStorageFileNameOptions(cloudFolderName: ServerTestCase.cloudFolderName, mimeType: mimeType)
         
@@ -847,13 +860,14 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         }
         
         // Prepare the v1 uploads
-       guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID1, fileUUID: fileUUID) else {
+        
+        guard let fg = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup.fileGroupUUID) else {
             XCTFail()
             return
         }
         
         // This upload needs to be with a different user. (We don't allow 2 rows in the Upload table with the same fileUUID and userId).
-        let otherUserId = fileIndex.userId + 1
+        let otherUserId = fg.owningUserId + 1
         guard let deferredUpload1 = createDeferredUpload(userId: otherUserId, fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID1, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()

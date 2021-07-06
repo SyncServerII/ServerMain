@@ -83,6 +83,7 @@ class Uploader: UploaderProtocol {
     private(set) var fileIndexRepo:FileIndexRepository!
     private(set) var userRepo: UserRepository!
     private(set) var staleVersionRepo:StaleVersionRepository!
+    private(set) var fileGroupRepo:FileGroupRepository!
 
     // For testing
     weak var delegate: UploaderDelegate?
@@ -122,6 +123,7 @@ class Uploader: UploaderProtocol {
         self.fileIndexRepo = FileIndexRepository(db)
         self.userRepo = UserRepository(db)
         self.staleVersionRepo = StaleVersionRepository(db)
+        self.fileGroupRepo = FileGroupRepository(db)
         
         return _db
     }
@@ -195,7 +197,7 @@ class Uploader: UploaderProtocol {
                 return
             }
 
-            let deletions = DeleteStaleFileVersions(staleVersionRepo: self.staleVersionRepo, fileIndexRepo: self.fileIndexRepo, userRepo: self.userRepo, services: self.services)
+            let deletions = DeleteStaleFileVersions(staleVersionRepo: self.staleVersionRepo, fileIndexRepo: self.fileIndexRepo, userRepo: self.userRepo, fileGroupRepo: self.fileGroupRepo, services: self.services)
             
             if !(self.transactProcessing(message: "DeleteStaleFileVersions") {
                 try deletions.doNeededDeletions()

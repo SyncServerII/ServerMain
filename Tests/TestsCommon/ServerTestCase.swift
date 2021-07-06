@@ -744,19 +744,19 @@ class ServerTestCase : XCTestCase {
             
             self.performRequest(route: ServerEndpoints.uploadFile, responseDictFrom: .header, headers: headers, urlParameters: "?" + parameters, body:data) { response, dict in
                 
-                Log.info("Status code: \(response!.statusCode)")
+                Log.info("Status code: \(String(describing: response?.statusCode))")
 
                 if errorExpected {
                     if let statusCodeExpected = statusCodeExpected {
-                        XCTAssert(response!.statusCode == statusCodeExpected)
+                        XCTAssert(response?.statusCode == statusCodeExpected)
                     }
                     else {
-                        XCTAssert(response!.statusCode != .OK)
+                        XCTAssert(response?.statusCode != .OK)
                     }
                 }
                 else {
                     guard response!.statusCode == .OK, dict != nil else {
-                        XCTFail("Did not work on uploadFile request: \(response!.statusCode)")
+                        XCTFail("Did not work on uploadFile request: \(String(describing: response?.statusCode))")
                         expectation.fulfill()
                         return
                     }
@@ -1503,19 +1503,22 @@ class ServerTestCase : XCTestCase {
         return false
     }
     
-    func doAddFileIndex(creationDate: Date? = Date(), updateDate: Date? = Date(),  userId:UserId = 1, sharingGroupUUID:String, createSharingGroup: Bool, fileUUID: String? = nil, fileGroupUUID: String? = nil, fileLabel: String? = nil, changeResolverName: String? = nil) -> FileIndex? {
-
-        if createSharingGroup {
-            guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
-                XCTFail()
-                return nil
-            }
-            
-            guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .write, owningUserId: nil) else {
-                XCTFail()
-                return nil
-            }
+    func addFileGroup(fileGroupUUID: String, sharingGroupUUID: String, objectType: String, userId: UserId, owningUserId: UserId) -> FileGroupModel? {
+        let fileGroup = FileGroupModel()
+        fileGroup.fileGroupUUID = fileGroupUUID
+        fileGroup.sharingGroupUUID = sharingGroupUUID
+        fileGroup.objectType = objectType
+        fileGroup.userId = userId
+        fileGroup.owningUserId = owningUserId
+        guard let id = FileGroupRepository(db).add(model: fileGroup) else {
+            return nil
         }
+        
+        fileGroup.fileGroupId = id
+        return fileGroup
+    }
+    
+    func doAddFileIndex(creationDate: Date? = Date(), updateDate: Date? = Date(), fileUUID: String? = nil, fileGroupUUID: String? = nil, fileLabel: String? = nil, changeResolverName: String? = nil) -> FileIndex? {
         
         let fileIndex = FileIndex()
         fileIndex.lastUploadedCheckSum = "abcde"
@@ -1537,14 +1540,11 @@ class ServerTestCase : XCTestCase {
             fileIndex.fileGroupUUID = Foundation.UUID().uuidString
         }
         
-        fileIndex.objectType = "MyObjectType"
         fileIndex.fileVersion = 1
         fileIndex.mimeType = "text/plain"
-        fileIndex.userId = userId
         fileIndex.appMetaData = "{ \"foo\": \"bar\" }"
         fileIndex.creationDate = creationDate
         fileIndex.updateDate = updateDate
-        fileIndex.sharingGroupUUID = sharingGroupUUID
         fileIndex.changeResolverName = changeResolverName
         
         if let fileLabel = fileLabel {

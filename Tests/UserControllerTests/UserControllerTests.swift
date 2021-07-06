@@ -228,14 +228,15 @@ class UserControllerTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
         let batchUUID = Foundation.UUID().uuidString
-
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+        
         guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
         }
         
         // Upload a file.
-        guard let uploadResult = uploadTextFile(batchUUID: batchUUID, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString) else {
+        guard let uploadResult = uploadTextFile(batchUUID: batchUUID, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
             XCTFail()
             return
         }
@@ -267,7 +268,7 @@ class UserControllerTests: ServerTestCase {
             XCTFail()
         }
         
-        let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, fileUUID: uploadResult.request.fileUUID)
+        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: uploadResult.request.fileUUID)
         let result = FileIndexRepository(db).lookup(key: key, modelInit: FileIndex.init)
         switch result {
         case .found(let obj):

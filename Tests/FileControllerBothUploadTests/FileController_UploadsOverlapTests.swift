@@ -37,7 +37,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
     }
     
     // Upload file change, and an upload deletion for the same file.
-    func runOneUploadFileChangeAndThenOneUploadDeletion(withFileGroup: Bool) throws {
+    func runOneUploadFileChangeAndThenOneUploadDeletion() throws {
         let fileUUID1 = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
@@ -52,10 +52,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         let batchUUID = UUID().uuidString
         
@@ -72,7 +69,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
 
-        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
             let deferredUploadId1 = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -85,20 +82,15 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        if withFileGroup {
-            uploadDeletionRequest.fileGroupUUID = fileGroup?.fileGroupUUID
-        }
-        else {
-            uploadDeletionRequest.fileUUID = fileUUID1
-        }
-        
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
+
         guard let deletionResults = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId2 = deletionResults.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID1) else {
             XCTFail()
             return
         }
@@ -121,18 +113,16 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         XCTAssert(uploadCount == UploadRepository(db).count(), "\(uploadCount) != \(String(describing: UploadRepository(db).count())))")
     }
 
-    func testOneUploadFileChangeAndThenOneUploadDeletionWithoutFileGroup() throws {
-        try runOneUploadFileChangeAndThenOneUploadDeletion(withFileGroup: false)
-    }
-
     func testOneUploadFileChangeAndThenOneUploadDeletionWithFileGroup() throws {
-        try runOneUploadFileChangeAndThenOneUploadDeletion(withFileGroup: true)
+        try runOneUploadFileChangeAndThenOneUploadDeletion()
     }
     
     func runUploadChange(withDeletionBefore:Bool) throws {
         let fileUUID = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
+
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
         guard let deferredCount = DeferredUploadRepository(db).count() else {
             XCTFail()
@@ -144,7 +134,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
                 
-        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName),
+        guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return
@@ -155,7 +145,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         if withDeletionBefore {
             let uploadDeletionRequest = UploadDeletionRequest()
             uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-            uploadDeletionRequest.fileUUID = fileUUID
+            uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
             
             guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false) else {
                 XCTFail()
@@ -194,7 +184,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             }
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID) else {
             XCTFail()
             return
         }
@@ -220,7 +210,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         try runUploadChange(withDeletionBefore: false)
     }
     
-    func runTwoUploadFileChangesAndThenOneUploadDeletionForSameFile(withFileGroup: Bool) throws {
+    func runTwoUploadFileChangesAndThenOneUploadDeletionForSameFile() throws {
         let fileUUID1 = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
@@ -235,10 +225,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
@@ -254,7 +241,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -267,7 +254,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -280,12 +267,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        if withFileGroup {
-            uploadDeletionRequest.fileGroupUUID = fileGroup?.fileGroupUUID
-        }
-        else {
-            uploadDeletionRequest.fileUUID = fileUUID1
-        }
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         
         guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId3 = deletionResult.deferredUploadId else {
@@ -293,7 +275,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID1) else {
             XCTFail()
             return
         }
@@ -322,14 +304,10 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
     }
     
     func testRunTwoUploadFileChangesAndThenOneUploadDeletionForSameFileWithFileGroup() throws {
-        try runTwoUploadFileChangesAndThenOneUploadDeletionForSameFile(withFileGroup: true)
+        try runTwoUploadFileChangesAndThenOneUploadDeletionForSameFile()
     }
     
-    func testRunTwoUploadFileChangesAndThenOneUploadDeletionForSameFileWithoutFileGroup() throws {
-        try runTwoUploadFileChangesAndThenOneUploadDeletionForSameFile(withFileGroup: false)
-    }
-    
-    func runTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChange(withFileGroup: Bool) throws {
+    func runTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChange() throws {
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
         let deviceUUID = Foundation.UUID().uuidString
@@ -345,10 +323,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         guard let result1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID1, fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup:fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
@@ -356,8 +331,10 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        // Explicitly not including this one in file group because we're going to upload a change for it, which we don't want removed with the other file group.
-        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, changeResolverName: changeResolverName) else {
+        // Explicitly not including this one in the same file group because we're going to upload a change for it, which we don't want removed with the other file group.
+        let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: Foundation.UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID2, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, stringFile: .commentFile, fileGroup: fileGroup2, changeResolverName: changeResolverName) else {
             XCTFail()
             return
         }
@@ -371,7 +348,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         let comment2 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment3 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -384,7 +361,7 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -396,38 +373,33 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
         }
         
         // Upload change for other file-- expecting this to *not* be pruned
-        guard let deferredUpload3 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload3 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup2.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId3 = deferredUpload3.deferredUploadId else {
             XCTFail()
             return
         }
             
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId3, updateContents: comment3.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, fileGroup: fileGroup2, sharingGroupUUID: sharingGroupUUID, userId: userId, deferredUploadId:deferredUploadId3, updateContents: comment3.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID, state: .vNUploadFileChange) else {
             XCTFail()
             return
         }
         
         let uploadDeletionRequest = UploadDeletionRequest()
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
-        if withFileGroup {
-            uploadDeletionRequest.fileGroupUUID = fileGroup?.fileGroupUUID
-        }
-        else {
-            uploadDeletionRequest.fileUUID = fileUUID1
-        }
-        
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
+
         guard let deletionResult = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false),
             let deferredUploadId4 = deletionResult.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let fileIndex1 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
+        guard let fileIndex1 = getFileIndex(fileUUID: fileUUID1) else {
             XCTFail()
             return
         }
         
-        guard let fileIndex2 = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID2) else {
+        guard let fileIndex2 = getFileIndex(fileUUID: fileUUID2) else {
             XCTFail()
             return
         }
@@ -464,10 +436,6 @@ class FileController_UploadsOverlapTests: ServerTestCase, UploaderCommon {
     }
     
     func testRunTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChangeWithFileGroup() throws {
-        try runTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChange(withFileGroup: true)
-    }
-    
-    func testRunTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChangeWithoutFileGroup() throws {
-        try runTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChange(withFileGroup: false)
+        try runTwoChangesAndThenOneDeletionForSameFilePlusOtherUploadChange()
     }
 }

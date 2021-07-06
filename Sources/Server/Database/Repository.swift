@@ -131,8 +131,54 @@ extension RepositoryLookup {
         }
     }
     
+    // Returns an empty array (not nil) if there are no results. Returns nil only on error.
     func lookupAll<MODEL: Model>(key: LOOKUPKEY, modelInit:@escaping () -> MODEL) -> [MODEL]? {
         let query = "select * from \(tableName) where " + lookupConstraint(key: key)
+        
+        guard let select = Select(db:db, query: query, modelInit: modelInit, ignoreErrors:false) else {
+            Log.error("\(db.errorMessage())")
+            return nil
+        }
+        
+        var result = [MODEL]()
+        var error = false
+        select.forEachRow { model in
+            guard !error else {
+                return
+            }
+            
+            if let model = model as? MODEL {
+                result += [model]
+            }
+            else {
+                error = true
+            }
+        }
+        
+        guard !error && select.forEachRowStatus == nil else {
+            return nil
+        }
+        
+        return result
+    }
+    
+    // Combines the keys with `or`; it's as if you called lookup on each key then returned the result.
+    func lookupAll<MODEL: Model>(keys: [LOOKUPKEY], modelInit:@escaping () -> MODEL) -> [MODEL]? {
+    
+        guard keys.count > 0 else {
+            return nil
+        }
+        
+        var whereConstraint: String = ""
+        for key in keys {
+            if whereConstraint.count > 0 {
+                whereConstraint += " or "
+            }
+            
+            whereConstraint += "(" + lookupConstraint(key: key) + ")"
+        }
+        
+        let query = "select * from \(tableName) where " + whereConstraint
         
         guard let select = Select(db:db, query: query, modelInit: modelInit, ignoreErrors:false) else {
             Log.error("\(db.errorMessage())")

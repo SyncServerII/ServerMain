@@ -19,7 +19,7 @@ extension FileController {
     
     // For a v0 file see if this is an existing file group.
     func getExistingOwningUser(fileGroupUUID: String, sharingGroupUUID: String, params:RequestProcessingParameters) -> GetExistingUserResult {
-        let key = FileIndexRepository.LookupKey.fileGroupUUIDAndSharingGroup(fileGroupUUID: fileGroupUUID, sharingGroupUUID: sharingGroupUUID)
+        let key = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
         guard let fileIndices = params.repos.fileIndex.lookupAll(key: key, modelInit: FileIndex.init) else {
             return .error("Could not lookup file group in FileIndex")
         }
@@ -28,16 +28,14 @@ extension FileController {
             return .fileGroupNotFound
         }
         
-        guard let userId = fileIndices[0].userId else {
-            return .error("No userId")
+        guard let fileGroup = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+            return .error("No FileGroup")
         }
         
-        // This shouldn't be needed, but just in case
-        let filtered = fileIndices.filter { $0.userId == userId }
-        guard filtered.count == fileIndices.count else {
-            return .error("Not all FileIndex records had the same user id")
+        guard fileGroup.sharingGroupUUID == sharingGroupUUID else {
+            return .error("Sharing group was not that expected.")
         }
         
-        return .userId(userId)
+        return .userId(fileGroup.owningUserId)
     }
 }

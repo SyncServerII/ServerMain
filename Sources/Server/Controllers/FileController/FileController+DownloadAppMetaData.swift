@@ -27,8 +27,8 @@ extension FileController {
             
         // Need to get the app meta data from the file index.
 
-        // First, lookup the file in the FileIndex. This does an important security check too-- makes sure the fileUUID is in the sharing group.
-        let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: downloadAppMetaDataRequest.sharingGroupUUID, fileUUID: downloadAppMetaDataRequest.fileUUID)
+        // First, lookup the file in the FileIndex.
+        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: downloadAppMetaDataRequest.fileUUID)
         let lookupResult = params.repos.fileIndex.lookup(key: key, modelInit: FileIndex.init)
         
         var fileIndexObj:FileIndex!
@@ -51,6 +51,22 @@ extension FileController {
             
         case .error(let error):
             let message = "Error looking up file in FileIndex: \(error)"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        // Also do an important security check -- make sure the fileUUID is in the sharing group
+        
+        guard let fileGroupModel = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileIndexObj.fileGroupUUID) else {
+            let message = "Could not get file group."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        guard fileGroupModel.sharingGroupUUID == downloadAppMetaDataRequest.sharingGroupUUID else {
+            let message = "File was not in the sharing group."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return

@@ -20,7 +20,10 @@ class MockStorageLiveTests: ServerTestCase {
 
     func testUploadFile() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobly")
+
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -43,15 +46,17 @@ class MockStorageLiveTests: ServerTestCase {
     func testDeleteFile() {
         let deviceUUID = Foundation.UUID().uuidString
         
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobly")
+        
         // This file is going to be deleted.
-        guard let uploadResult1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return
         }
         
         let uploadDeletionRequest = UploadDeletionRequest()
-        uploadDeletionRequest.fileUUID = uploadResult1.request.fileUUID
+        uploadDeletionRequest.fileGroupUUID = fileGroup.fileGroupUUID
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
         
         let result = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false)
@@ -60,9 +65,11 @@ class MockStorageLiveTests: ServerTestCase {
     
     func testDownloadFile() {
         let deviceUUID = Foundation.UUID().uuidString
-        
+
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobly")
+
         // This file is going to be deleted.
-        guard let uploadResult1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult1 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult1.sharingGroupUUID else {
             XCTFail()
             return

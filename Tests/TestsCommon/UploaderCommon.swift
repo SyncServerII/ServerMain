@@ -40,6 +40,11 @@ public protocol UploaderCommon {
     func waitForExpectations(timeout: TimeInterval, handler: XCWaitCompletionHandler?)
 }
 
+enum FileIsInCloudStorageError: Swift.Error {
+    case noFileGroupUUID
+    case failedFileGroupLookup
+}
+    
 public extension UploaderCommon {
     func downloadCommentFile(fileName: String, userId: UserId) -> CommentFile? {
         guard let cloudStorage = FileController.getCreds(forUserId: userId, userRepo: UserRepository(db), accountManager: accountManager, accountDelegate: nil)?.cloudStorage(mock: MockStorage()) else {
@@ -114,8 +119,8 @@ public extension UploaderCommon {
         return deferredUpload
     }
     
-    func getFileIndex(sharingGroupUUID: String, fileUUID: String) -> FileIndex? {
-        let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID)
+    func getFileIndex(fileUUID: String) -> FileIndex? {
+        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: fileUUID)
         let lookupResult = FileIndexRepository(db).lookup(key: key, modelInit: FileIndex.init)
         
         guard case .found(let model) = lookupResult,
@@ -161,10 +166,18 @@ public extension UploaderCommon {
     func fileIsInCloudStorage(fileIndex: FileIndex, services: UploaderServices) throws -> Bool {
         var boolResult: Bool = false
         
+        guard let fileGroupUUID = fileIndex.fileGroupUUID else {
+            throw FileIsInCloudStorageError.noFileGroupUUID
+        }
+        
         let exp2 = expectation(description: "run")
-
+        
+        guard let fg = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+            throw FileIsInCloudStorageError.failedFileGroupLookup
+        }
+        
         // Need to make sure the file has been removed from cloud storage.
-        let (_, cloudStorage) = try fileIndex.getCloudStorage(userRepo: UserRepository(db), services: services)
+        let (_, cloudStorage) = try UserRepository(db).getCloudStorage(owningUserId: fg.owningUserId, services: services)
         let cloudFileName = Filename.inCloud(deviceUUID: fileIndex.deviceUUID, fileUUID: fileIndex.fileUUID, mimeType: fileIndex.mimeType, fileVersion: fileIndex.fileVersion)
         let options = CloudStorageFileNameOptions(cloudFolderName: ServerTestCase.cloudFolderName, mimeType: fileIndex.mimeType)
         

@@ -179,7 +179,7 @@ class FinishUploadFiles {
         if let fileGroupUUID = fileGroupUUID {
             // See if this is the first upload of the file group.
             let key = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
-            let result = params.repos.fileGroups.lookup(key: key, modelInit: FileGroups.init)
+            let result = params.repos.fileGroups.lookup(key: key, modelInit: FileGroupModel.init)
             switch result {
             case .error(let error):
                 let message = "Failed on lookup for fileGroupUUID: \(fileGroupUUID); \(error)"
@@ -244,16 +244,12 @@ class FinishUploadFiles {
                 return .error(message: message)
             }
             
-            let fileGroup = FileGroups()
+            let fileGroup = FileGroupModel()
             fileGroup.fileGroupUUID = fileGroupUUID
             fileGroup.objectType = objectType
             fileGroup.sharingGroupUUID = sharingGroupUUID
-
             fileGroup.userId = currentSignedInUserId
-
-            if currentSignedInUserId != fileOwnerUserId {
-                fileGroup.owningUserId = fileOwnerUserId
-            }
+            fileGroup.owningUserId = fileOwnerUserId
             
             guard let _ = params.repos.fileGroups.add(model: fileGroup) else {
                 let message = "Failed adding file group record."
@@ -297,34 +293,5 @@ class FinishUploadFiles {
         }
         
         return deferredUploadId
-    }
-}
-
-extension FinishUploadFiles {
-    // Returns nil on an error.
-    private func getIndexEntries(forUploadFiles uploadFiles:[Upload], fileIndex:FileIndexRepository) -> [FileInfo]? {
-        var primaryFileIndexKeys = [FileIndexRepository.LookupKey]()
-    
-        for uploadFile in uploadFiles {
-            // 12/1/17; Up until today, I was using the params.currentSignedInUser!.userId in here and not the effective user id. Thus, when sharing users did an upload deletion, the files got deleted from the file index, but didn't get deleted from cloud storage.
-            // 6/24/18; Now things have changed again: With the change to having multiple owning users in a sharing group, a sharingGroup id is the key instead of the userId.
-            primaryFileIndexKeys += [.primaryKeys(sharingGroupUUID: uploadFile.sharingGroupUUID, fileUUID: uploadFile.fileUUID)]
-        }
-    
-        var fileIndexObjs = [FileInfo]()
-    
-        if primaryFileIndexKeys.count > 0 {
-            let fileIndexResult = fileIndex.fileIndex(forKeys: primaryFileIndexKeys)
-            switch fileIndexResult {
-            case .fileIndex(let fileIndex):
-                fileIndexObjs = fileIndex
-    
-            case .error(let error):
-                Log.error("Failed to get fileIndex: \(error)")
-                return nil
-            }
-        }
-        
-        return fileIndexObjs
     }
 }

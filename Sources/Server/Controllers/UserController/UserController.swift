@@ -351,14 +351,24 @@ class UserController : ControllerProtocol {
         }
         
         // 6/25/18; Up until today, user removal had included actual removal of all of the user's files from the FileIndex. BUT-- this goes against how deletion occurs on the SyncServer-- we mark files as deleted, but don't actually remove them from the FileIndex.
-        let markKey = FileIndexRepository.LookupKey.userId(userId)
-        guard let _ = repos.fileIndex.markFilesAsDeleted(key: markKey) else {
-            let message = "Could not mark files as deleted for user!"
+        let fileGroupKey = FileGroupRepository.LookupKey.userId(userId: userId)
+        guard let fileGroups = repos.fileGroups.lookupAll(key: fileGroupKey, modelInit: FileGroupModel.init) else {
+            let message = "Could not lookup file groups for user."
             Log.error(message)
             completion(.failure(.message(message)))
             return
         }
         
+        for fileGroup in fileGroups {
+            let markKey = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            guard let _ = repos.fileIndex.markFilesAsDeleted(key: markKey) else {
+                let message = "Could not mark files as deleted for user!"
+                Log.error(message)
+                completion(.failure(.message(message)))
+                return
+            }
+        }
+
         // The user will no longer be part of any sharing groups
         // This is *not* consistent with other parts of the server. Other parts of the server just mark the SharingGroupUser rows as deleted. This removes actual rows. My thinking is that: The userId isn't valid any more. Why keep the SharingGroupUser row?
         let sharingGroupUserKey = SharingGroupUserRepository.LookupKey.userId(userId)

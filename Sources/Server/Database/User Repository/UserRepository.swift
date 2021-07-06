@@ -365,3 +365,23 @@ class UserRepository : Repository, RepositoryLookup {
         }
     }
 }
+
+extension UserRepository {
+    enum UserRepositoryError: Swift.Error {
+        case couldNotGetOwningUserCreds
+        case couldNotConvertToCloudStorage
+    }
+
+    func getCloudStorage(owningUserId: UserId, services: UploaderServices) throws -> (Account, CloudStorage) {
+        
+        guard let owningUserCreds = FileController.getCreds(forUserId: owningUserId, userRepo: self, accountManager: services.accountManager, accountDelegate: nil) else {
+            throw UserRepositoryError.couldNotGetOwningUserCreds
+        }
+        
+        guard let cloudStorage = owningUserCreds.cloudStorage(mock: services.mockStorage) else {
+            throw UserRepositoryError.couldNotConvertToCloudStorage
+        }
+        
+        return (owningUserCreds, cloudStorage)
+    }
+}

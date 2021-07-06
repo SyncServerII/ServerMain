@@ -214,7 +214,8 @@ class SharingGroupsControllerTests: ServerTestCase {
     func testRemoveSharingGroupWorks_filesMarkedAsDeleted() {
         let deviceUUID = Foundation.UUID().uuidString
 
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -227,7 +228,12 @@ class SharingGroupsControllerTests: ServerTestCase {
         
         // Can't do a file index because no one is left in the sharing group. So, just look up in the db directly.
         
-        let key = FileIndexRepository.LookupKey.sharingGroupUUID(sharingGroupUUID: sharingGroupUUID)
+        guard let fileGroupUUID = uploadResult.request.fileGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        let key = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
         let result = FileIndexRepository(db).lookup(key: key, modelInit: FileIndex.init)
         switch result {
         case .noObjectFound:
@@ -243,7 +249,9 @@ class SharingGroupsControllerTests: ServerTestCase {
     func indexReportsSharingGroupDeleted(remove: Bool) {
         let deviceUUID = Foundation.UUID().uuidString
 
-        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+        
+        guard let uploadResult = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -334,6 +342,8 @@ class SharingGroupsControllerTests: ServerTestCase {
     func testRemoveSharingGroupWorks_cannotThenUploadFileToThatSharingGroup() {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+        
         guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
@@ -344,7 +354,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected:true)
+        uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected:true, fileGroup: fileGroup)
     }
     
     func testRemoveSharingGroupWorks_cannotThenDoDoneUploads() {
@@ -363,7 +373,9 @@ class SharingGroupsControllerTests: ServerTestCase {
     
     func testRemoveSharingGroupWorks_cannotDeleteFile() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString), let sharingGroupUUID = uploadResult.sharingGroupUUID else {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup), let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }
@@ -374,7 +386,7 @@ class SharingGroupsControllerTests: ServerTestCase {
         }
 
         let uploadDeletionRequest = UploadDeletionRequest()
-        uploadDeletionRequest.fileUUID = uploadResult.request.fileUUID
+        uploadDeletionRequest.fileGroupUUID = uploadResult.request.fileGroupUUID
         uploadDeletionRequest.sharingGroupUUID = sharingGroupUUID
         
         let result = uploadDeletion(uploadDeletionRequest: uploadDeletionRequest, deviceUUID: deviceUUID, addUser: false, expectError: true, expectingUploaderToRun: false)
@@ -384,7 +396,9 @@ class SharingGroupsControllerTests: ServerTestCase {
     func testRemoveSharingGroupWorks_downloadAppMetaDataFails() {
         let deviceUUID = Foundation.UUID().uuidString
         let appMetaData = "Foo"
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData: appMetaData), let sharingGroupUUID = uploadResult.sharingGroupUUID else {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, appMetaData: appMetaData, fileGroup: fileGroup), let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }
@@ -399,7 +413,9 @@ class SharingGroupsControllerTests: ServerTestCase {
     
     func testRemoveSharingGroupWorks_downloadFileFails() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString),
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -533,7 +549,9 @@ class SharingGroupsControllerTests: ServerTestCase {
     // When user has files in the sharing group-- those should be marked as deleted.
     func testRemoveUserFromSharingGroup_userHasFiles() {
         let deviceUUID = Foundation.UUID().uuidString
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString), let sharingGroupUUID = uploadResult.sharingGroupUUID else {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup), let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
         }
@@ -576,6 +594,8 @@ class SharingGroupsControllerTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
         let owningUser:TestAccount = .primaryOwningAccount
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foobar")
+        
         guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
@@ -599,7 +619,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        let result = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: true)
+        let result = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: true, fileGroup: fileGroup)
         XCTAssert(result == nil)
     }
     
@@ -682,6 +702,8 @@ class SharingGroupsControllerTests: ServerTestCase {
     func testInterleavedUploadsToDifferentSharingGroupsWorks() {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID1 = Foundation.UUID().uuidString
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+        let fileGroup2 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo2")
 
         guard let _ = self.addNewUser(sharingGroupUUID: sharingGroupUUID1, deviceUUID:deviceUUID) else {
             XCTFail()
@@ -696,9 +718,9 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
 
-        uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID1), fileLabel: UUID().uuidString)
+        uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID1), fileLabel: UUID().uuidString, fileGroup: fileGroup1)
 
-        uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID2), fileLabel: UUID().uuidString)
+        uploadTextFile(batchUUID: UUID().uuidString, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID2), fileLabel: UUID().uuidString, fileGroup: fileGroup2)
     }
     
     func testRemoveUserFromSharingGroup_thenReAddUser() {
@@ -744,6 +766,8 @@ class SharingGroupsControllerTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
         let owningUser:TestAccount = .primaryOwningAccount
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+
         guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
@@ -777,7 +801,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false) else {
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false, fileGroup: fileGroup1) else {
             XCTFail()
             return
         }
@@ -828,6 +852,9 @@ class SharingGroupsControllerTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let sharingGroupUUID = Foundation.UUID().uuidString
         let owningUser:TestAccount = .primaryOwningAccount
+        let fileGroup1 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+        let fileGroup2 = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo2")
+
         guard let _ = self.addNewUser(testAccount: owningUser, sharingGroupUUID: sharingGroupUUID, deviceUUID:deviceUUID) else {
             XCTFail()
             return
@@ -846,7 +873,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
 
-        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false) else {
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false, fileGroup: fileGroup1) else {
             XCTFail()
             return
         }
@@ -873,7 +900,7 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false) else {
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: sharingUser, owningAccountType: owningUser.scheme.accountName, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID:sharingGroupUUID), fileLabel: UUID().uuidString, errorExpected: false, fileGroup: fileGroup2) else {
             XCTFail()
             return
         }

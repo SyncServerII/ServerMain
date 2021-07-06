@@ -70,6 +70,7 @@ class ApplyDeferredUploads {
     let db: Database
     let allUploads: [Upload]
     let fileIndexRepo: FileIndexRepository
+    let fileGroupRepo: FileGroupRepository
     let userRepo: UserRepository
     let services: UploaderServices
     let fileUUIDs: [String]
@@ -88,6 +89,7 @@ class ApplyDeferredUploads {
         self.fileIndexRepo = FileIndexRepository(db)
         self.uploadRepo = UploadRepository(db)
         self.deferredUploadRepo = DeferredUploadRepository(db)
+        self.fileGroupRepo = FileGroupRepository(db)
         self.userRepo = UserRepository(db)
         self.staleVersionRepo = StaleVersionRepository(db)
         self.fileIndexClientUIRepo = FileIndexClientUIRepository(db)
@@ -254,17 +256,28 @@ class ApplyDeferredUploads {
     func applyChangesToSingleFile(fileUUID: String, completion: @escaping (Swift.Result<[Upload], Error>)->()) {
         let uploadsForFileUUID = uploads(fileUUID: fileUUID)
         
-        guard let fileIndex = try? fileIndexRepo.getFileIndex(forFileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID) else {
+        guard let fileIndex = try? fileIndexRepo.getFileIndex(forFileUUID: fileUUID),
+            let fileGroupUUID = fileIndex.fileGroupUUID else {
             completion(.failure(Errors.failedSetupForApplyChangesToSingleFile("FileIndex")))
             return
         }
         
+        guard let fileGroup = try? fileGroupRepo.getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+            completion(.failure(Errors.failedSetupForApplyChangesToSingleFile("FileGroup")))
+            return
+        }
+        
+        guard fileGroup.sharingGroupUUID == sharingGroupUUID else {
+            completion(.failure(Errors.failedSetupForApplyChangesToSingleFile("Sharing group mismatch")))
+            return
+        }
+                
         guard let resolver = try? changeResolver(forFileUUID: fileUUID, usingFileIndex: fileIndex) else {
             completion(.failure(Errors.failedSetupForApplyChangesToSingleFile("Resolver")))
             return
         }
-        
-        guard let (owningCreds, cloudStorage) = try? fileIndex.getCloudStorage(userRepo: userRepo, services: services) else {
+                
+        guard let (owningCreds, cloudStorage) = try? userRepo.getCloudStorage(owningUserId: fileGroup.owningUserId, services: services) else {
             completion(.failure(Errors.failedSetupForApplyChangesToSingleFile("getCloudStorage")))
             return
         }
@@ -346,7 +359,7 @@ class ApplyDeferredUploads {
                 // 2/15/21: Plus, we're delaying deleting files. See https://github.com/SyncServerII/ServerMain/issues/3
                 
                 let staleVersion = StaleVersion()
-                staleVersion.sharingGroupUUID = fileIndex.sharingGroupUUID
+                staleVersion.sharingGroupUUID = fileGroup.sharingGroupUUID
                 staleVersion.fileUUID = fileUUID
                 staleVersion.expiryDate = StaleVersion.initialExpiryDate
                 staleVersion.fileVersion = priorFileVersion

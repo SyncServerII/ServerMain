@@ -54,15 +54,12 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
     
     // MARK: ApplyDeferredUploads tests with a single file group
     
-    func runApplyDeferredUploadsWithASingleFileAndOneChange(withFileGroup: Bool) throws {
+    func runApplyDeferredUploadsWithASingleFileAndOneChange() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
         let batchUUID = Foundation.UUID().uuidString
 
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
 
         let changeResolverName = CommentFile.changeResolverName
 
@@ -75,12 +72,12 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         
-        guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID) else {
+        guard let fileGroupModel = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup.fileGroupUUID) else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId = deferredUpload.deferredUploadId else {
             XCTFail()
             return
@@ -88,12 +85,12 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         let batchUUID2 = UUID().uuidString
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId, updateContents: comment.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
             XCTFail()
             return
         }
         
-        guard let applyDeferredUploads = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup?.fileGroupUUID, deferredUploads: [deferredUpload], services: services.uploaderServices, db: db) else {
+        guard let applyDeferredUploads = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup.fileGroupUUID, deferredUploads: [deferredUpload], services: services.uploaderServices, db: db) else {
             XCTFail()
             return
         }
@@ -107,30 +104,23 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         waitExpectation(timeout: 10, handler: nil)
         
-        guard checkCommentFile(expectedComment: comment, deviceUUID: deviceUUID, fileUUID: fileUUID, userId: fileIndex.userId) else {
+        guard checkCommentFile(expectedComment: comment, deviceUUID: deviceUUID, fileUUID: fileUUID, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
     }
     
     func testApplyDeferredUploadsWithASingleFileAndOneChange() throws {
-        try runApplyDeferredUploadsWithASingleFileAndOneChange(withFileGroup: true)
-    }
-    
-    func testApplyDeferredUploadsWithNoFileGroupWithASingleFileAndOneChange() throws {
-        try runApplyDeferredUploadsWithASingleFileAndOneChange(withFileGroup: false)
+        try runApplyDeferredUploadsWithASingleFileAndOneChange()
     }
 
     // I'm doing this using two DeferredUpload's -- to simulate the case where changes for the same file are uploaded in two separate batches. I.e., it probably doesn't make sense to think of multiple changes to the same file being uploaded in the same batch.
-    func runApplyDeferredUploadsWithASingleFileAndTwoChanges(withFileGroup: Bool) throws {
+    func runApplyDeferredUploadsWithASingleFileAndTwoChanges() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID = Foundation.UUID().uuidString
         let batchUUID = Foundation.UUID().uuidString
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
 
         let changeResolverName = CommentFile.changeResolverName
 
@@ -144,18 +134,18 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Another message", id: Foundation.UUID().uuidString)
         
-        guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID) else {
+        guard let fileGroupModel = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup.fileGroupUUID) else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -163,17 +153,17 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         let batchUUID2 = UUID().uuidString
 
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
             XCTFail()
             return
         }
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId2, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId2, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID2) else {
             XCTFail()
             return
         }
         
-        guard let applyDeferredUploads = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup?.fileGroupUUID, deferredUploads: [deferredUpload1, deferredUpload2], services: services.uploaderServices, db: db) else {
+        guard let applyDeferredUploads = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup.fileGroupUUID, deferredUploads: [deferredUpload1, deferredUpload2], services: services.uploaderServices, db: db) else {
             XCTFail()
             return
         }
@@ -189,36 +179,29 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         // Need to download v1 of the file, read it and check it's contents.
 
-        guard checkCommentFile(expectedComment: comment1, recordIndex: 0, recordCount: 2, deviceUUID: deviceUUID, fileUUID: fileUUID, userId: fileIndex.userId) else {
+        guard checkCommentFile(expectedComment: comment1, recordIndex: 0, recordCount: 2, deviceUUID: deviceUUID, fileUUID: fileUUID, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
 
-         guard checkCommentFile(expectedComment: comment2, recordIndex: 1, recordCount: 2, deviceUUID: deviceUUID, fileUUID: fileUUID, userId: fileIndex.userId) else {
+         guard checkCommentFile(expectedComment: comment2, recordIndex: 1, recordCount: 2, deviceUUID: deviceUUID, fileUUID: fileUUID, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
     }
     
     func testApplyDeferredUploadsWithASingleFileAndTwoChanges() throws {
-        try runApplyDeferredUploadsWithASingleFileAndTwoChanges(withFileGroup: true)
+        try runApplyDeferredUploadsWithASingleFileAndTwoChanges()
     }
     
-    func testApplyDeferredUploadsWithNoFileGroupWithASingleFileAndTwoChanges() throws {
-        try runApplyDeferredUploadsWithASingleFileAndTwoChanges(withFileGroup: false)
-    }
-    
-    func runApplyDeferredUploadsWithTwoFilesAndOneChangeEach(withFileGroup: Bool) throws {
+    func runApplyDeferredUploadsWithTwoFilesAndOneChangeEach() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
         let batchUUID1 = Foundation.UUID().uuidString
         let batchUUID2 = Foundation.UUID().uuidString
         
-        var fileGroup: FileGroup?
-        if withFileGroup {
-            fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
 
         let changeResolverName = CommentFile.changeResolverName
 
@@ -237,18 +220,18 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Another message", id: Foundation.UUID().uuidString)
         
-        guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
+       guard let fileGroupModel = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup.fileGroupUUID) else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -256,17 +239,17 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
 
         let batchUUID3 = UUID().uuidString
 
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
             XCTFail()
             return
         }
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId2, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId2, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
             XCTFail()
             return
         }
         
-        guard let applyDeferredUploads = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup?.fileGroupUUID, deferredUploads: [deferredUpload1, deferredUpload2], services: services.uploaderServices, db: db) else {
+        guard let applyDeferredUploads = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup.fileGroupUUID, deferredUploads: [deferredUpload1, deferredUpload2], services: services.uploaderServices, db: db) else {
             XCTFail()
             return
         }
@@ -280,41 +263,32 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         waitExpectation(timeout: 10, handler: nil)
         
-        guard checkCommentFile(expectedComment: comment1, deviceUUID: deviceUUID, fileUUID: fileUUID1, userId: fileIndex.userId) else {
+        guard checkCommentFile(expectedComment: comment1, deviceUUID: deviceUUID, fileUUID: fileUUID1, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
 
-         guard checkCommentFile(expectedComment: comment2, deviceUUID: deviceUUID, fileUUID: fileUUID2, userId: fileIndex.userId) else {
+         guard checkCommentFile(expectedComment: comment2, deviceUUID: deviceUUID, fileUUID: fileUUID2, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
     }
     
     func testApplyDeferredUploadsWithTwoFilesAndOneChangeEach() throws {
-        try runApplyDeferredUploadsWithTwoFilesAndOneChangeEach(withFileGroup: true)
-    }
-    
-    func testApplyDeferredUploadsWithNoFileGroupWithTwoFilesAndOneChangeEach() throws {
-        try runApplyDeferredUploadsWithTwoFilesAndOneChangeEach(withFileGroup: false)
+        try runApplyDeferredUploadsWithTwoFilesAndOneChangeEach()
     }
     
     // MARK: ApplyDeferredUploads tests with two file groups
 
-    func runApplyDeferredUploadsWithTwoFileGroupsAndTwoFiles(withFileGroups: Bool) throws {
+    func runApplyDeferredUploadsWithTwoFileGroupsAndTwoFiles() throws {
         let deviceUUID = Foundation.UUID().uuidString
         let fileUUID1 = Foundation.UUID().uuidString
         let fileUUID2 = Foundation.UUID().uuidString
         let batchUUID1 = Foundation.UUID().uuidString
         let batchUUID2 = Foundation.UUID().uuidString
         
-        var fileGroup1: FileGroup?
-        var fileGroup2: FileGroup?
-        
-        if withFileGroups {
-            fileGroup1 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-            fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
-        }
+        let fileGroup1 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+        let fileGroup2 = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
         
         let changeResolverName = CommentFile.changeResolverName
 
@@ -333,18 +307,18 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         let comment1 = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
         let comment2 = ExampleComment(messageString: "Another message", id: Foundation.UUID().uuidString)
         
-        guard let fileIndex = getFileIndex(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID1) else {
+       guard let fileGroupModel = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup1.fileGroupUUID) else {
             XCTFail()
             return
         }
 
-        guard let deferredUpload1 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup1?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
         }
         
-        guard let deferredUpload2 = createDeferredUpload(userId: fileIndex.userId, fileGroupUUID: fileGroup2?.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload2 = createDeferredUpload(userId: fileGroupModel.userId, fileGroupUUID: fileGroup2.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId2 = deferredUpload2.deferredUploadId else {
             XCTFail()
             return
@@ -352,17 +326,17 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         let batchUUID3 = UUID().uuidString
 
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID1, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId1, updateContents: comment1.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
             XCTFail()
             return
         }
         
-        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: fileIndex.userId, deferredUploadId: deferredUploadId2, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
+        guard let _ = createUploadForTextFile(deviceUUID: deviceUUID, fileUUID: fileUUID2, sharingGroupUUID: sharingGroupUUID, userId: fileGroupModel.userId, deferredUploadId: deferredUploadId2, updateContents: comment2.updateContents, uploadCount: 1, uploadIndex: 1, batchUUID: batchUUID3) else {
             XCTFail()
             return
         }
         
-        guard let applyDeferredUploads1 = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup1?.fileGroupUUID, deferredUploads: [deferredUpload1], services: services.uploaderServices,  db: db) else {
+        guard let applyDeferredUploads1 = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup1.fileGroupUUID, deferredUploads: [deferredUpload1], services: services.uploaderServices,  db: db) else {
             XCTFail()
             return
         }
@@ -378,7 +352,7 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         waitExpectation(timeout: 10, handler: nil)
         
-        guard let applyDeferredUploads2 = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup2?.fileGroupUUID, deferredUploads: [deferredUpload2], services: services.uploaderServices, db: db) else {
+        guard let applyDeferredUploads2 = try ApplyDeferredUploads(sharingGroupUUID: sharingGroupUUID, fileGroupUUID: fileGroup2.fileGroupUUID, deferredUploads: [deferredUpload2], services: services.uploaderServices, db: db) else {
             XCTFail()
             return
         }
@@ -394,22 +368,18 @@ class ApplyDeferredUploadsTests: ServerTestCase, UploaderCommon {
         
         waitExpectation(timeout: 10, handler: nil)
         
-        guard checkCommentFile(expectedComment: comment1, deviceUUID: deviceUUID, fileUUID: fileUUID1, userId: fileIndex.userId) else {
+        guard checkCommentFile(expectedComment: comment1, deviceUUID: deviceUUID, fileUUID: fileUUID1, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
 
-         guard checkCommentFile(expectedComment: comment2, deviceUUID: deviceUUID, fileUUID: fileUUID2, userId: fileIndex.userId) else {
+         guard checkCommentFile(expectedComment: comment2, deviceUUID: deviceUUID, fileUUID: fileUUID2, userId: fileGroupModel.userId) else {
             XCTFail()
             return
         }
     }
     
     func testApplyDeferredUploadsWithTwoFileGroupsAndTwoFiles() throws {
-        try runApplyDeferredUploadsWithTwoFileGroupsAndTwoFiles(withFileGroups: true)
-    }
-    
-    func testApplyDeferredWithNoFileGroupUploadsWithTwoFileGroupsAndTwoFiles() throws {
-        try runApplyDeferredUploadsWithTwoFileGroupsAndTwoFiles(withFileGroups: false)
+        try runApplyDeferredUploadsWithTwoFileGroupsAndTwoFiles()
     }
 }

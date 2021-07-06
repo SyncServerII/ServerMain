@@ -55,7 +55,9 @@ class FileController_DownloadStaleFiles: ServerTestCase, UploaderCommon  {
         let changeResolverName = CommentFile.changeResolverName
         let comment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
 
-        guard let result1 = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, changeResolverName: changeResolverName),
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo1")
+        
+        guard let result1 = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result1.sharingGroupUUID else {
             XCTFail()
             return

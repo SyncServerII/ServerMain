@@ -119,14 +119,24 @@ class SharingGroupsController : ControllerProtocol {
     }
     
     private func remove(params:RequestProcessingParameters, sharingGroupUUID: String) -> Bool {
-        let markKey = FileIndexRepository.LookupKey.sharingGroupUUID(sharingGroupUUID: sharingGroupUUID)
-        guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: markKey) else {
-            let message = "Could not mark files as deleted for sharing group!"
+        let key = FileGroupRepository.LookupKey.sharingGroupUUID(sharingGroupUUID: sharingGroupUUID)
+        guard let fileGroups = params.repos.fileGroups.lookupAll(key: key, modelInit: FileGroupModel.init) else {
+            let message = "Could not look up file groups for removal."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return false
         }
         
+        for fileGroup in fileGroups {
+            let markKey = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: markKey) else {
+                let message = "Could not mark files as deleted for sharing group!"
+                Log.error(message)
+                params.completion(.failure(.message(message)))
+                return false
+            }
+        }
+
         // Any users who were members of the sharing group should no longer be members.
         // We're handling this by marking the users as removed.
         let deletionMarkedKey = SharingGroupUserRepository.LookupKey.sharingGroupUUID(sharingGroupUUID, deleted: false)
@@ -204,14 +214,24 @@ class SharingGroupsController : ControllerProtocol {
         }
         
         // Any files that this user has in the FileIndex for this sharing group should be marked as deleted.
-        let markKey = FileIndexRepository.LookupKey.userAndSharingGroup(params.currentSignedInUser!.userId, sharingGroupUUID: request.sharingGroupUUID)
-        guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: markKey) else {
-            let message = "Could not mark files as deleted for user and sharing group!"
+        let key = FileGroupRepository.LookupKey.userIdAndSharingGroup(userId: params.currentSignedInUser!.userId, sharingGroupUUID: request.sharingGroupUUID)
+        guard let fileGroupsInSharingGroup = params.repos.fileGroups.lookupAll(key: key, modelInit: FileGroupModel.init) else {
+            let message = "Could not look up file groups for user removal."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
         }
-
+        
+        for fileGroup in fileGroupsInSharingGroup {
+            let markKey = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: markKey) else {
+                let message = "Could not mark files as deleted for user and sharing group!"
+                Log.error(message)
+                params.completion(.failure(.message(message)))
+                return
+            }
+        }
+        
         if numberSharingUsers == 1 {
             guard remove(params:params, sharingGroupUUID: request.sharingGroupUUID) else {
                 return

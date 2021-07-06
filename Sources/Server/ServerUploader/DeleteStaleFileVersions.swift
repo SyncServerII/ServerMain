@@ -18,13 +18,15 @@ class DeleteStaleFileVersions {
     private let staleVersionRepo:StaleVersionRepository
     private var fileIndexRepo:FileIndexRepository
     private let userRepo: UserRepository
+    private let fileGroupRepo: FileGroupRepository
     private let services: UploaderServices
     
-    init(staleVersionRepo:StaleVersionRepository, fileIndexRepo:FileIndexRepository, userRepo: UserRepository, services: UploaderServices) {
+    init(staleVersionRepo:StaleVersionRepository, fileIndexRepo:FileIndexRepository, userRepo: UserRepository, fileGroupRepo: FileGroupRepository, services: UploaderServices) {
         self.staleVersionRepo = staleVersionRepo
         self.fileIndexRepo = fileIndexRepo
         self.userRepo = userRepo
         self.services = services
+        self.fileGroupRepo = fileGroupRepo
     }
     
     // Operates synchronously
@@ -49,11 +51,16 @@ class DeleteStaleFileVersions {
             let fileIndexKey = FileIndexRepository.LookupKey.fileIndexId(staleFileVersion.fileIndexId)
             let fileIndexResult = fileIndexRepo.lookup(key: fileIndexKey, modelInit: FileIndex.init)
             guard case .found(let object) = fileIndexResult,
-                let fileIndex = object as? FileIndex else {
+                let fileIndex = object as? FileIndex,
+                let fileGroupUUID = fileIndex.fileGroupUUID else {
                 throw DeleteStaleFileVersionsError.generic("DeleteStaleFileVersions: failed lookup in FileIndexRepository: \(String(describing: staleFileVersion.fileIndexId))")
             }
-
-            guard let (owningCreds, cloudStorage) = try? fileIndex.getCloudStorage(userRepo: userRepo, services: services) else {
+            
+            guard let fileGroup = try? fileGroupRepo.getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+                throw DeleteStaleFileVersionsError.generic("DeleteStaleFileVersions: failed lookup in FileGroupRepository: \(fileGroupUUID)")
+            }
+            
+            guard let (owningCreds, cloudStorage) = try? userRepo.getCloudStorage(owningUserId: fileGroup.owningUserId, services: services) else {
                 throw DeleteStaleFileVersionsError.generic("DeleteStaleFileVersions: failed getCloudStorage")
             }
         

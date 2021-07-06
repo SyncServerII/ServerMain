@@ -25,8 +25,9 @@ class FileController_DownloadTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file),
+        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -50,8 +51,9 @@ class FileController_DownloadTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file),
+        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -99,8 +101,9 @@ class FileController_DownloadTests: ServerTestCase {
     func testDownloadTextFileWhereFileDeletedGivesGoneResponse() {
         let testAccount:TestAccount = .primaryOwningAccount
         let deviceUUID = Foundation.UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, testAccount: testAccount, deviceUUID: deviceUUID, fileLabel: UUID().uuidString),
+        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, testAccount: testAccount, deviceUUID: deviceUUID, fileLabel: UUID().uuidString, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -152,8 +155,9 @@ class FileController_DownloadTests: ServerTestCase {
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
         let appMetaData = "{ \"foo\": \"bar\" }"
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, appMetaData: appMetaData, file: file),
+        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, appMetaData: appMetaData, file: file, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -179,8 +183,9 @@ class FileController_DownloadTests: ServerTestCase {
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
         let appMetaData = "{ \"foo\": \"bar\" }"
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
-        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, appMetaData: appMetaData, file: file),
+        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, appMetaData: appMetaData, file: file, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -230,10 +235,11 @@ class FileController_DownloadTests: ServerTestCase {
         let deviceUUID = Foundation.UUID().uuidString
         let testAccount:TestAccount = .primaryOwningAccount
         let fileUUID = Foundation.UUID().uuidString
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
         
         let beforeUploadTime = Date()
         
-        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file),
+        guard let uploadResult = uploadServerFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount:testAccount, fileLabel: UUID().uuidString, mimeType: file.mimeType.rawValue, deviceUUID:deviceUUID, fileUUID: fileUUID, cloudFolderName: ServerTestCase.cloudFolderName, file: file, fileGroup: fileGroup),
             let sharingGroupUUID = uploadResult.sharingGroupUUID else {
             XCTFail()
             return
@@ -260,6 +266,7 @@ class FileController_DownloadTests: ServerTestCase {
     func testDownloadVNOfFileWorks() throws {
         let file:TestFile = .commentFile
         let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
         guard case .string(let initialFileString) = file.contents,
             let initialData = initialFileString.data(using: .utf8) else {
@@ -275,7 +282,7 @@ class FileController_DownloadTests: ServerTestCase {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return

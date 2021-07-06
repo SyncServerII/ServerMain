@@ -10,8 +10,9 @@ import ServerShared
 import LoggerAPI
 
 // See https://github.com/SyncServerII/Neebla/issues/23#issuecomment-873467928 for why I finally had to add this table.
+// Due to a naming conflict, this is called `FileGroupModel` and not `FileGroup`.
 
-class FileGroups : NSObject, Model {
+class FileGroupModel : NSObject, Model {
     static let fileGroupIdKey = "fileGroupId"
     var fileGroupId: Int64!
     
@@ -29,9 +30,9 @@ class FileGroups : NSObject, Model {
     static let userIdKey = "userId"
     var userId: UserId!
     
-    // Only when the current user (identified by the userId) is a sharing user, this gives the userId that is the owner of the data for this file group.
+    // If the user has cloud storage, this will be the same as `userId`. If the user doesn't have cloud storage, it will be the user that sponsored the cloud storage for the social user.
     static let owningUserIdKey = "owningUserId"
-    var owningUserId:UserId?
+    var owningUserId:UserId!
     
     subscript(key:String) -> Any? {
         set {
@@ -71,7 +72,7 @@ class FileGroups : NSObject, Model {
 }
 
 class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
-    static var indexIdKey = FileGroups.fileGroupIdKey
+    static var indexIdKey = FileGroupModel.fileGroupIdKey
     
     private(set) var db:Database!
     
@@ -101,7 +102,8 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
                                     
             "userId BIGINT NOT NULL, " +
             
-            "owningUserId BIGINT, " +
+            // Not letting this field be NULL as a convenience. It's considerably easier for joins and other access to *always* have a known field that is the owning user id.
+            "owningUserId BIGINT NOT NULL, " +
 
             "UNIQUE (fileGroupUUID), " +
             
@@ -124,15 +126,16 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
         return result
     }
     
-    private func haveNilFieldForAdd(model:FileGroups) -> Bool {
+    private func haveNilFieldForAdd(model:FileGroupModel) -> Bool {
         return model.fileGroupUUID == nil
             || model.objectType == nil
             || model.sharingGroupUUID == nil
             || model.userId == nil
+            || model.owningUserId == nil
     }
     
     // On success, returns the new `fileGroupId` value.
-    func add(model:FileGroups) -> Int64? {
+    func add(model:FileGroupModel) -> Int64? {
         if haveNilFieldForAdd(model: model) {
             Log.error("One of the model values was nil: \(model)")
             return nil
@@ -140,12 +143,12 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
         
         let insert = Database.PreparedStatement(repo: self, type: .insert)
 
-        insert.add(fieldName: FileGroups.fileGroupUUIDKey, value: .string(model.fileGroupUUID))
-        insert.add(fieldName: FileGroups.userIdKey, value: .int64(model.userId))
-        insert.add(fieldName: FileGroups.objectTypeKey, value: .string(model.objectType))
-        insert.add(fieldName: FileGroups.sharingGroupUUIDKey, value: .string(model.sharingGroupUUID))
+        insert.add(fieldName: FileGroupModel.fileGroupUUIDKey, value: .string(model.fileGroupUUID))
+        insert.add(fieldName: FileGroupModel.userIdKey, value: .int64(model.userId))
+        insert.add(fieldName: FileGroupModel.objectTypeKey, value: .string(model.objectType))
+        insert.add(fieldName: FileGroupModel.sharingGroupUUIDKey, value: .string(model.sharingGroupUUID))
         
-        insert.add(fieldName: FileGroups.owningUserIdKey, value: .int64Optional(model.owningUserId))
+        insert.add(fieldName: FileGroupModel.owningUserIdKey, value: .int64Optional(model.owningUserId))
         
         do {
             try insert.run()
@@ -161,6 +164,9 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
     enum LookupKey : CustomStringConvertible {
         case fileGroupId(Int64)
         case fileGroupUUID(fileGroupUUID: String)
+        case sharingGroupUUID(sharingGroupUUID: String)
+        case userIdAndSharingGroup(userId: UserId, sharingGroupUUID: String)
+        case userId(userId: UserId)
         
         var description : String {
             switch self {
@@ -168,6 +174,12 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
                 return "fileGroupId(\(id))"
             case .fileGroupUUID(let fileGroupUUID):
                 return "fileGroupUUID(\(fileGroupUUID))"
+            case .sharingGroupUUID(let sharingGroupUUID):
+                return "sharingGroupUUID(\(sharingGroupUUID))"
+            case .userIdAndSharingGroup(let userId, let sharingGroupUUID):
+                return "userId(\(userId)); sharingGroupUUID(\(sharingGroupUUID))"
+            case .userId(let userId):
+                return "userId(\(userId))"
             }
         }
     }
@@ -178,6 +190,28 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
             return "fileGroupId = \(id)"
         case .fileGroupUUID(fileGroupUUID: let uuid):
             return "fileGroupUUID = '\(uuid)'"
+        case .sharingGroupUUID(sharingGroupUUID: let uuid):
+            return "sharingGroupUUID = '\(uuid)'"
+        case .userIdAndSharingGroup(let userId, let sharingGroupUUID):
+            return "userId = \(userId) and sharingGroupUUID = '\(sharingGroupUUID)'"
+        case .userId(let userId):
+            return "userId = \(userId)"
         }
+    }
+}
+
+extension FileGroupRepository {
+    enum FileGroupRepositoryError: Error {
+        case failedFileGroupLookup
+    }
+    
+    func getFileGroup(forFileGroupUUID fileGroupUUID: String) throws -> FileGroupModel {
+        let fileGroupKey = Self.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
+        guard let fileGroups = lookupAll(key: fileGroupKey, modelInit: FileGroupModel.init),
+            fileGroups.count == 1 else {
+            throw FileGroupRepositoryError.failedFileGroupLookup
+        }
+        
+        return fileGroups[0]
     }
 }

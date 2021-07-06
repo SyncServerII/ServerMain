@@ -30,6 +30,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
     func runGetUploadsResult(withInvalidDeferredUploadId: Bool) throws {
         let file:TestFile = .commentFile
         let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
         guard case .string(let initialFileString) = file.contents,
             let initialData = initialFileString.data(using: .utf8) else {
@@ -44,7 +45,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -55,7 +56,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             return
         }
                 
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -101,6 +102,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
     func runGetUploadsResult(withInvalidUserId: Bool) throws {
         let file:TestFile = .commentFile
         let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
         guard case .string(let initialFileString) = file.contents,
             let initialData = initialFileString.data(using: .utf8) else {
@@ -115,7 +117,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -131,7 +133,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             actualUserId += 1
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: actualUserId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: actualUserId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -168,6 +170,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
     func runGetUploadsResult(withDeferredUploadId: Bool) throws {
         let file:TestFile = .commentFile
         let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
         guard case .string(let initialFileString) = file.contents,
             let initialData = initialFileString.data(using: .utf8) else {
@@ -182,7 +185,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let fileUUID = Foundation.UUID().uuidString
         let changeResolverName = CommentFile.changeResolverName
 
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -193,7 +196,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: nil, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return
@@ -235,6 +238,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
     func testGetUploadsResultWithBatchUUIDWorks() throws {
         let file:TestFile = .commentFile
         let comment = ExampleComment(messageString: "Example", id: Foundation.UUID().uuidString)
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
 
         guard case .string(let initialFileString) = file.contents,
             let initialData = initialFileString.data(using: .utf8) else {
@@ -250,7 +254,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
         let changeResolverName = CommentFile.changeResolverName
         let batchUUID = UUID().uuidString
         
-        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, changeResolverName: changeResolverName),
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: UUID().uuidString, stringFile: file, fileGroup: fileGroup, changeResolverName: changeResolverName),
             let sharingGroupUUID = result.sharingGroupUUID else {
             XCTFail()
             return
@@ -261,7 +265,7 @@ class FileController_GetUploadsResults: ServerTestCase, UploaderCommon {
             return
         }
         
-        guard let deferredUpload1 = createDeferredUpload(userId: userId, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
+        guard let deferredUpload1 = createDeferredUpload(userId: userId, fileGroupUUID: fileGroup.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, batchUUID: batchUUID, status: .pendingChange),
             let deferredUploadId1 = deferredUpload1.deferredUploadId else {
             XCTFail()
             return

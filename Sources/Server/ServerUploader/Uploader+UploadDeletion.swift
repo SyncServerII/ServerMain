@@ -12,7 +12,15 @@ import LoggerAPI
 
 extension Uploader {
     private func getDeletionFrom(fileIndex: FileIndex) throws -> FileDeletion {
-        guard let (owningCreds, cloudStorage) = try? fileIndex.getCloudStorage(userRepo: userRepo, services: services) else {
+        guard let fileGroupUUID = fileIndex.fileGroupUUID else {
+            throw Errors.generic("Failed to get fileGroupUUID")
+        }
+        
+        guard let fileGroup = try? fileGroupRepo.getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+            throw Errors.generic("getDeletionFrom: failed lookup in FileGroupRepository: \(fileGroupUUID)")
+        }
+                    
+        guard let (owningCreds, cloudStorage) = try? userRepo.getCloudStorage(owningUserId: fileGroup.owningUserId, services: services) else {
             throw Errors.failedGettingCloudStorage
         }
         
@@ -37,7 +45,7 @@ extension Uploader {
                 throw Errors.couldNotGetFileGroup
             }
             
-            let key1 = FileIndexRepository.LookupKey.fileGroupUUIDAndSharingGroup(fileGroupUUID: deferredUploadWithFileGroup.fileGroupUUID!, sharingGroupUUID: deferredUploadWithFileGroup.sharingGroupUUID)
+            let key1 = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: deferredUploadWithFileGroup.fileGroupUUID!)
             guard let fileIndexes = fileIndexRepo.lookupAll(key: key1, modelInit: FileIndex.init) else {
                 throw Errors.couldNotLookupByGroups
             }
@@ -69,16 +77,12 @@ extension Uploader {
             
             uploads += theUploads
             
-            for upload in uploads {
-                guard let sharingGroupUUID = upload.sharingGroupUUID else {
-                    throw Errors.failedToGetSharingGroupUUID
-                }
-                
+            for upload in uploads {                
                 guard let fileUUID = upload.fileUUID else {
                     throw Errors.failedToGetFileUUID
                 }
                 
-                let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, fileUUID: fileUUID)
+                let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: fileUUID)
                 guard case .found(let model) = fileIndexRepo.lookup(key: key, modelInit: FileIndex.init), let fileIndex = model as? FileIndex else {
                     throw Errors.failedToGetFileUUID
                 }

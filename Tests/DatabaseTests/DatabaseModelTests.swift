@@ -118,7 +118,6 @@ class DatabaseModelTests: ServerTestCase {
         let newFileIndexId = FileIndexId(334)
         let newFileUUID = Foundation.UUID().uuidString
         let newDeviceUUID = Foundation.UUID().uuidString
-        let newUserId = UserId(3226453)
         let newMimeType = "text/plain"
         let newAppMetaData = "whatever"
         let newDeleted = false
@@ -127,12 +126,10 @@ class DatabaseModelTests: ServerTestCase {
         let creationDate = Date()
         let updateDate = Date()
         let changeResolverName = "SomeChangeResolver"
-        let objectType = "SomeType"
         
         fileIndex[FileIndex.fileIndexIdKey] = newFileIndexId
         fileIndex[FileIndex.fileUUIDKey] = newFileUUID
         fileIndex[FileIndex.deviceUUIDKey] = newDeviceUUID
-        fileIndex[FileIndex.userIdKey] = newUserId
         fileIndex[FileIndex.mimeTypeKey] = newMimeType
         fileIndex[FileIndex.appMetaDataKey] = newAppMetaData
         fileIndex[FileIndex.deletedKey] = newDeleted
@@ -141,12 +138,10 @@ class DatabaseModelTests: ServerTestCase {
         fileIndex[FileIndex.creationDateKey] = creationDate
         fileIndex[FileIndex.updateDateKey] = updateDate
         fileIndex[FileIndex.changeResolverNameKey] = changeResolverName
-        fileIndex[FileIndex.objectTypeKey] = objectType
         
         XCTAssert(fileIndex.fileIndexId == newFileIndexId)
         XCTAssert(fileIndex.fileUUID == newFileUUID)
         XCTAssert(fileIndex.deviceUUID == newDeviceUUID)
-        XCTAssert(fileIndex.userId == newUserId)
         XCTAssert(fileIndex.mimeType == newMimeType)
         XCTAssert(fileIndex.appMetaData == newAppMetaData)
         XCTAssert(fileIndex.deleted == newDeleted)
@@ -155,12 +150,10 @@ class DatabaseModelTests: ServerTestCase {
         XCTAssert(fileIndex.creationDate == creationDate)
         XCTAssert(fileIndex.updateDate == updateDate)
         XCTAssert(fileIndex.changeResolverName == changeResolverName)
-        XCTAssert(fileIndex.objectType == objectType)
 
         fileIndex[FileIndex.fileIndexIdKey] = nil
         fileIndex[FileIndex.fileUUIDKey] = nil
         fileIndex[FileIndex.deviceUUIDKey] = nil
-        fileIndex[FileIndex.userIdKey] = nil
         fileIndex[FileIndex.mimeTypeKey] = nil
         fileIndex[FileIndex.appMetaDataKey] = nil
         fileIndex[FileIndex.deletedKey] = nil
@@ -169,12 +162,10 @@ class DatabaseModelTests: ServerTestCase {
         fileIndex[FileIndex.creationDateKey] = nil
         fileIndex[FileIndex.updateDateKey] = nil
         fileIndex[FileIndex.changeResolverNameKey] = nil
-        fileIndex[FileIndex.objectTypeKey] = nil
 
         XCTAssert(fileIndex.fileIndexId == nil)
         XCTAssert(fileIndex.fileUUID == nil)
         XCTAssert(fileIndex.deviceUUID == nil)
-        XCTAssert(fileIndex.userId == nil)
         XCTAssert(fileIndex.mimeType == nil)
         XCTAssert(fileIndex.appMetaData == nil)
         XCTAssert(fileIndex.deleted == nil)
@@ -183,7 +174,6 @@ class DatabaseModelTests: ServerTestCase {
         XCTAssert(fileIndex.creationDate == nil)
         XCTAssert(fileIndex.updateDate == nil)
         XCTAssert(fileIndex.changeResolverName == nil)
-        XCTAssert(fileIndex.objectType == nil)
     }
     
     func testUpload() {

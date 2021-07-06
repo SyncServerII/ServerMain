@@ -30,11 +30,11 @@ extension FileController {
         
         // TODO: *0* What would happen if someone else deletes the file as we we're downloading it? It seems a shame to hold a lock for the entire duration of the download, however.
         
-            // Need to get the file from the cloud storage service:
+        // Need to get the file from the cloud storage service:
             
-            // First, lookup the file in the FileIndex. This does an important security check too-- make sure the fileUUID is in the sharing group.
+        // First, lookup the file in the FileIndex.
            
-        let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: downloadRequest.sharingGroupUUID, fileUUID: downloadRequest.fileUUID)
+        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: downloadRequest.fileUUID)
         let lookupResult = params.repos.fileIndex.lookup(key: key, modelInit: FileIndex.init)
         
         let fileIndex:FileIndex
@@ -63,8 +63,23 @@ extension FileController {
             return
         }
 
+        // Also do an important security check -- make sure the fileUUID is in the sharing group.
+        guard let fileGroupModel = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileIndex.fileGroupUUID) else {
+            let message = "Could not get file group."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        guard fileGroupModel.sharingGroupUUID == downloadRequest.sharingGroupUUID else {
+            let message = "File was not in the sharing group."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
         var foundStaleVersion = false
-        let staleVersionKey = StaleVersionRepository.LookupKey.uuids(fileUUID: fileIndex.fileUUID, sharingGroupUUID: fileIndex.sharingGroupUUID, fileVersion: downloadRequest.fileVersion)
+        let staleVersionKey = StaleVersionRepository.LookupKey.uuids(fileUUID: fileIndex.fileUUID, sharingGroupUUID: fileGroupModel.sharingGroupUUID, fileVersion: downloadRequest.fileVersion)
         let staleVersionLookupResult = params.repos.staleVersion.lookup(key: staleVersionKey, modelInit: StaleVersion.init)
         switch staleVersionLookupResult {
         case .found:
@@ -116,7 +131,7 @@ extension FileController {
 
         // OWNER
         // The cloud storage for the file is the original owning user's storage.
-        guard let owningUserCreds = FileController.getCreds(forUserId: fileIndex.userId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate) else {
+        guard let owningUserCreds = FileController.getCreds(forUserId: fileGroupModel.owningUserId, userRepo: params.repos.user, accountManager: params.services.accountManager, accountDelegate: params.accountDelegate) else {
             let message = "Could not obtain owning users creds"
             Log.error(message)
             params.completion(.failure(.message(message)))

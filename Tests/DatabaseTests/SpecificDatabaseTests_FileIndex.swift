@@ -38,57 +38,21 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
     }
 
     func testAddFileIndex() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        let sharingGroupUUID = UUID().uuidString
-        guard let _ = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let _ = doAddFileIndex() else {
             XCTFail()
             return
         }
     }
     
     func testAddFileIndexWithChangeResolver() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        let sharingGroupUUID = UUID().uuidString
-        guard let _ = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true, changeResolverName: "Foobar") else {
+        guard let _ = doAddFileIndex(changeResolverName: "Foobar") else {
             XCTFail()
             return
         }
     }
 
     func testUpdateFileIndexWithNoChanges() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        let sharingGroupUUID = UUID().uuidString
-        guard let fileIndex = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let fileIndex = doAddFileIndex() else {
             XCTFail()
             return
         }
@@ -97,20 +61,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
     }
     
     func testUpdateFileIndexWithAChange() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        let sharingGroupUUID = UUID().uuidString
-
-        // 6/12/19; Just added the JSON validation parameter. I have *no* idea how this was working before this. It ought to have required the server to be running for it to work.
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        guard let fileIndex = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let fileIndex = doAddFileIndex() else {
             XCTFail()
             return
         }
@@ -120,19 +71,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
     }
     
     func testUpdateFileIndexFailsWithoutFileIndexId() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        let sharingGroupUUID = UUID().uuidString
-
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        guard let fileIndex = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let fileIndex = doAddFileIndex() else {
             XCTFail()
             return
         }
@@ -141,19 +80,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
     }
     
     func testUpdateUploadSucceedsWithNilAppMetaData() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        let sharingGroupUUID = UUID().uuidString
-
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        guard let fileIndex = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let fileIndex = doAddFileIndex() else {
             XCTFail()
             return
         }
@@ -163,20 +90,9 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
     }
     
     func testLookupFromFileIndex() {
-        let user1 = User()
-        user1.username = "Chris"
-        user1.accountType = AccountScheme.google.accountName
-        user1.creds = "{\"accessToken\": \"SomeAccessTokenValue1\"}"
-        user1.credsId = "100"
-        let sharingGroupUUID = UUID().uuidString
         let changeResolverName = "Foobar"
-        
-        guard let userId = userRepo.add(user: user1, accountManager: accountManager, accountDelegate: accountDelegate, validateJSON: false) else {
-            XCTFail("Bad credentialsId!")
-            return
-        }
-        
-        guard let fileIndex1 = doAddFileIndex(userId:userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true, changeResolverName: changeResolverName) else {
+
+        guard let fileIndex1 = doAddFileIndex(changeResolverName: changeResolverName) else {
             XCTFail()
             return
         }
@@ -195,11 +111,8 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
 
             XCTAssert(fileIndex1.fileVersion != nil && fileIndex1.fileVersion == fileIndex2.fileVersion)
             XCTAssert(fileIndex1.mimeType != nil && fileIndex1.mimeType == fileIndex2.mimeType)
-            XCTAssert(fileIndex1.userId != nil && fileIndex1.userId == fileIndex2.userId)
             XCTAssert(fileIndex1.appMetaData != nil && fileIndex1.appMetaData == fileIndex2.appMetaData)
-            XCTAssert(fileIndex1.sharingGroupUUID != nil && fileIndex1.sharingGroupUUID == fileIndex2.sharingGroupUUID)
             
-            XCTAssert(fileIndex1.objectType != nil && fileIndex1.objectType == fileIndex2.objectType)
             XCTAssert(fileIndex1.fileGroupUUID != nil && fileIndex1.fileGroupUUID == fileIndex2.fileGroupUUID)
 
             XCTAssert(fileIndex2.changeResolverName == changeResolverName)
@@ -254,17 +167,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
+        guard let fileIndexInserted = doAddFileIndex() else {
             XCTFail()
             return
         }
-        
-        guard case .success = SharingGroupUserRepository(db).add(sharingGroupUUID: sharingGroupUUID, userId: userId, permission: .read, owningUserId: nil) else {
-            XCTFail()
-            return
-        }
-
-        guard let fileIndexInserted = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+                
+        guard let _ = addFileGroup(fileGroupUUID: fileIndexInserted.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -311,12 +219,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
+            XCTFail()
+            return
+        }
+        
+        guard let fileIndex2 = doAddFileIndex() else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex2.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar2", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -373,13 +291,17 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
+            XCTFail()
+            return
+        }
+
+        guard let fileGroup1 = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
         
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
         }
@@ -401,7 +323,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             }
             
             XCTAssert(!summary[0].deleted)
-            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            XCTAssert(summary[0].fileGroupUUID == fileGroup1.fileGroupUUID)
             
             guard let inform = summary[0].inform, inform.count == 1 else {
                 XCTFail()
@@ -437,11 +359,16 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
-        
+
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
+            XCTFail()
+            return
+        }
+
         guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
@@ -489,17 +416,27 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
 
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
+            XCTFail()
+            return
+        }
+        
         guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex2 = doAddFileIndex() else {
+            XCTFail()
+            return
+        }
+ 
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex2.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar2", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -546,18 +483,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
 
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileGroup1 = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false, fileGroupUUID: fileGroupUUID, fileLabel: "file2") else {
+        guard let fileUUID = fileIndex1.fileUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(fileGroupUUID: fileGroup1.fileGroupUUID, fileLabel: "file2") else {
             XCTFail()
             return
         }
@@ -605,18 +546,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
-            XCTFail()
-            return
-        }
-
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false, fileGroupUUID: fileGroupUUID, fileLabel: "file2") else {
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
+            XCTFail()
+            return
+        }
+
+        guard let fileUUID = fileIndex1.fileUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(fileGroupUUID: fileIndex1.fileGroupUUID, fileLabel: "file2") else {
             XCTFail()
             return
         }
@@ -668,18 +613,22 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
 
-        guard let fileUUID = fileIndex1.fileUUID,
-            let fileGroupUUID = fileIndex1.fileGroupUUID else {
+        guard let fileGroup1 = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false, fileGroupUUID: fileGroupUUID, fileLabel: "file2") else {
+        guard let fileUUID = fileIndex1.fileUUID else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = doAddFileIndex(fileGroupUUID: fileGroup1.fileGroupUUID, fileLabel: "file2") else {
             XCTFail()
             return
         }
@@ -706,7 +655,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             }
             
             XCTAssert(!summary[0].deleted)
-            XCTAssert(summary[0].fileGroupUUID == fileGroupUUID)
+            XCTAssert(summary[0].fileGroupUUID == fileIndex1.fileGroupUUID)
             
             guard let inform = summary[0].inform, inform.count == 1 else {
                 XCTFail()
@@ -743,17 +692,27 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
 
-        guard let fileIndex1 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex() else {
             XCTFail()
             return
         }
 
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
+            XCTFail()
+            return
+        }
+        
         guard let fileUUID = fileIndex1.fileUUID else {
             XCTFail()
             return
         }
 
-        guard let fileIndex2 = doAddFileIndex(userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex2 = doAddFileIndex() else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex2.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar2", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -816,7 +775,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
         }
 
         let date = Date()
-        guard let _ = doAddFileIndex(creationDate: date, updateDate: nil, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex(creationDate: date, updateDate: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -860,7 +824,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = doAddFileIndex(creationDate: creationDate, updateDate: updateDate, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex(creationDate: creationDate, updateDate: updateDate) else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -904,7 +873,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = doAddFileIndex(creationDate: creationDate, updateDate: updateDate, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex(creationDate: creationDate, updateDate: updateDate) else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -946,7 +920,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = doAddFileIndex(creationDate: creationDate1, updateDate: nil, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex1 = doAddFileIndex(creationDate: creationDate1, updateDate: nil) else {
+            XCTFail()
+            return
+        }
+
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex1.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar1", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -956,7 +935,12 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        guard let _ = doAddFileIndex(creationDate: creationDate2, updateDate: nil, userId: userId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex2 = doAddFileIndex(creationDate: creationDate2, updateDate: nil) else {
+            XCTFail()
+            return
+        }
+        
+        guard let _ = addFileGroup(fileGroupUUID: fileIndex2.fileGroupUUID, sharingGroupUUID: sharingGroupUUID, objectType: "Foobar2", userId: userId, owningUserId: userId) else {
             XCTFail()
             return
         }
@@ -966,7 +950,7 @@ class SpecificDatabaseTests_FileIndex: ServerTestCase {
             return
         }
         
-        XCTAssert(DateExtras.equals(result, creationDate2))
+        XCTAssert(DateExtras.equals(result, creationDate2), "\(result) != \(creationDate2)")
     }
 }
 

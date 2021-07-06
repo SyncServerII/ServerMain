@@ -45,13 +45,6 @@ extension FileController {
             return
         }
         
-        guard let deviceUUID = params.deviceUUID else {
-            let message = "No deviceUUID in UploadDeletionRequest"
-            Log.error(message)
-            params.completion(.failure(.message(message)))
-            return
-        }
-        
         guard let sharingGroupUUID = uploadDeletionRequest.sharingGroupUUID,
             sharingGroupSecurityCheck(sharingGroupUUID: sharingGroupUUID, params: params) else {
             let message = "Failed in sharing group security check."
@@ -62,26 +55,16 @@ extension FileController {
         
         // Do we have a fileUUID or a fileGroupUUID?
         
-        var keys = [FileIndexRepository.LookupKey]()
-        
-        enum DeletionType {
-            case singleFile
-            case fileGroup
+        // 7/4/21; No longer allowing deletion by fileUUID
+        guard uploadDeletionRequest.fileUUID == nil else {
+            let message = "No longer supporting fileUUID deletion."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
         }
-        let deletionType: DeletionType
-        
-        if let fileUUID = uploadDeletionRequest.fileUUID {
-            let key = FileIndexRepository.LookupKey.primaryKeys(sharingGroupUUID: uploadDeletionRequest.sharingGroupUUID, fileUUID: fileUUID)
-            keys += [key]
-            deletionType = .singleFile
-        }
-        else if let fileGroupUUID = uploadDeletionRequest.fileGroupUUID {
-            let key = FileIndexRepository.LookupKey.fileGroupUUIDAndSharingGroup(fileGroupUUID: fileGroupUUID, sharingGroupUUID: uploadDeletionRequest.sharingGroupUUID)
-            keys += [key]
-            deletionType = .fileGroup
-        }
-        else {
-            let message = "Did not have either a fileUUID or a fileGroupUUID"
+
+        guard let fileGroupUUID = uploadDeletionRequest.fileGroupUUID else {
+            let message = "Did not have either a fileGroupUUID"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
@@ -89,7 +72,7 @@ extension FileController {
         
         let files:[FileInfo]
         
-        let indexResult = params.repos.fileIndex.fileIndex(forKeys: keys)
+        let indexResult = params.repos.fileIndex.fileIndex(forFileGroupUUID: fileGroupUUID)
         switch indexResult {
         case .error(let error):
             Log.error(error)
@@ -99,8 +82,17 @@ extension FileController {
             files = fileInfos
         }
         
+        // Make sure each of the files is in the sharing group.
+        let filter = files.filter { $0.sharingGroupUUID == uploadDeletionRequest.sharingGroupUUID }
+        guard filter.count == files.count else {
+            let message = "Not all files were in the sharing group."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
         guard files.count > 0 else {
-            let message = "File(s) \(keys) not in FileIndex"
+            let message = "File(s) in fileGroupUUID not in FileIndex"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
@@ -115,72 +107,16 @@ extension FileController {
         }
         
         // Mark the file(s) as deleted in the FileIndex
-        for key in keys {
-            guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: key) else {
-                let message = "Failed marking file(s) as deleted: \(key)"
-                Log.error(message)
-                params.completion(.failure(.message(message)))
-                return
-            }
+        let key = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
+        guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: key) else {
+            let message = "Failed marking file(s) as deleted: \(key)"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
         }
         
-        let finishType:FinishUploadDeletion.DeletionsType
-        
-        switch deletionType {
-        case .fileGroup:
-            finishType = .fileGroup(fileGroupUUID: uploadDeletionRequest.fileGroupUUID)
-            
-        case .singleFile:
-            guard files.count == 1 else {
-                let message = "Single file deletion and not exactly one file."
-                Log.error(message)
-                params.completion(.failure(.message(message)))
-                return
-            }
-            
-            let file = files[0]
-            
-            guard file.fileGroupUUID == nil else {
-                let message = "Single file deletion but the file had a file group."
-                Log.error(message)
-                params.completion(.failure(.message(message)))
-                return
-            }
-            
-            guard let fileUUID = file.fileUUID else {
-                let message = "Single file deletion and no fileUUID given."
-                Log.error(message)
-                params.completion(.failure(.message(message)))
-                return
-            }
-            
-            Log.info("Upload deletion for fileUUID: ")
-                        
-            let upload = Upload()
-            upload.fileUUID = fileUUID
-            upload.deviceUUID = deviceUUID
-            upload.state = .deleteSingleFile
-            upload.userId = params.currentSignedInUser!.userId
-            upload.sharingGroupUUID = sharingGroupUUID
-            
-            // So we don't get failures due to nil checks.
-            upload.uploadCount = 1
-            upload.uploadIndex = 1
-            
-            let uploadAddResult = params.repos.upload.add(upload: upload)
-            
-            switch uploadAddResult {
-            case .success(_):
-                finishType = .singleFile(upload: upload)
+        let finishType:FinishUploadDeletion.DeletionsType = .fileGroup(fileGroupUUID: uploadDeletionRequest.fileGroupUUID)
 
-            default:
-                let message = "Error adding Upload record: \(uploadAddResult)"
-                Log.error(message)
-                params.completion(.failure(.message(message)))
-                return
-            }
-        }
-        
         let uploader = Uploader(services: params.services.uploaderServices, delegate: params.services)
 
         do {

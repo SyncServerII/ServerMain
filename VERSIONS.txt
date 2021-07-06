@@ -7,6 +7,11 @@ Version 1.12.0
 		the FileGroup table.
 		- Integrated usage of that table into v0 file uploads.
 		- Added tests to support the addition of this new table and its usage.
+	* Migrations
+		- Removing fields from FileIndex table:
+			userId, sharingGroupUUID, objectType
+	* Deprecations
+		- No longer allowing uploads of files with no file group UUID.
 	* Adding support for new endpoint: moveFileGroups
 	
 Version 1.11.6 (6/27/21)

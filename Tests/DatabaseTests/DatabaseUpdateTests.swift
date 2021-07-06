@@ -43,12 +43,12 @@ class DatabaseUpdateTests: ServerTestCase {
     func runUpdateSingleField(fieldName: String, valueType: Database.PreparedStatement.ValueType, expectedUpdateResult: Bool) throws -> FileIndex? {
 
         // Add an extra-- so we can search for update and have it be meaningful.
-        guard let _ = doAddFileIndex(userId:exampleUserId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let _ = doAddFileIndex() else {
             XCTFail()
             return nil
         }
         
-        guard let fileIndex = doAddFileIndex(userId:exampleUserId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex = doAddFileIndex() else {
             XCTFail()
             return nil
         }
@@ -83,12 +83,12 @@ class DatabaseUpdateTests: ServerTestCase {
     
     func testUpdateMultipleFieldsWorks() throws {
         // Add an extra-- so we can search for update and have it be meaningful.
-        guard let _ = doAddFileIndex(userId:exampleUserId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        guard let _ = doAddFileIndex() else {
             XCTFail()
             return
         }
         
-        guard let fileIndex = doAddFileIndex(userId:exampleUserId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let fileIndex = doAddFileIndex() else {
             XCTFail()
             return
         }
@@ -115,19 +115,21 @@ class DatabaseUpdateTests: ServerTestCase {
     }
     
     func testUpdateAll() {
-        guard let _ = doAddFileIndex(userId:exampleUserId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: true) else {
+        let fileGroupUUID = UUID().uuidString
+        
+        guard let _ = doAddFileIndex(fileGroupUUID: fileGroupUUID, fileLabel: "Foo1") else {
             XCTFail()
             return
         }
         
-        guard let _ = doAddFileIndex(userId:exampleUserId, sharingGroupUUID: sharingGroupUUID, createSharingGroup: false) else {
+        guard let _ = doAddFileIndex(fileGroupUUID: fileGroupUUID, fileLabel: "Foo2") else {
             XCTFail()
             return
         }
         
         let newVersion = FileVersionInt(87)
         
-        let key = FileIndexRepository.LookupKey.sharingGroupUUID(sharingGroupUUID: sharingGroupUUID)
+        let key = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
         let result = fileIndexRepo.updateAll(key: key, updates: [FileIndex.fileVersionKey : .int32(newVersion)])
         XCTAssert(result == 2)
         

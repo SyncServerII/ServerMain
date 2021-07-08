@@ -44,6 +44,7 @@ public class ServerRoutes {
             (ServerEndpoints.updateSharingGroup, sharingGroupsController.updateSharingGroup),
             (ServerEndpoints.removeSharingGroup, sharingGroupsController.removeSharingGroup),
             (ServerEndpoints.removeUserFromSharingGroup, sharingGroupsController.removeUserFromSharingGroup),
+            (ServerEndpoints.moveFileGroupsFromSourceSharingGroupToDest, sharingGroupsController.moveFileGroups),
             
             (ServerEndpoints.registerPushNotificationToken, pushNotificationsController.registerPushNotificationToken),
             (ServerEndpoints.sendPushNotifications, pushNotificationsController.sendPushNotifications)

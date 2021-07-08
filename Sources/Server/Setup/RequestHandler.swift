@@ -209,60 +209,29 @@ class RequestHandler {
             }
             
             // The user is on the system. Whether or not they can perform the endpoint depends on their permissions for the sharing group.
-            let key = SharingGroupUserRepository.LookupKey.primaryKeys(sharingGroupUUID: sharingGroupUUID, userId: currentSignedInUser!.userId, deleted: false)
-            let result = repositories.sharingGroupUser.lookup(key: key, modelInit: SharingGroupUser.init)
-            switch result {
-            case .found(let model):
-                guard let sharingGroupUser = model as? SharingGroupUser,
-                    let userPermissions = sharingGroupUser.permission else {
-                    self.failWithError(message: "SharingGroupUser did not have permissions!")
-                    return .failure
-                }
-                
-                if let minPermission = sharing.minPermission {
-                    guard userPermissions.hasMinimumPermission(minPermission) else {
-                        self.failWithError(message: "User did not meet minimum permissions -- needed: \(minPermission); had: \(userPermissions)!")
-                        return .failure
-                    }
-                }
-                
-            case .noObjectFound:
-                // One reason that the sharing group user might not be found is that the SharingGroupUser was removed from the system-- e.g., if an owning user is deleted, SharingGroupUser rows that have it as their owningUserId will be removed.
-                // If a client fails with this error, it seems like some kind of client error or edge case where the client should have been updated already (i.e., from an Index endpoint call) so that it doesn't make such a request. Therefore, I'm not going to code a special case on the client to deal with this.
-                // 7/8/20; Actually, this occurs simply when an incorrect sharingGroupUUID is used when uploading a file. Let's test to see if the sharingGroupUUID exists.
-                if let exists = sharingGroupExists(sharingGroupUUID: sharingGroupUUID), exists {
-                    self.failWithError(failureResult:
-                        .goneWithReason(message: "SharingGroupUser object not found!", .userRemoved))
-                }
-                else {
-                    self.failWithError(failureResult:
-                        .message("sharingGroupUUID not found!"))
-                }
-                        
-                return .failure
+            let permissionResult = repositories.sharingGroupUser.checkPermissions(userId: currentSignedInUser!.userId, sharingGroupUUID: sharingGroupUUID, minPermission: sharing.minPermission, sharingGroupRepo: repositories.sharingGroup)
+            
+            switch permissionResult {
+            case .success:
+                return .success(sharingGroupUUID: sharingGroupUUID)
+            case .didNotHavePermission:
+                failWithError(message: "SharingGroupUser did not have permissions!")
+            case .didNotHaveMinimumPermission(let needed, let actual):
+                failWithError(message: "User did not meet minimum permissions -- needed: \(needed); had: \(actual)!")
+            case .sharingGroupUUIDNotFound:
+                failWithError(failureResult:
+                    .message("sharingGroupUUID not found!"))
+            case .sharingGroupUUIDGone:
+                failWithError(failureResult:
+                    .goneWithReason(message: "SharingGroupUser object not found!", .userRemoved))
             case .error(let error):
-                self.failWithError(message: error)
-                return .failure
+                failWithError(message: error)
             }
             
-            return .success(sharingGroupUUID: sharingGroupUUID)
+            return .failure
         }
         
         return .success(sharingGroupUUID: nil)
-    }
-    
-    private func sharingGroupExists(sharingGroupUUID: String) -> Bool? {
-        let key = SharingGroupRepository.LookupKey.sharingGroupUUID(sharingGroupUUID)
-        let result = repositories.sharingGroup.lookup(key: key, modelInit: SharingGroup.init)
-        switch result {
-        case .found:
-            return true
-        case .noObjectFound:
-            return false
-        case .error(let error):
-            Log.error("sharingGroupExists: \(error)")
-            return nil
-        }
     }
     
     // Starts a transaction, and calls the `dbOperations` closure. If the closure succeeds (no error), then commits the transaction. Otherwise, rolls it back.

@@ -1,5 +1,12 @@
 SyncServer
 
+Version 1.12.2 (7/7/21)
+	* Completed moveFileGroups endpoint.
+		Including tests. 
+
+[MIGRATIONS]
+	* Production migrations for the FileGroup table.
+
 Version 1.12.1 (7/6/21)
 	* Changed from a (fileUUID, fileGroupUUID) unique constraint on the FileIndex to a
 		fileUUID unique constraint-- to be consistent with the LookupKey for FileIndex.

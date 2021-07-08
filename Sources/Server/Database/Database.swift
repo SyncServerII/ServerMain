@@ -712,7 +712,7 @@ extension Database {
 
 extension RepositoryBasics where Self: ModelIndexId {
 
-    // Updates consist of fieldName/ValueType key/value pairs. indexId provides the value for the index field that youare updating, to find the record in the database (along with the ModelIndexId key). Don't include the index field in the update(s).
+    // Updates consist of fieldName/ValueType key/value pairs. indexId provides the value for the indexId field that you are updating, to find the record in the database (along with the ModelIndexId key). Don't include the index field in the update(s).
     // Returns true iff success.
     func update(indexId: Int64,
         with updates:[String: Database.PreparedStatement.ValueType]) -> Bool {

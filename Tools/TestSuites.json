@@ -187,6 +187,9 @@
     },
     {
       "name": "SharingTests.SharingGroupsControllerTests"
+    },
+    {
+      "name": "SharingTests.SharingGroupsController_MoveFileGroups"
     }
   ],
   "OtherTests": [

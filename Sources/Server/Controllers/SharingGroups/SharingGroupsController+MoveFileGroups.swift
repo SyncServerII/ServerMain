@@ -1,5 +1,5 @@
 //
-//  SharingGroupsController+Move.swift
+//  SharingGroupsController+MoveFileGroups.swift
 //  Server
 //
 //  Created by Christopher G Prince on 7/3/21.
@@ -34,8 +34,36 @@ extension SharingGroupsController {
             return
         }
         
+        guard sourceSharingGroupUUID != destinationSharingGroupUUID else {
+            let message = "The source sharing group is the same as the destination."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
         guard sharingGroupSecurityCheck(sharingGroupUUID: sourceSharingGroupUUID, params: params) else {
             let message = "Failed in sharing group security check: For source sharing group"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        guard let userId = params.currentSignedInUser?.userId else {
+            let message = "Could not get current signed in user."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        guard case .success = params.repos.sharingGroupUser.checkPermissions(userId: userId, sharingGroupUUID: sourceSharingGroupUUID, minPermission: .admin, sharingGroupRepo: params.repos.sharingGroup) else {
+            let message = "User didn't have admin permission on source sharing group"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+
+        guard case .success = params.repos.sharingGroupUser.checkPermissions(userId: userId, sharingGroupUUID: destinationSharingGroupUUID, minPermission: .admin, sharingGroupRepo: params.repos.sharingGroup) else {
+            let message = "User didn't have admin permission on destination sharing group"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
@@ -48,19 +76,33 @@ extension SharingGroupsController {
             params.completion(.failure(.message(message)))
             return
         }
+        
+        guard Set<String>(fileGroupUUIDs).count == fileGroupUUIDs.count else {
+            let message = "Duplicate file group(s) passed."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
 
         guard let fileGroups = checkOwners(fileGroupUUIDs: fileGroupUUIDs, sourceSharingGroup: sourceSharingGroupUUID, destinationSharingGroup: destinationSharingGroupUUID, params: params) else {
             // `checkOwners` already did the completion.
             return
         }
         
-        // TODO: Need to change the `sharingGroupUUID` field of each of the `FileGroupModel`'s and save 'em back to the database.
-        // And: I've not yet integrated this endpoint into Setup/ServerRoutes.swift.
-        // For now, fail this endpoint-- until we've completed this implementation.
-        let message = "YIKES: This endpoint isn't yet completed."
-        Log.error(message)
-        params.completion(.failure(.message(message)))
-        return
+        // Need to change the `sharingGroupUUID` field of each of the `FileGroupModel`'s and save 'em back to the database.
+        for fileGroup in fileGroups {
+            let success = params.repos.fileGroups.update(indexId: fileGroup.fileGroupId, with: [FileGroupModel.sharingGroupUUIDKey: .string(destinationSharingGroupUUID)])
+            guard success else {
+                let message = "Failed in updating "
+                Log.error(message)
+                params.completion(.failure(.message(message)))
+                return
+            }
+        }
+        
+        let response = MoveFileGroupsResponse()
+        response.result = .success
+        params.completion(.success(response))
     }
 }
 
@@ -82,7 +124,7 @@ extension SharingGroupsController {
         }
         
         guard fileGroupUUIDs.count == fileGroups.count else {
-            let message = "Did not find all file groups passed as parameter."
+            let message = "Did not find all file groups passed as parameter: parameter had \(fileGroupUUIDs.count) file groups; found: \(fileGroups.count) in db."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return nil

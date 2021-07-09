@@ -11,8 +11,18 @@ import LoggerAPI
 
 extension SharingGroupsController {
     func moveFileGroups(params:RequestProcessingParameters) {
-        guard let request = params.request as? MoveFileGroupsRequest else {
+        guard let requestWithData = params.request as? MoveFileGroupsRequest else {
             let message = "Did not receive MoveFileGroupsRequest"
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+        }
+        
+        let request:MoveFileGroupsRequest
+        do {
+            request = try MoveFileGroupsRequest.decode(data: requestWithData.data)
+        } catch let error {
+            let message = "Could not decode MoveFileGroupsRequest from data: \(error)"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
@@ -84,20 +94,18 @@ extension SharingGroupsController {
             return
         }
 
-        guard let fileGroups = checkOwners(fileGroupUUIDs: fileGroupUUIDs, sourceSharingGroup: sourceSharingGroupUUID, destinationSharingGroup: destinationSharingGroupUUID, params: params) else {
+        guard let _ = checkOwners(fileGroupUUIDs: fileGroupUUIDs, sourceSharingGroup: sourceSharingGroupUUID, destinationSharingGroup: destinationSharingGroupUUID, params: params) else {
             // `checkOwners` already did the completion.
             return
         }
         
-        // Need to change the `sharingGroupUUID` field of each of the `FileGroupModel`'s and save 'em back to the database.
-        for fileGroup in fileGroups {
-            let success = params.repos.fileGroups.update(indexId: fileGroup.fileGroupId, with: [FileGroupModel.sharingGroupUUIDKey: .string(destinationSharingGroupUUID)])
-            guard success else {
-                let message = "Failed in updating "
-                Log.error(message)
-                params.completion(.failure(.message(message)))
-                return
-            }
+        // Need to change the `sharingGroupUUID` field of each FileGroup in the database.
+
+        guard params.repos.fileGroups.updateFileGroups(fileGroupUUIDs, sourceSharingGroupUUID: sourceSharingGroupUUID, destinationSharingGroupUUID: destinationSharingGroupUUID) else {
+            let message = "Failed updating file groups to dest sharing group."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
         }
         
         let response = MoveFileGroupsResponse()

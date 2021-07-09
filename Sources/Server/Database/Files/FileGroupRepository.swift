@@ -214,4 +214,36 @@ extension FileGroupRepository {
         
         return fileGroups[0]
     }
+    
+    func updateFileGroups(_ fileGroupUUIDs: [String], sourceSharingGroupUUID: String, destinationSharingGroupUUID: String) -> Bool {
+    
+        guard fileGroupUUIDs.count > 0 else {
+            return false
+        }
+        
+        let fileGroups = fileGroupUUIDs.map { "'\($0)'" }.joined(separator: ", ")
+
+        let query = """
+            UPDATE \(tableName)
+            SET
+                sharingGroupUUID = '\(destinationSharingGroupUUID)'
+            WHERE
+                sharingGroupUUID = '\(sourceSharingGroupUUID)'
+                    and
+                fileGroupUUID in (\(fileGroups))
+        """
+        
+        if db.query(statement: query) {
+            guard fileGroupUUIDs.count == db.numberAffectedRows() else {
+            Log.error("Did not have <= \(fileGroupUUIDs.count) row updated: \(db.numberAffectedRows())")
+                return false
+            }
+            return true
+        }
+        else {
+            let error = db.error
+            Log.error("Could not update \(tableName): \(error)")
+            return false
+        }
+    }
 }

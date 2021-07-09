@@ -1,5 +1,10 @@
 SyncServer
 
+Version 1.12.3 (7/8/21)
+	* Changes to moveFileGroups endpoint-- so parameters are passed in request body.
+	* Improved final move to dest sharing group: Doing it with a single database query.
+	* Added one more test for moveFileGroups.
+	
 Version 1.12.2 (7/7/21)
 	* Completed moveFileGroups endpoint.
 		Including tests. 

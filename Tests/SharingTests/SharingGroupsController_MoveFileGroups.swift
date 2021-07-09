@@ -417,7 +417,13 @@ class SharingGroupsController_MoveFileGroups: ServerTestCase {
         runTest(allFileGroupOwnersInDestSharingGroup: true)
     }
 
-    func runTest(moveAsNonAdminUserForDest: Bool) {
+    enum MoveAsUser {
+        case nonAdminInDest
+        case nonAdminInSource
+        case adminInBoth
+    }
+    
+    func runTest(moveAsUser: MoveAsUser) {
         let sharingGroupUUID1 = UUID().uuidString
         let sharingGroupUUID2 = UUID().uuidString
         
@@ -445,7 +451,15 @@ class SharingGroupsController_MoveFileGroups: ServerTestCase {
             return
         }
         
-        guard let sharingInvitationUUID1 = createSharingInvitation(testAccount: testUser1, permission: .admin, sharingGroupUUID: sharingGroupUUID1) else {
+        var errorExpected = false
+
+        var sourcePermission: Permission = .admin
+        if moveAsUser == .nonAdminInSource {
+            sourcePermission = .write
+            errorExpected = true
+        }
+        
+        guard let sharingInvitationUUID1 = createSharingInvitation(testAccount: testUser1, permission: sourcePermission, sharingGroupUUID: sharingGroupUUID1) else {
             XCTFail()
             return
         }
@@ -455,14 +469,13 @@ class SharingGroupsController_MoveFileGroups: ServerTestCase {
             return
         }
 
-        var errorExpected = false
-        var permission: Permission = .admin
-        if moveAsNonAdminUserForDest {
-            permission = .write
+        var destPermission: Permission = .admin
+        if moveAsUser == .nonAdminInDest {
+            destPermission = .write
             errorExpected = true
         }
         
-        guard let sharingInvitationUUID2 = createSharingInvitation(testAccount: testUser1, permission: permission, sharingGroupUUID: sharingGroupUUID3) else {
+        guard let sharingInvitationUUID2 = createSharingInvitation(testAccount: testUser1, permission: destPermission, sharingGroupUUID: sharingGroupUUID3) else {
             XCTFail()
             return
         }
@@ -484,20 +497,24 @@ class SharingGroupsController_MoveFileGroups: ServerTestCase {
         
         let response = moveFileGroups(testUser: testUser2, deviceUUID: deviceUUID2, sourceSharingGroupUUID: sharingGroupUUID1, destinationSharingGroupUUID: sharingGroupUUID3, fileGroupUUIDs: fileGroups, errorExpected: errorExpected)
         
-        if moveAsNonAdminUserForDest {
+        switch moveAsUser {
+        case .nonAdminInSource, .nonAdminInDest:
             XCTAssert(response == nil)
-        }
-        else {
+        case .adminInBoth:
             XCTAssert(response != nil)
         }
     }
     
     func testMoveAsNonAdminUserForDestFails() {
-        runTest(moveAsNonAdminUserForDest: true)
+        runTest(moveAsUser: .nonAdminInDest)
+    }
+    
+    func testMoveAsNonAdminUserForSourceFails() {
+        runTest(moveAsUser: .nonAdminInSource)
     }
  
-    func testMoveAsAdminUserForDestWorks() {
-        runTest(moveAsNonAdminUserForDest: false)
+    func testMoveAsAdminUserForBothWorks() {
+        runTest(moveAsUser: .adminInBoth)
     }
     
     func testMultipleFileGroupsToSuccessfullyMoveWorks() throws {
@@ -555,18 +572,18 @@ extension SharingGroupsController_MoveFileGroups {
             
             let headers = self.setupHeaders(testUser: testUser, accessToken: accessToken, deviceUUID:deviceUUID)
             
-            var urlParameters:String?
-            
             let request = MoveFileGroupsRequest()
             request.sourceSharingGroupUUID = sourceSharingGroupUUID
             request.destinationSharingGroupUUID = destinationSharingGroupUUID
             request.fileGroupUUIDs = fileGroupUUIDs
             
-            if let requestParams = request.urlParameters() {
-                urlParameters = "?" + requestParams
+            guard let data = try? JSONEncoder().encode(request) else {
+                XCTFail()
+                expectation.fulfill()
+                return
             }
             
-            self.performRequest(route: ServerEndpoints.moveFileGroupsFromSourceSharingGroupToDest, headers: headers, urlParameters: urlParameters, body:nil) { response, dict in
+            self.performRequest(route: ServerEndpoints.moveFileGroupsFromSourceSharingGroupToDest, headers: headers, urlParameters: nil, body:data) { response, dict in
                 Log.info("Status code: \(String(describing: response?.statusCode))")
                 
                 if errorExpected {

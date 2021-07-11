@@ -34,6 +34,10 @@ class FileGroupModel : NSObject, Model {
     static let owningUserIdKey = "owningUserId"
     var owningUserId:UserId!
     
+    // When "deleted" file groups are not fully removed from the system. Their files are not removed from cloud storage; the file group is just marked as deleted.
+    static let deletedKey = "deleted"
+    var deleted:Bool!
+    
     subscript(key:String) -> Any? {
         set {
             switch key {
@@ -55,6 +59,9 @@ class FileGroupModel : NSObject, Model {
             case Self.owningUserIdKey:
                 owningUserId = newValue as? UserId
                 
+            case Self.deletedKey:
+                deleted = newValue as? Bool
+                
             default:
                 Log.debug("key: \(key)")
                 assert(false)
@@ -68,6 +75,18 @@ class FileGroupModel : NSObject, Model {
     
     required override init() {
         super.init()
+    }
+    
+    func typeConvertersToModel(propertyName:String) -> ((_ propertyValue:Any) -> Any?)? {
+        switch propertyName {
+            case FileGroupModel.deletedKey:
+                return {(x:Any) -> Any? in
+                    return (x as? Int8) == 1
+                }
+            
+            default:
+                return nil
+        }
     }
 }
 
@@ -104,6 +123,9 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
             
             // Not letting this field be NULL as a convenience. It's considerably easier for joins and other access to *always* have a known field that is the owning user id.
             "owningUserId BIGINT NOT NULL, " +
+            
+            // true iff file group has been marked as deleted.
+            "deleted BOOL NOT NULL DEFAULT FALSE, " +
 
             "UNIQUE (fileGroupUUID), " +
             
@@ -114,7 +136,11 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
         let result = db.createTableIfNeeded(tableName: "\(tableName)", columnCreateQuery: createColumns)
         switch result {
         case .success(.alreadyPresent):
-            break
+            if db.columnExists(FileGroupModel.deletedKey, in: tableName) == false {
+                if !db.addColumn("\(FileGroupModel.deletedKey) BOOL NOT NULL DEFAULT FALSE", to: tableName) {
+                    return .failure(.columnCreation)
+                }
+            }
             
         case .success:
             break
@@ -132,6 +158,7 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
             || model.sharingGroupUUID == nil
             || model.userId == nil
             || model.owningUserId == nil
+            || model.deleted == nil
     }
     
     // On success, returns the new `fileGroupId` value.
@@ -147,6 +174,7 @@ class FileGroupRepository : Repository, RepositoryLookup, ModelIndexId {
         insert.add(fieldName: FileGroupModel.userIdKey, value: .int64(model.userId))
         insert.add(fieldName: FileGroupModel.objectTypeKey, value: .string(model.objectType))
         insert.add(fieldName: FileGroupModel.sharingGroupUUIDKey, value: .string(model.sharingGroupUUID))
+        insert.add(fieldName: FileGroupModel.deletedKey, value: .bool(model.deleted))
         
         insert.add(fieldName: FileGroupModel.owningUserIdKey, value: .int64Optional(model.owningUserId))
         
@@ -229,8 +257,9 @@ extension FileGroupRepository {
                 sharingGroupUUID = '\(destinationSharingGroupUUID)'
             WHERE
                 sharingGroupUUID = '\(sourceSharingGroupUUID)'
-                    and
+            and
                 fileGroupUUID in (\(fileGroups))
+            and deleted = 0
         """
         
         if db.query(statement: query) {
@@ -244,6 +273,22 @@ extension FileGroupRepository {
             let error = db.error
             Log.error("Could not update \(tableName): \(error)")
             return false
+        }
+    }
+    
+    // Returns nil on error; number of rows marked otherwise.
+    // 8/5/20: Just added the "and \(FileGroupModel.deletedKey) = 0"-- which should ensure that the update can not occur twice, successfully, in a race.
+    func markAsDeleted(key:LookupKey) -> Int64? {
+        let query = "UPDATE \(tableName) SET \(FileGroupModel.deletedKey) = 1 WHERE " + lookupConstraint(key: key) + " and \(FileGroupModel.deletedKey) = 0"
+        if db.query(statement: query) {
+            let numberRows = db.numberAffectedRows()
+            Log.debug("Number rows: \(numberRows) for query: \(query)")
+            return numberRows
+        }
+        else {
+            let error = db.error
+            Log.error("Could not mark file group(s) as deleted in \(tableName): \(error)")
+            return nil
         }
     }
 }

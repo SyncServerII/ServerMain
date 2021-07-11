@@ -360,9 +360,9 @@ class UserController : ControllerProtocol {
         }
         
         for fileGroup in fileGroups {
-            let markKey = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
-            guard let _ = repos.fileIndex.markFilesAsDeleted(key: markKey) else {
-                let message = "Could not mark files as deleted for user!"
+            let markKey = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            guard let _ = repos.fileGroups.markAsDeleted(key: markKey) else {
+                let message = "Could not mark file group as deleted for user!"
                 Log.error(message)
                 completion(.failure(.message(message)))
                 return

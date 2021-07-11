@@ -72,7 +72,7 @@ extension FileController {
             return
         }
         
-        if fileIndexObj!.deleted! {
+        guard !fileGroupModel.deleted else {
             let message = "The file you are trying to download app meta data for has been deleted!"
             Log.error(message)
             params.completion(.failure(.message(message)))

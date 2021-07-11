@@ -233,17 +233,12 @@ class SharingGroupsControllerTests: ServerTestCase {
             return
         }
         
-        let key = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
-        let result = FileIndexRepository(db).lookup(key: key, modelInit: FileIndex.init)
-        switch result {
-        case .noObjectFound:
+        guard let fileGroupModel = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroupUUID) else {
             XCTFail()
-        case .error:
-            XCTFail()
-        case .found(let model):
-            let file = model as! FileIndex
-            XCTAssert(file.deleted)
+            return
         }
+        
+        XCTAssert(fileGroupModel.deleted)
     }
     
     func indexReportsSharingGroupDeleted(remove: Bool) {

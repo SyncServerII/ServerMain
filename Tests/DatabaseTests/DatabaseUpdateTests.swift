@@ -97,7 +97,6 @@ class DatabaseUpdateTests: ServerTestCase {
         
         let result = fileIndexRepo.update(indexId: fileIndex.fileIndexId, with: [
             FileIndex.fileVersionKey: .int32(newFileVersion),
-            FileIndex.deletedKey: .bool(true)
         ])
         
         XCTAssertTrue(result)
@@ -111,7 +110,6 @@ class DatabaseUpdateTests: ServerTestCase {
         
         XCTAssertTrue(fileIndex.fileIndexId == fileIndex2.fileIndexId)
         XCTAssertTrue(fileIndex2.fileVersion == newFileVersion)
-        XCTAssertTrue(fileIndex2.deleted == true)
     }
     
     func testUpdateAll() {

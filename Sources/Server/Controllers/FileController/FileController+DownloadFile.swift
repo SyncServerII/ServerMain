@@ -105,8 +105,8 @@ extension FileController {
             return
         }
         
-        guard let deleted = fileIndex.deleted else {
-            let message = "Nil fileIndex.deleted value"
+        guard let deleted = fileGroupModel.deleted else {
+            let message = "Nil fileGroupModel.deleted value"
             Log.error(message)
             params.completion(.failure(.message(message)))
             return

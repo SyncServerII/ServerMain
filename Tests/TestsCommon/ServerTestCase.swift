@@ -954,8 +954,8 @@ class ServerTestCase : XCTestCase {
             }
             
             self.performRequest(route: ServerEndpoints.index, headers: headers, urlParameters: urlParameters, body:nil) { response, dict in
-                Log.info("Status code: \(response!.statusCode)")
-                XCTAssert(response!.statusCode == .OK, "Did not work on IndexRequest")
+                Log.info("Status code: \(String(describing: response?.statusCode))")
+                XCTAssert(response?.statusCode == .OK, "Did not work on IndexRequest")
                 XCTAssert(dict != nil)
 
                 guard let indexResponse = try? IndexResponse.decode(dict!),
@@ -1512,6 +1512,8 @@ class ServerTestCase : XCTestCase {
         fileGroup.objectType = objectType
         fileGroup.userId = userId
         fileGroup.owningUserId = owningUserId
+        fileGroup.deleted = false
+
         guard let id = FileGroupRepository(db).add(model: fileGroup) else {
             return nil
         }
@@ -1524,7 +1526,6 @@ class ServerTestCase : XCTestCase {
         
         let fileIndex = FileIndex()
         fileIndex.lastUploadedCheckSum = "abcde"
-        fileIndex.deleted = false
         
         if let fileUUID = fileUUID {
             fileIndex.fileUUID = fileUUID

@@ -128,9 +128,9 @@ class SharingGroupsController : ControllerProtocol {
         }
         
         for fileGroup in fileGroups {
-            let markKey = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
-            guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: markKey) else {
-                let message = "Could not mark files as deleted for sharing group!"
+            let markKey = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            guard let _ = params.repos.fileGroups.markAsDeleted(key: markKey) else {
+                let message = "Could not mark file group as deleted for sharing group!"
                 Log.error(message)
                 params.completion(.failure(.message(message)))
                 return false
@@ -223,9 +223,9 @@ class SharingGroupsController : ControllerProtocol {
         }
         
         for fileGroup in fileGroupsInSharingGroup {
-            let markKey = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
-            guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: markKey) else {
-                let message = "Could not mark files as deleted for user and sharing group!"
+            let markKey = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroup.fileGroupUUID)
+            guard let _ = params.repos.fileGroups.markAsDeleted(key: markKey) else {
+                let message = "Could not mark file group as deleted for user and sharing group!"
                 Log.error(message)
                 params.completion(.failure(.message(message)))
                 return

@@ -109,69 +109,6 @@ class SpecificDatabaseTests_Uploads: ServerTestCase {
         _ = doAddUpload(sharingGroupUUID:sharingGroupUUID, missingField: true, expectError: true)
     }
     
-    func doAddUploadDeletion(sharingGroupUUID: String, userId:UserId = 1, deviceUUID:String = Foundation.UUID().uuidString, missingField:Bool = false) -> Upload {
-        let upload = Upload()
-        upload.deviceUUID = deviceUUID
-        upload.fileUUID = Foundation.UUID().uuidString
-        upload.fileVersion = 1
-        upload.state = .deleteSingleFile
-        upload.sharingGroupUUID = sharingGroupUUID
-        upload.uploadIndex = 1
-        upload.uploadCount = 1
-        
-        if !missingField {
-            upload.userId = userId
-        }
-        
-        let result = UploadRepository(db).add(upload: upload)
-        
-        var uploadId:Int64?
-        switch result {
-        case .success(uploadId: let id):
-            if missingField {
-                XCTFail()
-            }
-            uploadId = id
-        
-        default:
-            if !missingField {
-                XCTFail()
-            }
-        }
-        
-        if missingField {
-            XCTAssert(uploadId == nil, "Good uploadId!")
-        }
-        else {
-            XCTAssert(uploadId == 1, "Bad uploadId!")
-            upload.uploadId = uploadId
-        }
-        
-        return upload
-    }
-    
-    func testAddUploadDeletion() {
-        let sharingGroupUUID = UUID().uuidString
-
-        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
-            XCTFail()
-            return
-        }
-        
-        _ = doAddUploadDeletion(sharingGroupUUID:sharingGroupUUID)
-    }
-    
-    func testAddUploadDeletionWithMissingField() {
-        let sharingGroupUUID = UUID().uuidString
-
-        guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {
-            XCTFail()
-            return
-        }
-        
-        _ = doAddUploadDeletion(sharingGroupUUID:sharingGroupUUID, missingField:true)
-    }
-    
     func testAddUploadSucceedsWithNilAppMetaData() {
         let sharingGroupUUID = UUID().uuidString
         guard case .success = SharingGroupRepository(db).add(sharingGroupUUID: sharingGroupUUID) else {

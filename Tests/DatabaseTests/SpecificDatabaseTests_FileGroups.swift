@@ -30,6 +30,7 @@ class SpecificDatabaseTests_FileGroups: ServerTestCase {
         fg.userId = UserId(10)
         fg.objectType = "Foobar"
         fg.sharingGroupUUID = UUID().uuidString
+        fg.deleted = false
         
         guard let resultId = fileGroupRepo.add(model: fg) else {
             XCTFail()
@@ -62,6 +63,7 @@ class SpecificDatabaseTests_FileGroups: ServerTestCase {
         fg.owningUserId = UserId(20)
         fg.objectType = "Foobar"
         fg.sharingGroupUUID = UUID().uuidString
+        fg.deleted = false
         
         guard let resultId = fileGroupRepo.add(model: fg) else {
             XCTFail()
@@ -109,8 +111,9 @@ class SpecificDatabaseTests_FileGroups: ServerTestCase {
         fg.owningUserId = UserId(20)
         fg.objectType = "Foobar"
         fg.sharingGroupUUID = UUID().uuidString
+        fg.deleted = false
         
-        guard let resultId = fileGroupRepo.add(model: fg) else {
+        guard let _ = fileGroupRepo.add(model: fg) else {
             XCTFail()
             return
         }
@@ -137,8 +140,9 @@ class SpecificDatabaseTests_FileGroups: ServerTestCase {
         fg.owningUserId = UserId(20)
         fg.objectType = "Foobar"
         fg.sharingGroupUUID = UUID().uuidString
+        fg.deleted = false
         
-        guard let resultId = fileGroupRepo.add(model: fg) else {
+        guard let _ = fileGroupRepo.add(model: fg) else {
             XCTFail()
             return
         }
@@ -149,8 +153,9 @@ class SpecificDatabaseTests_FileGroups: ServerTestCase {
         fg2.owningUserId = UserId(20)
         fg2.objectType = "Foobar"
         fg2.sharingGroupUUID = UUID().uuidString
+        fg2.deleted = false
         
-        guard let resultId2 = fileGroupRepo.add(model: fg2) else {
+        guard let _ = fileGroupRepo.add(model: fg2) else {
             XCTFail()
             return
         }
@@ -161,8 +166,9 @@ class SpecificDatabaseTests_FileGroups: ServerTestCase {
         fg3.owningUserId = UserId(20)
         fg3.objectType = "Foobar"
         fg3.sharingGroupUUID = UUID().uuidString
+        fg3.deleted = false
         
-        guard let resultId3 = fileGroupRepo.add(model: fg3) else {
+        guard let _ = fileGroupRepo.add(model: fg3) else {
             XCTFail()
             return
         }

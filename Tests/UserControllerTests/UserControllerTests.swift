@@ -236,7 +236,7 @@ class UserControllerTests: ServerTestCase {
         }
         
         // Upload a file.
-        guard let uploadResult = uploadTextFile(batchUUID: batchUUID, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
+        guard let _ = uploadTextFile(batchUUID: batchUUID, deviceUUID:deviceUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
             XCTFail()
             return
         }
@@ -262,27 +262,17 @@ class UserControllerTests: ServerTestCase {
                 XCTFail("fileIndex.count: \(fileIndex.count)")
                 return
             }
-            
 
         case .error(_):
             XCTFail()
         }
         
-        let key = FileIndexRepository.LookupKey.primaryKey(fileUUID: uploadResult.request.fileUUID)
-        let result = FileIndexRepository(db).lookup(key: key, modelInit: FileIndex.init)
-        switch result {
-        case .found(let obj):
-            guard let fileIndexObj = obj as? FileIndex else {
-                XCTFail()
-                return
-            }
-            
-            XCTAssert(fileIndexObj.deleted == true)
-        
-        default:
+        guard let fileGroupModel = try? FileGroupRepository(db).getFileGroup(forFileGroupUUID: fileGroup.fileGroupUUID) else {
             XCTFail()
             return
         }
+        
+        XCTAssert(fileGroupModel.deleted)
     }
     
     func testUpdateUserName() {

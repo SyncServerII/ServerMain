@@ -199,7 +199,7 @@ class Sharing_FileManipulationTests: ServerTestCase {
         }
         
         // And upload a file by that user.
-        guard let uploadResult = uploadTextFile(batchUUID: UUID().uuidString, testAccount: .primaryOwningAccount, deviceUUID:deviceUUID1, addUser:.no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
+        guard let _ = uploadTextFile(batchUUID: UUID().uuidString, testAccount: .primaryOwningAccount, deviceUUID:deviceUUID1, addUser:.no(sharingGroupUUID: sharingGroupUUID), fileLabel: UUID().uuidString, fileGroup: fileGroup) else {
             XCTFail()
             return
         }

@@ -555,6 +555,73 @@ class SharingGroupsController_MoveFileGroups: ServerTestCase {
         let response = moveFileGroups(testUser: testUser1, deviceUUID: deviceUUID1, sourceSharingGroupUUID: sharingGroupUUID1, destinationSharingGroupUUID: sharingGroupUUID2, fileGroupUUIDs: fileGroups, errorExpected: false)
         XCTAssert(response != nil)
     }
+    
+    func testMoveFileGroup(deleteFileGroupBefore: Bool) {
+        let sharingGroupUUID1 = UUID().uuidString
+        let sharingGroupUUID2 = UUID().uuidString
+        let deviceUUID1 = UUID().uuidString
+        let testUser1: TestAccount = .primaryOwningAccount
+
+        guard let _ = addNewUser(testAccount: testUser1, sharingGroupUUID: sharingGroupUUID1, deviceUUID:deviceUUID1) else {
+            XCTFail()
+            return
+        }
+                
+        let sharingGroup2 = ServerShared.SharingGroup()
+
+        guard createSharingGroup(testAccount: testUser1, sharingGroupUUID: sharingGroupUUID2, deviceUUID:deviceUUID1, sharingGroup: sharingGroup2) else {
+            XCTFail()
+            return
+        }
+        
+        let fileGroupUUI1 = UUID().uuidString
+        let fileGroup1 = FileGroup(fileGroupUUID: fileGroupUUI1, objectType: "Foobly")
+        
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: testUser1, deviceUUID:deviceUUID1, fileUUID: UUID().uuidString, addUser: .no(sharingGroupUUID: sharingGroupUUID1), fileLabel: UUID().uuidString, fileGroup: fileGroup1) else {
+            XCTFail()
+            return
+        }
+        
+        if deleteFileGroupBefore {
+            let deletionRequest = UploadDeletionRequest()
+            deletionRequest.fileGroupUUID = fileGroupUUI1
+            deletionRequest.sharingGroupUUID = sharingGroupUUID1
+
+            guard let deletionResult = uploadDeletion(testAccount: testUser1, uploadDeletionRequest: deletionRequest, deviceUUID: deviceUUID1, addUser: false) else {
+                XCTFail()
+                return
+            }
+            
+            guard let deferredUploadId = deletionResult.deferredUploadId else {
+                XCTFail()
+                return
+            }
+        
+            guard let status = getUploadsResults(deviceUUID: deviceUUID1, deferredUploadId: deferredUploadId), status == .completed else {
+                XCTFail()
+                return
+            }
+        }
+        
+        let fileGroups = [fileGroupUUI1]
+        
+        let response = moveFileGroups(testUser: testUser1, deviceUUID: deviceUUID1, sourceSharingGroupUUID: sharingGroupUUID1, destinationSharingGroupUUID: sharingGroupUUID2, fileGroupUUIDs: fileGroups, errorExpected: deleteFileGroupBefore)
+        
+        if deleteFileGroupBefore {
+            XCTAssert(response == nil)
+        }
+        else {
+            XCTAssert(response != nil)
+        }
+    }
+    
+    func testDeletedFileGroupMoveFails() {
+        testMoveFileGroup(deleteFileGroupBefore: true)
+    }
+    
+    func testNormalFileGroupMoveWorks() {
+        testMoveFileGroup(deleteFileGroupBefore: false)
+    }
 }
 
 extension SharingGroupsController_MoveFileGroups {
@@ -597,7 +664,7 @@ extension SharingGroupsController_MoveFileGroups {
                         result = response
                     }
                     else {
-                        XCTFail("\(dict)")
+                        XCTFail("\(String(describing: dict))")
                     }
                 }
                 

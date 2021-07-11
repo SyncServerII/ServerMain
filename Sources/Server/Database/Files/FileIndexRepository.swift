@@ -49,10 +49,6 @@ class FileIndex : NSObject, Model {
     static let appMetaDataKey = "appMetaData"
     var appMetaData: String?
     
-    // When "deleted" files are not fully removed from the system. They are removed from cloud storage, but just marked as deleted in the FileIndex. This effectively also marks the containing file group as deleted.
-    static let deletedKey = "deleted"
-    var deleted:Bool!
-    
     static let fileVersionKey = "fileVersion"
     var fileVersion: FileVersionInt!
     
@@ -75,6 +71,9 @@ class FileIndex : NSObject, Model {
     
     static let queryObjectTypeKey = "objectType"
     var queryObjectType:String?
+
+    static let queryDeletedKey = "deleted"
+    var queryDeleted:Bool!
     
     subscript(key:String) -> Any? {
         set {
@@ -111,9 +110,6 @@ class FileIndex : NSObject, Model {
                 
             case FileIndex.appMetaDataKey:
                 appMetaData = newValue as! String?
-            
-            case FileIndex.deletedKey:
-                deleted = newValue as! Bool?
                 
             case FileIndex.fileVersionKey:
                 fileVersion = newValue as! FileVersionInt?
@@ -129,6 +125,9 @@ class FileIndex : NSObject, Model {
                 
             case User.accountTypeKey:
                 accountType = newValue as! String?
+                
+            case FileIndex.queryDeletedKey:
+                queryDeleted = newValue as? Bool
                 
             default:
                 Log.debug("key: \(key)")
@@ -147,11 +146,11 @@ class FileIndex : NSObject, Model {
     
     func typeConvertersToModel(propertyName:String) -> ((_ propertyValue:Any) -> Any?)? {
         switch propertyName {
-            case FileIndex.deletedKey:
+            case FileIndex.queryDeletedKey:
                 return {(x:Any) -> Any? in
-                    return (x as! Int8) == 1
+                    return (x as? Int8) == 1
                 }
-            
+                
             case FileIndex.creationDateKey:
                 return {(x:Any) -> Any? in
                     return DateExtras.date(x as! String, fromFormat: .DATETIME)
@@ -168,7 +167,7 @@ class FileIndex : NSObject, Model {
     }
     
     override var description : String {
-        return "fileIndexId: \(String(describing: fileIndexId)); fileUUID: \(String(describing: fileUUID)); deviceUUID: \(deviceUUID ?? ""); creationDate: \(String(describing: creationDate)); updateDate: \(String(describing: updateDate)); mimeTypeKey: \(String(describing: mimeType)); appMetaData: \(String(describing: appMetaData)); deleted: \(String(describing: deleted)); fileVersion: \(String(describing: fileVersion)); lastUploadedCheckSum: \(String(describing: lastUploadedCheckSum))"
+        return "fileIndexId: \(String(describing: fileIndexId)); fileUUID: \(String(describing: fileUUID)); deviceUUID: \(deviceUUID ?? ""); creationDate: \(String(describing: creationDate)); updateDate: \(String(describing: updateDate)); mimeTypeKey: \(String(describing: mimeType)); appMetaData: \(String(describing: appMetaData)); fileVersion: \(String(describing: fileVersion)); lastUploadedCheckSum: \(String(describing: lastUploadedCheckSum))"
     }
 }
 
@@ -222,9 +221,6 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             "appMetaData TEXT, " +
 
             "fileLabel VARCHAR(\(FileLabel.maxLength)) NOT NULL, " +
-            
-            // true if file has been deleted, false if not.
-            "deleted BOOL NOT NULL, " +
             
             "fileVersion INT NOT NULL, " +
 
@@ -300,7 +296,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     }
     
     private func haveNilFieldForAdd(fileIndex:FileIndex) -> Bool {
-        return fileIndex.fileUUID == nil || fileIndex.mimeType == nil || fileIndex.deviceUUID == nil || fileIndex.deleted == nil || fileIndex.fileVersion == nil || fileIndex.lastUploadedCheckSum == nil || fileIndex.creationDate == nil || fileIndex.fileLabel == nil || fileIndex.fileGroupUUID == nil
+        return fileIndex.fileUUID == nil || fileIndex.mimeType == nil || fileIndex.deviceUUID == nil || fileIndex.fileVersion == nil || fileIndex.lastUploadedCheckSum == nil || fileIndex.creationDate == nil || fileIndex.fileLabel == nil || fileIndex.fileGroupUUID == nil
         // Not including `updateDate` here: It should be nil in a record creation as we're not updating we're creating.
     }
     
@@ -329,8 +325,6 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         let insert = Database.PreparedStatement(repo: self, type: .insert)
 
         insert.add(fieldName: FileIndex.fileVersionKey, value: .int32Optional(fileIndex.fileVersion))
-        
-        insert.add(fieldName: FileIndex.deletedKey, value: .boolOptional(fileIndex.deleted))
 
         insert.add(fieldName: FileIndex.fileGroupUUIDKey, value: .string(fileIndex.fileGroupUUID))
         
@@ -375,7 +369,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
     private func haveNilFieldForUpdate(fileIndex:FileIndex, updateType: UpdateType) -> Bool {
         // OWNER
         // Allowing a nil userId for update because the v0 owner of a file is always the owner of the file. i.e., for v1, v2 etc. of a file, we don't update the userId.
-        let result = fileIndex.fileUUID == nil || fileIndex.deleted == nil
+        let result = fileIndex.fileUUID == nil
         
         switch updateType {
         case .uploadDeletion:
@@ -426,10 +420,8 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         let updateDateField = getUpdateFieldSetter(fieldValue: updateDateValue, fieldName: FileIndex.updateDateKey)
         
         let changeResolverNameField = getUpdateFieldSetter(fieldValue: fileIndex.changeResolverName, fieldName: FileIndex.changeResolverNameKey)
-        
-        let deletedValue = fileIndex.deleted == true ? 1 : 0
-        
-        let query = "UPDATE \(tableName) SET \(FileIndex.fileUUIDKey)='\(fileIndex.fileUUID!)', \(FileIndex.deletedKey)=\(deletedValue) \(appMetaDataField) \(lastUploadedCheckSumField) \(mimeTypeField) \(deviceUUIDField) \(updateDateField) \(fileVersionField) \(fileGroupUUIDField) \(changeResolverNameField) WHERE \(FileIndex.fileIndexIdKey)=\(fileIndex.fileIndexId!)"
+                
+        let query = "UPDATE \(tableName) SET \(FileIndex.fileUUIDKey)='\(fileIndex.fileUUID!)' \(appMetaDataField) \(lastUploadedCheckSumField) \(mimeTypeField) \(deviceUUIDField) \(updateDateField) \(fileVersionField) \(fileGroupUUIDField) \(changeResolverNameField) WHERE \(FileIndex.fileIndexIdKey)=\(fileIndex.fileIndexId!)"
         
         if db.query(statement: query) {
             // "When using UPDATE, MySQL will not update columns where the new value is the same as the old value. This creates the possibility that mysql_affected_rows may not actually equal the number of rows matched, only the number of rows that were literally affected by the query." From: https://dev.mysql.com/doc/apis-php/en/apis-php-function.mysql-affected-rows.html
@@ -522,21 +514,14 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             }
             
             let upload = rowModel as! Upload
-            
-            // This will a) mark the FileIndex entry as deleted for toDeleteFromFileIndex, and b) mark it as not deleted for *both* uploadingUndelete and uploading files. So, effectively, it does part of our upload undelete for us.
-            let uploadDeletion = upload.state == .deleteSingleFile
 
             let fileIndex = FileIndex()
             fileIndex.lastUploadedCheckSum = upload.lastUploadedCheckSum
-            fileIndex.deleted = uploadDeletion
             fileIndex.fileUUID = upload.fileUUID
             
-            // If this an uploadDeletion, it seems inappropriate to update the deviceUUID in the file index-- all we're doing is marking it as deleted.
-            if !uploadDeletion {
-                // Using `uploadingDeviceUUID` here, but equivalently use upload.deviceUUID-- they are the same. See [1] above.
-                assert(uploadingDeviceUUID == upload.deviceUUID)
-                fileIndex.deviceUUID = uploadingDeviceUUID
-            }
+            // Using `uploadingDeviceUUID` here, but equivalently use upload.deviceUUID-- they are the same. See [1] above.
+            assert(uploadingDeviceUUID == upload.deviceUUID)
+            fileIndex.deviceUUID = uploadingDeviceUUID
             
             fileIndex.mimeType = upload.mimeType
             fileIndex.appMetaData = upload.appMetaData
@@ -570,28 +555,15 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             case .found(let object):
                 let existingFileIndex = object as! FileIndex
 
-                if uploadDeletion {
-                    guard upload.fileVersion == existingFileIndex.fileVersion else {
-                        Log.error("Did not specify current version of file in upload deletion!")
-                        error = true
-                        return
-                    }
-                }
-                else {
-                    guard upload.fileVersion == (existingFileIndex.fileVersion + 1) else {
-                        Log.error("Did not have next version of file!")
-                        error = true
-                        return
-                    }
+                guard upload.fileVersion == (existingFileIndex.fileVersion + 1) else {
+                    Log.error("Did not have next version of file!")
+                    error = true
+                    return
                 }
 
                 fileIndex.fileIndexId = existingFileIndex.fileIndexId
                 
-                var updateType:UpdateType = .uploadFile
-                if uploadDeletion {
-                    updateType = .uploadDeletion
-                }
-                
+                let updateType:UpdateType = .uploadFile
                 guard self.update(fileIndex: fileIndex, updateType: updateType) else {
                     Log.error("Could not update FileIndex!")
                     error = true
@@ -599,30 +571,23 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                 }
                 
             case .noObjectFound:
-                if uploadDeletion {
-                    Log.error("Attempting to delete a file not present in the file index: \(key)!")
+                guard upload.state == .v0UploadCompleteFile else {
+                    Log.error("Did not have version 0 of file!")
                     error = true
                     return
                 }
-                else {
-                    guard upload.state == .v0UploadCompleteFile else {
-                        Log.error("Did not have version 0 of file!")
-                        error = true
-                        return
-                    }
-                    
-                    let result = self.retry(request: {
-                        self.add(fileIndex: fileIndex)
-                    })
-                    
-                    switch result {
-                    case .success:
-                        break
-                    case .deadlock, .error:
-                        Log.error("Could not add new FileIndex!")
-                        error = true
-                        return
-                    }
+                
+                let result = self.retry(request: {
+                    self.add(fileIndex: fileIndex)
+                })
+                
+                switch result {
+                case .success:
+                    break
+                case .deadlock, .error:
+                    Log.error("Could not add new FileIndex!")
+                    error = true
+                    return
                 }
             }
 
@@ -653,22 +618,6 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         }
     }
     
-    // Returns nil on error; number of rows marked otherwise.
-    // 8/5/20: Just added the "and \(FileIndex.deletedKey) = 0"-- which should ensure that the update can not occur twice, successfully, in a race.
-    func markFilesAsDeleted(key:LookupKey) -> Int64? {
-        let query = "UPDATE \(tableName) SET \(FileIndex.deletedKey)=1 WHERE " + lookupConstraint(key: key) + " and \(FileIndex.deletedKey) = 0"
-        if db.query(statement: query) {
-            let numberRows = db.numberAffectedRows()
-            Log.debug("Number rows: \(numberRows) for query: \(query)")
-            return numberRows
-        }
-        else {
-            let error = db.error
-            Log.error("Could not mark files as deleted in \(tableName): \(error)")
-            return nil
-        }
-    }
-    
     enum FileIndexResult {
     case fileIndex([FileInfo])
     case error(String)
@@ -682,7 +631,8 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                 \(UserRepository.tableName).accountType,
                 \(FileGroupRepository.tableName).\(FileGroupModel.objectTypeKey),
                 \(FileGroupRepository.tableName).\(FileGroupModel.sharingGroupUUIDKey),
-                \(FileGroupRepository.tableName).\(FileGroupModel.owningUserIdKey)
+                \(FileGroupRepository.tableName).\(FileGroupModel.owningUserIdKey),
+                \(FileGroupRepository.tableName).\(FileGroupModel.deletedKey)
             from \(tableName), \(UserRepository.tableName), \(FileGroupRepository.tableName)
             where
                 \(tableName).fileGroupUUID = \(FileGroupRepository.tableName).\(FileGroupModel.fileGroupUUIDKey)
@@ -712,7 +662,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             fileInfo.fileUUID = rowModel.fileUUID
             fileInfo.deviceUUID = rowModel.deviceUUID
             fileInfo.fileVersion = rowModel.fileVersion
-            fileInfo.deleted = rowModel.deleted
+            fileInfo.deleted = rowModel.queryDeleted ?? false
             fileInfo.mimeType = rowModel.mimeType
             fileInfo.creationDate = rowModel.creationDate
             fileInfo.updateDate = rowModel.updateDate
@@ -757,6 +707,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
                 \(FileGroupRepository.tableName).\(FileGroupModel.objectTypeKey),
                 \(FileGroupRepository.tableName).\(FileGroupModel.sharingGroupUUIDKey),
                 \(FileGroupRepository.tableName).\(FileGroupModel.owningUserIdKey),
+                \(FileGroupRepository.tableName).\(FileGroupModel.deletedKey),
                 \(UserRepository.tableName).accountType
             from \(tableName), \(UserRepository.tableName), \(FileGroupRepository.tableName)
             where
@@ -792,10 +743,11 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
         // Note that this comparison is in terms of (a) the user making the request, and (b) the `informAllButUserId` user. And it's specifically *not* in terms of the `userId` from the FileIndex row. Since the `userId` in FileIndex is the *owning* user if we used the owning user id we couldn't deal with social users. We also couldn't deal with changes made to files by non-owning users.
 
         let selectQuery = """
-        select \(tableName).\(FileIndex.deletedKey),
+        select
             \(tableName).\(FileIndex.fileGroupUUIDKey),
             \(FileIndexClientUIRepository.tableName).\(FileIndexClientUI.fileVersionKey),
-            \(tableName).\(FileIndex.fileUUIDKey)
+            \(tableName).\(FileIndex.fileUUIDKey),
+            \(FileGroupRepository.tableName).\(FileGroupModel.deletedKey)
         from \(tableName), \(FileIndexClientUIRepository.tableName), \(FileGroupRepository.tableName)
         where
             \(FileGroupRepository.tableName).\(FileGroupModel.fileGroupUUIDKey)
@@ -841,7 +793,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             }
             
             let summary = FileGroupSummary()
-            summary.deleted = fileGroup[0].deleted ?? false
+            summary.deleted = fileGroup[0].queryDeleted ?? false
             summary.fileGroupUUID = fileGroup[0].fileGroupUUID
 
             var fileGroupSummaryInform = [FileGroupSummary.Inform]()

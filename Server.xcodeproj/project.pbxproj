@@ -44,8 +44,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		216AD43B3A5BD4CBCA246E3F /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = F0DE01270AEAA5DB01DF5369 /* Server.json */; };
-		E194A8ACD9589FC72062C842 /* ServerTests.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = FD91F969D47A4E33AA695CCB /* ServerTests.json */; };
+		426678C742A48EF9B220B0F6 /* ServerTests.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = ECE9CA1B8BF0263F5CC3D4CB /* ServerTests.json */; };
+		91010B5A5277B694DAE9F5CC /* Server.json in CopyFiles */ = {isa = PBXBuildFile; fileRef = 28FC3735C6C324730C5397F0 /* Server.json */; };
 		OBJ_1036 /* AppleClaims.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_373 /* AppleClaims.swift */; };
 		OBJ_1037 /* ApplePublicKey+HTTP.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_374 /* ApplePublicKey+HTTP.swift */; };
 		OBJ_1038 /* ApplePublicKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_375 /* ApplePublicKey.swift */; };
@@ -1547,20 +1547,21 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F02BE91D27331575AF0204B5 /* CopyFiles */ = {
+		49549992DA1F3ABA12B8F801 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				216AD43B3A5BD4CBCA246E3F /* Server.json in CopyFiles */,
-				E194A8ACD9589FC72062C842 /* ServerTests.json in CopyFiles */,
+				91010B5A5277B694DAE9F5CC /* Server.json in CopyFiles */,
+				426678C742A48EF9B220B0F6 /* ServerTests.json in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		28FC3735C6C324730C5397F0 /* Server.json */ = {isa = PBXFileReference; includeInIndex = 1; path = Server.json; sourceTree = SOURCE_ROOT; };
 		AppleJWTDecoder::AppleJWTDecoder::Product /* AppleJWTDecoder.framework */ = {isa = PBXFileReference; path = AppleJWTDecoder.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		ChangeResolvers::ChangeResolvers::Product /* ChangeResolvers.framework */ = {isa = PBXFileReference; path = ChangeResolvers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CredentialsAppleSignIn::CredentialsAppleSignIn::Product /* CredentialsAppleSignIn.framework */ = {isa = PBXFileReference; path = CredentialsAppleSignIn.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1570,8 +1571,7 @@
 		Cryptor::Cryptor::Product /* Cryptor.framework */ = {isa = PBXFileReference; path = Cryptor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CryptorECC::CryptorECC::Product /* CryptorECC.framework */ = {isa = PBXFileReference; path = CryptorECC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CryptorRSA::CryptorRSA::Product /* CryptorRSA.framework */ = {isa = PBXFileReference; path = CryptorRSA.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		F0DE01270AEAA5DB01DF5369 /* Server.json */ = {isa = PBXFileReference; includeInIndex = 1; path = Server.json; sourceTree = SOURCE_ROOT; };
-		FD91F969D47A4E33AA695CCB /* ServerTests.json */ = {isa = PBXFileReference; includeInIndex = 1; path = ServerTests.json; sourceTree = SOURCE_ROOT; };
+		ECE9CA1B8BF0263F5CC3D4CB /* ServerTests.json */ = {isa = PBXFileReference; includeInIndex = 1; path = ServerTests.json; sourceTree = SOURCE_ROOT; };
 		HeliumLogger::HeliumLogger::Product /* HeliumLogger.framework */ = {isa = PBXFileReference; path = HeliumLogger.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		Kitura-Credentials::Credentials::Product /* Credentials.framework */ = {isa = PBXFileReference; path = Credentials.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		Kitura-CredentialsFacebook::CredentialsFacebook::Product /* CredentialsFacebook.framework */ = {isa = PBXFileReference; path = CredentialsFacebook.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -6826,7 +6826,7 @@
 			buildPhases = (
 				OBJ_2756 /* Sources */,
 				OBJ_2827 /* Frameworks */,
-				F02BE91D27331575AF0204B5 /* CopyFiles */,
+				49549992DA1F3ABA12B8F801 /* CopyFiles */,
 			);
 			buildRules = (
 			);

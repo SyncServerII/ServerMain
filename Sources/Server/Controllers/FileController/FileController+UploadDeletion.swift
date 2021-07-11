@@ -60,45 +60,32 @@ extension FileController {
             return
         }
         
-        let files:[FileInfo]
-        
-        let indexResult = params.repos.fileIndex.fileIndex(forFileGroupUUID: fileGroupUUID)
-        switch indexResult {
-        case .error(let error):
-            Log.error(error)
-            params.completion(.failure(.message(error)))
-            return
-        case .fileIndex(let fileInfos):
-            files = fileInfos
-        }
-        
-        // Make sure each of the files is in the sharing group.
-        let filter = files.filter { $0.sharingGroupUUID == uploadDeletionRequest.sharingGroupUUID }
-        guard filter.count == files.count else {
-            let message = "Not all files were in the sharing group."
+        guard let fileGroup = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+            let message = "Could not get file group."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
         }
-        
-        guard files.count > 0 else {
-            let message = "File(s) in fileGroupUUID not in FileIndex"
+
+        // Make sure the file group is in the sharing group.
+        guard fileGroup.sharingGroupUUID == uploadDeletionRequest.sharingGroupUUID  else {
+            let message = "The file group was not in the sharing group."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
         }
-        
-        // Are all of the file(s) marked as deleted?
-        if (files.filter {$0.deleted == true}).count == files.count {
+
+        // Is the file group already marked as deleted?
+        if fileGroup.deleted {
             Log.info("File(s) already marked as deleted: Not deleting again.")
             let response = UploadDeletionResponse()
             params.completion(.success(response))
             return
         }
         
-        // Mark the file(s) as deleted in the FileIndex
-        let key = FileIndexRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
-        guard let _ = params.repos.fileIndex.markFilesAsDeleted(key: key) else {
+        // Mark the file(s) as deleted in the FileGroup
+        let key = FileGroupRepository.LookupKey.fileGroupUUID(fileGroupUUID: fileGroupUUID)
+        guard let _ = params.repos.fileGroups.markAsDeleted(key: key) else {
             let message = "Failed marking file(s) as deleted: \(key)"
             Log.error(message)
             params.completion(.failure(.message(message)))

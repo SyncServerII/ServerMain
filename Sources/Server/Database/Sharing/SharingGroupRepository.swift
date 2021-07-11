@@ -291,7 +291,7 @@ class SharingGroupRepository: Repository, RepositoryLookup {
         }
         else {
             let error = db.error
-            Log.error("Could not mark files as deleted in \(tableName): \(error)")
+            Log.error("Could not mark sharing group(s) as deleted in \(tableName): \(error)")
             return nil
         }
     }

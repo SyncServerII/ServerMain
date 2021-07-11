@@ -250,6 +250,7 @@ class FinishUploadFiles {
             fileGroup.sharingGroupUUID = sharingGroupUUID
             fileGroup.userId = currentSignedInUserId
             fileGroup.owningUserId = fileOwnerUserId
+            fileGroup.deleted = false
             
             guard let _ = params.repos.fileGroups.add(model: fileGroup) else {
                 let message = "Failed adding file group record."

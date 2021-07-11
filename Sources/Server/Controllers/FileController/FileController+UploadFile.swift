@@ -154,8 +154,15 @@ extension FileController {
                 finish(.errorMessage(message), params: params)
                 return
             }
-        
-            if existingFileInFileIndex.deleted {
+            
+            guard let fileGroupUUID = existingFileInFileIndex.fileGroupUUID,
+                let fileGroup = try? params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileGroupUUID) else {
+                let message = "Could not get file group."
+                finish(.errorMessage(message), params: params)
+                return
+            }
+
+            guard !fileGroup.deleted else {
                 let message = "Attempt to upload an existing file, but it has already been deleted."
                 finish(.errorResponse(.failure(
                     .goneWithReason(message: message, .fileRemovedOrRenamed))), params: params)

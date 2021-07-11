@@ -94,8 +94,16 @@ extension SharingGroupsController {
             return
         }
 
-        guard let _ = checkOwners(fileGroupUUIDs: fileGroupUUIDs, sourceSharingGroup: sourceSharingGroupUUID, destinationSharingGroup: destinationSharingGroupUUID, params: params) else {
+        guard let fileGroups = checkOwners(fileGroupUUIDs: fileGroupUUIDs, sourceSharingGroup: sourceSharingGroupUUID, destinationSharingGroup: destinationSharingGroupUUID, params: params) else {
             // `checkOwners` already did the completion.
+            return
+        }
+        
+        let deleted = fileGroups.filter { $0.deleted }
+        guard deleted.count == 0 else {
+            let message = "Some of the file groups in the attempted move, were deleted."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
             return
         }
         

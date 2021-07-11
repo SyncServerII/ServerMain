@@ -120,7 +120,6 @@ class DatabaseModelTests: ServerTestCase {
         let newDeviceUUID = Foundation.UUID().uuidString
         let newMimeType = "text/plain"
         let newAppMetaData = "whatever"
-        let newDeleted = false
         let newFileVersion = FileVersionInt(100)
         let newCheckSum = "abcdef"
         let creationDate = Date()
@@ -132,7 +131,6 @@ class DatabaseModelTests: ServerTestCase {
         fileIndex[FileIndex.deviceUUIDKey] = newDeviceUUID
         fileIndex[FileIndex.mimeTypeKey] = newMimeType
         fileIndex[FileIndex.appMetaDataKey] = newAppMetaData
-        fileIndex[FileIndex.deletedKey] = newDeleted
         fileIndex[FileIndex.fileVersionKey] = newFileVersion
         fileIndex[FileIndex.lastUploadedCheckSumKey] = newCheckSum
         fileIndex[FileIndex.creationDateKey] = creationDate
@@ -144,7 +142,6 @@ class DatabaseModelTests: ServerTestCase {
         XCTAssert(fileIndex.deviceUUID == newDeviceUUID)
         XCTAssert(fileIndex.mimeType == newMimeType)
         XCTAssert(fileIndex.appMetaData == newAppMetaData)
-        XCTAssert(fileIndex.deleted == newDeleted)
         XCTAssert(fileIndex.fileVersion == newFileVersion)
         XCTAssert(fileIndex.lastUploadedCheckSum == newCheckSum)
         XCTAssert(fileIndex.creationDate == creationDate)
@@ -156,7 +153,6 @@ class DatabaseModelTests: ServerTestCase {
         fileIndex[FileIndex.deviceUUIDKey] = nil
         fileIndex[FileIndex.mimeTypeKey] = nil
         fileIndex[FileIndex.appMetaDataKey] = nil
-        fileIndex[FileIndex.deletedKey] = nil
         fileIndex[FileIndex.fileVersionKey] = nil
         fileIndex[FileIndex.lastUploadedCheckSumKey] = nil
         fileIndex[FileIndex.creationDateKey] = nil
@@ -168,7 +164,6 @@ class DatabaseModelTests: ServerTestCase {
         XCTAssert(fileIndex.deviceUUID == nil)
         XCTAssert(fileIndex.mimeType == nil)
         XCTAssert(fileIndex.appMetaData == nil)
-        XCTAssert(fileIndex.deleted == nil)
         XCTAssert(fileIndex.fileVersion == nil)
         XCTAssert(fileIndex.lastUploadedCheckSum == nil)
         XCTAssert(fileIndex.creationDate == nil)
@@ -184,7 +179,7 @@ class DatabaseModelTests: ServerTestCase {
         let userId = UserId(43)
         let fileVersion = FileVersionInt(322)
         let deviceUUID = Foundation.UUID().uuidString
-        let state:UploadState = .deleteSingleFile
+        let state:UploadState = .v0UploadCompleteFile
         let appMetaData = "arba"
         let fileCheckSum = TestFile.test1.dropboxCheckSum
         let mimeType = "text/plain"

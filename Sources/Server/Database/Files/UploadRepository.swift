@@ -28,11 +28,12 @@ import ChangeResolvers
 public enum UploadState : String {
     case v0UploadCompleteFile
     case vNUploadFileChange
-    case deleteSingleFile
-    // deletion of a file group will not be represented by an Upload row, but by a DeferredUpload row (only).
     
-    // DEPRECATED.
+    @available(*, deprecated)
+    case deleteSingleFile
+    @available(*, deprecated)
     case uploadingUndelete
+    @available(*, deprecated)
     case uploadedUndelete
     
     var isUploadFile: Bool {
@@ -743,7 +744,7 @@ class UploadRepository : Repository, RepositoryLookup, ModelIndexId {
             
             fileInfo.fileUUID = upload.fileUUID
             fileInfo.fileVersion = upload.fileVersion
-            fileInfo.deleted = upload.state == .deleteSingleFile
+            fileInfo.deleted = false
             fileInfo.mimeType = upload.mimeType
             fileInfo.creationDate = upload.creationDate
             fileInfo.updateDate = upload.updateDate

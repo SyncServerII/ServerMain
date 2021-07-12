@@ -8,7 +8,7 @@ global:
   application_name: neebla-02-production
   branch: null
   default_ec2_keyname: amazon1
-  default_platform: Docker 19.03.13-ce
+  default_platform: Docker 20.10.4
   default_region: us-west-2
   include_git_submodules: true
   instance_profile: null

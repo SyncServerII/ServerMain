@@ -1,5 +1,8 @@
 SyncServer
 
+[MIGRATIONS]
+	* Production migrations for the deleted column on the FileGroup table.
+	
 Version 1.12.4 (7/10/21)
     * Moved `deleted` column from FileIndex table to FileGroup table.
         Because deletions are only allowed on a file group basis.

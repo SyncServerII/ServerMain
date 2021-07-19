@@ -1,6 +1,6 @@
 SyncServer
 
-Versions 1.12.5
+Versions 1.12.5 (7/18/21)
 	* Added `usersThatMustBeInDestination` field to `MoveFileGroupsRequest` so client
 		can ensure that all users making comments must be in destination album when
 		doing a move.

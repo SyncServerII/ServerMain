@@ -622,10 +622,109 @@ class SharingGroupsController_MoveFileGroups: ServerTestCase {
     func testNormalFileGroupMoveWorks() {
         testMoveFileGroup(deleteFileGroupBefore: false)
     }
+    
+    // User A and user B are both in sharing group 1.
+    // User A (only) is in sharing group 2.
+    // User A uploads a file.
+    // User A requests a move of the file, to sharing group 2, with user B in usersThatMustBeInDestination. This simulates user B having made a comment on that file.
+    // The move should fail.
+    enum UsersThatMustBeInDestinationCase {
+        case none
+        case oneNotInDest
+        case oneInDest
+    }
+    
+    func testRun(simulatedUsersThatMustBeInDestination: UsersThatMustBeInDestinationCase) {
+        let sharingGroupUUID1 = UUID().uuidString
+        let sharingGroupUUID2 = UUID().uuidString
+        let deviceUUID1 = UUID().uuidString
+        
+        let testUser1: TestAccount = .primaryOwningAccount
+        let testUser2: TestAccount = .secondaryOwningAccount
+
+        guard let addUserResponse = addNewUser(testAccount: testUser1, sharingGroupUUID: sharingGroupUUID1, deviceUUID:deviceUUID1) else {
+            XCTFail()
+            return
+        }
+
+        guard let userAId = addUserResponse.userId else {
+            XCTFail()
+            return
+        }
+        
+        let sharingGroup2 = ServerShared.SharingGroup()
+
+        guard createSharingGroup(testAccount: testUser1, sharingGroupUUID: sharingGroupUUID2, deviceUUID:deviceUUID1, sharingGroup: sharingGroup2) else {
+            XCTFail()
+            return
+        }
+        
+        guard let sharingInvitationCode = createSharingInvitation(testAccount: testUser1, permission: .admin, sharingGroupUUID: sharingGroupUUID1) else {
+            XCTFail()
+            return
+        }
+        
+        guard let redeemResult = redeemSharingInvitation(sharingUser: testUser2, sharingInvitationUUID: sharingInvitationCode) else {
+            XCTFail()
+            return
+        }
+        
+        guard let userBId = redeemResult.userId else {
+            XCTFail()
+            return
+        }
+
+        let fileGroupUUI1 = UUID().uuidString
+        let fileGroup1 = FileGroup(fileGroupUUID: fileGroupUUI1, objectType: "Foobly")
+        
+        guard let _ = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: testUser1, deviceUUID:deviceUUID1, fileUUID: UUID().uuidString, addUser: .no(sharingGroupUUID: sharingGroupUUID1), fileLabel: UUID().uuidString, fileGroup: fileGroup1) else {
+            XCTFail()
+            return
+        }
+        
+        let fileGroups = [fileGroupUUI1]
+        var userThatMustBeInDest = Set<UserId>()
+        
+        switch simulatedUsersThatMustBeInDestination {
+        case .none:
+            break
+            
+        case .oneInDest:
+            userThatMustBeInDest = [userAId]
+            
+        case .oneNotInDest:
+            userThatMustBeInDest = [userBId]
+        }
+
+        guard let response = moveFileGroups(testUser: testUser1, deviceUUID: deviceUUID1, usersThatMustBeInDestination: userThatMustBeInDest, sourceSharingGroupUUID: sharingGroupUUID1, destinationSharingGroupUUID: sharingGroupUUID2, fileGroupUUIDs: fileGroups, errorExpected: false) else {
+            XCTFail()
+            return
+        }
+
+        switch simulatedUsersThatMustBeInDestination {
+        case .none, .oneInDest:
+            XCTAssert(response.result == .success)
+            
+        case .oneNotInDest:
+            XCTAssert(response.result == .failedWithUserConstraintNotSatisfied)
+        }
+    }
+    
+    func testSimulatedUsersThatMustBeInDestination_oneNotInDest() {
+        testRun(simulatedUsersThatMustBeInDestination: .oneNotInDest)
+    }
+    
+    func testSimulatedUsersThatMustBeInDestination_oneInDest() {
+        testRun(simulatedUsersThatMustBeInDestination: .oneInDest)
+    }
+    
+    func testSimulatedUsersThatMustBeInDestination_none() {
+        testRun(simulatedUsersThatMustBeInDestination: .none)
+    }
 }
 
 extension SharingGroupsController_MoveFileGroups {
-    func moveFileGroups(testUser:TestAccount, deviceUUID:String = Foundation.UUID().uuidString, sourceSharingGroupUUID: String, destinationSharingGroupUUID: String, fileGroupUUIDs: [String], errorExpected:Bool=false) -> MoveFileGroupsResponse? {
+    func moveFileGroups(testUser:TestAccount, deviceUUID:String = Foundation.UUID().uuidString, usersThatMustBeInDestination: Set<UserId>? = nil, sourceSharingGroupUUID: String, destinationSharingGroupUUID: String, fileGroupUUIDs: [String], errorExpected:Bool=false) -> MoveFileGroupsResponse? {
     
         var result:MoveFileGroupsResponse?
         
@@ -643,6 +742,7 @@ extension SharingGroupsController_MoveFileGroups {
             request.sourceSharingGroupUUID = sourceSharingGroupUUID
             request.destinationSharingGroupUUID = destinationSharingGroupUUID
             request.fileGroupUUIDs = fileGroupUUIDs
+            request.usersThatMustBeInDestination = usersThatMustBeInDestination
             
             guard let data = try? JSONEncoder().encode(request) else {
                 XCTFail()

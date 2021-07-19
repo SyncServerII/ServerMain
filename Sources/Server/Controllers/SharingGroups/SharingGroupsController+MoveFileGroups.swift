@@ -93,6 +93,26 @@ extension SharingGroupsController {
             params.completion(.failure(.message(message)))
             return
         }
+        
+        let userConstraintResult = checkUserConstraint(request: request, params: params)
+        switch userConstraintResult {
+        case .error:
+            let message = "There was an error checking the user constraint."
+            Log.error(message)
+            params.completion(.failure(.message(message)))
+            return
+            
+        case .notSatisfied:
+            let message = "The user constraint was not satisfied."
+            Log.debug(message)
+            let response = MoveFileGroupsResponse()
+            response.result = .failedWithUserConstraintNotSatisfied
+            params.completion(.success(response))
+            return
+            
+        case .satisifed:
+            break
+        }
 
         guard let fileGroups = checkOwners(fileGroupUUIDs: fileGroupUUIDs, sourceSharingGroup: sourceSharingGroupUUID, destinationSharingGroup: destinationSharingGroupUUID, params: params) else {
             // `checkOwners` already did the completion.
@@ -101,7 +121,7 @@ extension SharingGroupsController {
         
         let deleted = fileGroups.filter { $0.deleted }
         guard deleted.count == 0 else {
-            let message = "Some of the file groups in the attempted move, were deleted."
+            let message = "Some of the file groups in the attempted move were deleted."
             Log.error(message)
             params.completion(.failure(.message(message)))
             return
@@ -179,5 +199,38 @@ extension SharingGroupsController {
         }
         
         return fileGroups
+    }
+    
+    enum UserConstraint {
+        case satisifed
+        case notSatisfied
+        case error
+    }
+    
+    // Constrain by `usersThatMustBeInDestination`.
+    func checkUserConstraint(request:MoveFileGroupsRequest, params:RequestProcessingParameters) -> UserConstraint {
+        guard let usersThatMustBeInDestination = request.usersThatMustBeInDestination else {
+            Log.info("There was no usersThatMustBeInDestination field in request.")
+            return .satisifed
+        }
+        
+        guard let sourceUsers = params.repos.sharingGroupUser.usersInSharingGroup(sharingGroupUUID: request.sourceSharingGroupUUID) else {
+            return .error
+        }
+        
+        // See which users are still in the source sharing group.
+        // Note that if for some reason there are invalid user id's in `usersThatMustBeInDestination` -- e.g., ids of users that just are not on the system, `usersInConstraint` will not have those users as they will not intersect with `sourceUsers`.
+        let usersInConstraint = sourceUsers.intersection(usersThatMustBeInDestination)
+
+        guard let destUsers = params.repos.sharingGroupUser.usersInSharingGroup(sharingGroupUUID: request.destinationSharingGroupUUID) else {
+            return .error
+        }
+        
+        guard destUsers.intersection(usersInConstraint).count
+            == usersInConstraint.count else {
+            return .notSatisfied
+        }
+
+        return .satisifed
     }
 }

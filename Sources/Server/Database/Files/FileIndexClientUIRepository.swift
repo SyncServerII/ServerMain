@@ -19,6 +19,7 @@ class FileIndexClientUI : NSObject, Model {
     static let fileUUIDKey = "fileUUID"
     var fileUUID: String!
     
+    // TODO: Remove this column: https://github.com/SyncServerII/ServerMain/issues/17
     static let sharingGroupUUIDKey = "sharingGroupUUID"
     var sharingGroupUUID: String!
     

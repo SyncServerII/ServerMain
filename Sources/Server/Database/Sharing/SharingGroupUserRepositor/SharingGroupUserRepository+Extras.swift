@@ -67,4 +67,13 @@ extension SharingGroupUserRepository {
             return nil
         }
     }
+    
+    // Check which users are are actively in the sharing group (i.e., not deleted members). Returns nil on error.
+    func usersInSharingGroup(sharingGroupUUID: String) -> Set<UserId>? {
+        guard let users:[User] = sharingGroupUsers(forSharingGroupUUID: sharingGroupUUID, includeRemovedUsers: false) else {
+            return nil
+        }
+        
+        return Set<UserId>(users.map { $0.userId })
+    }
 }

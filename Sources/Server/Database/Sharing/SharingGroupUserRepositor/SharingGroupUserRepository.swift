@@ -256,7 +256,7 @@ class SharingGroupUserRepository : Repository, RepositoryLookup {
         return result
     }
     
-    // includeRemovedUsers iff users that have been removed from the sharing group are included in result
+    // includeRemovedUsers iff users that have been removed from the sharing group are included in result; returns nil on error
     func sharingGroupUsers(forSharingGroupUUID sharingGroupUUID: String, includeRemovedUsers: Bool) -> [User]? {
         
         var onlyCurrentUsers = ""

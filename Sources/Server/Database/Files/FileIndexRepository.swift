@@ -225,6 +225,7 @@ class FileIndexRepository : Repository, RepositoryLookup, ModelIndexId {
             "fileVersion INT NOT NULL, " +
 
             // I've left this as NULL-able for now to deal with migration-- systems in production prior to 10/27/18. In general, this should not be null.
+            // 8/4/21: Currently, this is not getting updated past v0: https://github.com/SyncServerII/ServerMain/issues/18
             "lastUploadedCheckSum TEXT, " +
             
             "changeResolverName VARCHAR(\(ChangeResolverConstants.maxChangeResolverNameLength)), " +

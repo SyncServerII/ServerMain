@@ -30,7 +30,7 @@ let package = Package(
         .package(url: "https://github.com/SyncServerII/ServerMicrosoftAccount.git", from: "0.0.2"),
         .package(url: "https://github.com/SyncServerII/ServerAppleSignInAccount.git", from: "0.0.1"),
         .package(url: "https://github.com/SyncServerII/ServerFacebookAccount.git", from: "0.0.1"),
-
+        
         .package(url: "https://github.com/IBM-Swift/Kitura-Credentials.git", .upToNextMajor(from: "2.4.1")),
         .package(url: "https://github.com/IBM-Swift/Kitura-CredentialsFacebook.git", .upToNextMajor(from: "2.3.1")),
         
@@ -40,6 +40,7 @@ let package = Package(
         .package(url: "https://github.com/crspybits/CredentialsDropbox.git", from: "0.4.5"),
         .package(url: "https://github.com/crspybits/CredentialsMicrosoft.git", from: "0.2.0"),
         .package(url: "https://github.com/crspybits/CredentialsAppleSignIn.git", from: "0.0.4"),
+        // .package(url: "https://github.com/crspybits/CredentialsSolid.git", from: "0.0.1"),
 
         // .package(url: "../../repos/Perfect-MySQL", .branch("master")),
         // .package(url:"https://github.com/crspybits/Perfect-MySQL.git", from: "3.1.3"),
@@ -64,7 +65,8 @@ let package = Package(
             ]),
 
         .target(name: "Server",
-            dependencies: ["ServerShared", "Credentials", "CredentialsGoogle", "PerfectThread", "PerfectMySQL", "HeliumLogger", "CredentialsFacebook", "CredentialsDropbox", "Kitura", "PerfectLib", "SwiftyAWSSNS", "CredentialsMicrosoft", "ServerAccount", "ServerDropboxAccount", "ServerGoogleAccount", "ServerMicrosoftAccount", "ServerAppleSignInAccount", "ServerFacebookAccount", "ChangeResolvers", "CryptoSwift", "CredentialsAppleSignIn"],
+            dependencies: ["ServerShared", "Credentials", "CredentialsGoogle", "PerfectThread", "PerfectMySQL", "HeliumLogger", "CredentialsFacebook", "CredentialsDropbox", "Kitura", "PerfectLib", "SwiftyAWSSNS", "CredentialsMicrosoft", "ServerAccount", "ServerDropboxAccount", "ServerGoogleAccount", "ServerMicrosoftAccount", "ServerAppleSignInAccount", "ServerFacebookAccount", "ChangeResolvers", "CryptoSwift", "CredentialsAppleSignIn", // "CredentialsSolid",
+            ],
             swiftSettings: [
                 .define("DEBUG", .when(platforms: nil, configuration: .debug)),
                 .define("SERVER")

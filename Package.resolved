@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/SyncServerII/AppleJWTDecoder.git",
         "state": {
           "branch": null,
-          "revision": "bd791ad027c52f8054dcb448b9a9981046712dbf",
-          "version": "0.0.6"
+          "revision": "2cb4d109b2ef8336a87e6a347f77751b1d2d74b3",
+          "version": "0.0.8"
         }
       },
       {
@@ -267,8 +267,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerAccount.git",
         "state": {
           "branch": null,
-          "revision": "8dc5b24eb55f97c90bc989fac746302be53a1a0d",
-          "version": "0.0.8"
+          "revision": "37d7362d1348b7687db4bb77cb5bd510e17d89d9",
+          "version": "0.0.10"
         }
       },
       {
@@ -321,8 +321,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerShared.git",
         "state": {
           "branch": null,
-          "revision": "d98b3e022d7a13f586e9f58d277feb48d6190e96",
-          "version": "0.12.9"
+          "revision": "5f6ed0477e1eb33794fc52957aefecfc0cfa410f",
+          "version": "0.13.2"
         }
       },
       {

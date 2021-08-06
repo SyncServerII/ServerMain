@@ -1,5 +1,8 @@
 SyncServer
 
+Versions 1.13.0
+    * Improve error handling on v0 upload retries. See https://github.com/SyncServerII/Neebla/issues/25
+
 Versions 1.12.5 (7/18/21)
 	* Added `usersThatMustBeInDestination` field to `MoveFileGroupsRequest` so client
 		can ensure that all users making comments must be in destination album when

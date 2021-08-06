@@ -108,21 +108,44 @@ extension FileController {
 
         do {
             existingFileInFileIndex = try FileController.checkForExistingFile(params:params, sharingGroupUUID: uploadRequest.sharingGroupUUID, fileUUID:uploadRequest.fileUUID)
-            
-            // For an existing file, check to make sure that the request has no file group. It's an error to try to upload an existing file with a file group. E.g., this could be a client attempt to re-assign an existing file to a different file group, which is not allowed.
-            if let _ = existingFileInFileIndex {
-                guard uploadRequest.fileGroupUUID == nil else {
-                    let message = "fileGroupUUID given for vN upload."
-                    finish(.errorMessage(message), params: params)
-                    return
-                }
-            }
         } catch (let error) {
             let message = "Could not lookup file in FileIndex: \(error)"
             finish(.errorMessage(message), params: params)
             return
         }
-        
+
+        if let existingFileInFileIndex = existingFileInFileIndex {
+            guard uploadRequest.fileGroupUUID == nil else {
+                // This is an existing file in the FileIndex. And the upload request has a file group -- so is a v0 upload. Is this just some kind of odd error, or is this a retry of a v0 upload?
+            
+                // See if it's a retry.
+                let isDuplicate: Bool
+                do {
+                    isDuplicate = try isDuplicateV0Upload(fileIndex: existingFileInFileIndex, uploadRequest: uploadRequest, params: params)
+                } catch let error {
+                    let message = "Failed on isDuplicateV0Upload: \(error)"
+                    finish(.errorMessage(message), params: params)
+                    return
+                }
+                
+                if isDuplicate {
+                    let response = UploadFileResponse()
+                    response.allUploadsFinished = .v0DuplicateFileUpload
+
+                    // 12/27/17; Send the dates back down to the client. https://github.com/crspybits/SharedImages/issues/44
+                    response.creationDate = existingFileInFileIndex.creationDate
+                    response.updateDate = existingFileInFileIndex.updateDate
+                    finish(.success(response: response, runner: nil), params: params)
+                    return
+                }
+            
+                // Not a retry.
+                let message = "fileGroupUUID given for vN upload."
+                finish(.errorMessage(message), params: params)
+                return
+            }
+        }
+
         // Content data for the initial v0 file or vN change.
         guard let fileContents = uploadRequest.data else {
             let message = "Could not get content data for file from request"
@@ -148,7 +171,7 @@ extension FileController {
                 finish(.errorMessage(message), params: params)
                 return
             }
-            
+
             guard uploadRequest.appMetaData == nil else {
                 let message = "App meta data only allowed with v0 of file."
                 finish(.errorMessage(message), params: params)
@@ -633,6 +656,23 @@ extension FileController {
         case .otherError(let error):
             finish(.errorCleanup(message: error, cleanup: cleanup), params: params)
         }
+    }
+    
+    // Heuristically check if this a duplicate v0 upload. A duplicate can happen in certain upload retry conditions. See https://github.com/SyncServerII/Neebla/issues/25#issuecomment-891842298
+    // It's heuristic because we're comparing the checksum and other request parameters. To make this exact, we'd have to download the cloud storage file and compare it to the file just uploaded. And that's expensive.
+    // Not going to require that file version is 0 because it seems possible that: a) the upload had originally succeeded, b) the file had a change resolver, and c) someone else applied a change to the file. If we required that the file version was 0, this would then fail.
+    func isDuplicateV0Upload(fileIndex: FileIndex, uploadRequest: UploadFileRequest, params:RequestProcessingParameters) throws -> Bool {
+        let fileGroup = try params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileIndex.fileGroupUUID)
+    
+        return uploadRequest.fileGroupUUID == fileIndex.fileGroupUUID &&
+            uploadRequest.mimeType == fileIndex.mimeType &&
+            uploadRequest.checkSum == fileIndex.lastUploadedCheckSum &&
+            uploadRequest.fileUUID == fileIndex.fileUUID &&
+            uploadRequest.changeResolverName == fileIndex.changeResolverName &&
+            uploadRequest.fileLabel == fileIndex.fileLabel &&
+            uploadRequest.sharingGroupUUID == fileGroup.sharingGroupUUID &&
+            uploadRequest.objectType == fileGroup.objectType &&
+            fileGroup.userId == params.currentSignedInUser?.userId
     }
 }
 

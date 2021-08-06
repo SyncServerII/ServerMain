@@ -48,7 +48,7 @@ class FileController_V0_UploadTests: ServerTestCase {
     }
     
     @discardableResult
-    func uploadSingleV0File(changeResolverName: String? = nil, expectError: Bool = false, uploadSingleFile:(_ deviceUUID: String, _ fileUUID: String, _ changeResolverName: String?)->(ServerTestCase.UploadFileResult?)) -> UploadResult? {
+    func uploadSingleV0File(changeResolverName: String? = nil, expectError: Bool = false, fileUUID: String = Foundation.UUID().uuidString, allUploadsFinished: UploadFileResponse.UploadsFinished = .v0UploadsFinished, uploadSingleFile:(_ deviceUUID: String, _ fileUUID: String, _ changeResolverName: String?)->(ServerTestCase.UploadFileResult?)) -> UploadResult? {
         let fileIndex = FileIndexRepository(db)
         let upload = UploadRepository(db)
         
@@ -63,9 +63,7 @@ class FileController_V0_UploadTests: ServerTestCase {
         }
         
         let deviceUUID = Foundation.UUID().uuidString
-        
-        let fileUUID = Foundation.UUID().uuidString
-        
+
         guard let result = uploadSingleFile(deviceUUID, fileUUID, changeResolverName) else {
             if expectError {
                 return nil
@@ -75,7 +73,7 @@ class FileController_V0_UploadTests: ServerTestCase {
         }
         
         XCTAssert(result.response?.creationDate != nil)
-        XCTAssert(result.response?.allUploadsFinished == .v0UploadsFinished)
+        XCTAssert(result.response?.allUploadsFinished == allUploadsFinished)
                 
         guard let fileIndexCount2 = fileIndex.count() else {
             XCTFail()
@@ -86,9 +84,11 @@ class FileController_V0_UploadTests: ServerTestCase {
             XCTFail()
             return nil
         }
-        
-        // Make sure the file index has another row.
-        XCTAssert(fileIndexCount1 + 1 == fileIndexCount2)
+
+        if allUploadsFinished == .v0UploadsFinished {
+            // Make sure the file index has another row.
+            XCTAssert(fileIndexCount1 + 1 == fileIndexCount2)
+        }
         
         // And the upload table has no more rows after.
         XCTAssert(uploadCount1 == uploadCount2)
@@ -117,6 +117,36 @@ class FileController_V0_UploadTests: ServerTestCase {
         case .noObjectFound:
             break
         default:
+            XCTFail()
+            return
+        }
+    }
+    
+    // See https://github.com/SyncServerII/Neebla/issues/25
+    func testUploadSingleV0TextFileWithRetry() {
+        let fileGroup = FileGroup(fileGroupUUID: UUID().uuidString, objectType: "Foo")
+        let fileUUID = UUID().uuidString
+        let fileLabel = UUID().uuidString
+        let sharingGroup = UUID().uuidString
+        
+        let uploadResult1 = uploadSingleV0File(fileUUID: fileUUID) { deviceUUID, fileUUID, changeResolverName in
+            let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, fileLabel: fileLabel, fileGroup: fileGroup, sharingGroup: sharingGroup)
+            XCTAssert(result?.response?.allUploadsFinished == .v0UploadsFinished)
+            return result
+        }
+        
+        guard let sharingGroupUUID = uploadResult1?.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+        
+        let uploadResult2 = uploadSingleV0File(fileUUID: fileUUID, allUploadsFinished: .v0DuplicateFileUpload) { deviceUUID, fileUUID, changeResolverName in
+            let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, deviceUUID:deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: fileLabel, fileGroup: fileGroup, sharingGroup: sharingGroup)
+            XCTAssert(result?.response?.allUploadsFinished == .v0DuplicateFileUpload)
+            return result
+        }
+        
+        guard uploadResult2 != nil else {
             XCTFail()
             return
         }

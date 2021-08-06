@@ -80,6 +80,9 @@ class Hashing {
             return generateDropbox(fromData: data)
         case .Google:
             return generateMD5(fromData: data)
+        case .Solid:
+            Log.error("Solid not yet implemented")
+            return nil
         }
     }
 }

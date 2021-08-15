@@ -664,15 +664,21 @@ extension FileController {
     func isDuplicateV0Upload(fileIndex: FileIndex, uploadRequest: UploadFileRequest, params:RequestProcessingParameters) throws -> Bool {
         let fileGroup = try params.repos.fileGroups.getFileGroup(forFileGroupUUID: fileIndex.fileGroupUUID)
     
-        return uploadRequest.fileGroupUUID == fileIndex.fileGroupUUID &&
+        var isDuplicate = uploadRequest.fileGroupUUID == fileIndex.fileGroupUUID &&
             uploadRequest.mimeType == fileIndex.mimeType &&
-            uploadRequest.checkSum == fileIndex.lastUploadedCheckSum &&
             uploadRequest.fileUUID == fileIndex.fileUUID &&
             uploadRequest.changeResolverName == fileIndex.changeResolverName &&
             uploadRequest.fileLabel == fileIndex.fileLabel &&
             uploadRequest.sharingGroupUUID == fileGroup.sharingGroupUUID &&
             uploadRequest.objectType == fileGroup.objectType &&
             fileGroup.userId == params.currentSignedInUser?.userId
+        
+        // Can only compare check sum for v0 files because for vN files the deferred uploader changes the check sum in the FileIndex.
+        if fileIndex.fileVersion == 0 {
+            isDuplicate = isDuplicate && uploadRequest.checkSum == fileIndex.lastUploadedCheckSum
+        }
+            
+        return isDuplicate
     }
 }
 

@@ -166,6 +166,58 @@ class FileController_VN_UploadTests: ServerTestCase, UploaderCommon {
         runUploadOneV1TextFileWorks()
     }
     
+    // See https://github.com/SyncServerII/Neebla/issues/25
+    // This retries the v0 upload because that is handled differently-- without using a checksum.
+    func testUploadSingleVNTextFileWithV0Retry() {
+        let changeResolverName = CommentFile.changeResolverName
+        let deviceUUID = Foundation.UUID().uuidString
+        let fileUUID = Foundation.UUID().uuidString
+
+        let fileGroup = FileGroup(fileGroupUUID: Foundation.UUID().uuidString, objectType: "Foo")
+        
+        let exampleComment = ExampleComment(messageString: "Hello, World", id: Foundation.UUID().uuidString)
+         
+        // First upload the v0 file.
+  
+        let fileLabel = UUID().uuidString
+        let batchUUID = UUID().uuidString
+        let informAllButSelf = true
+        
+        guard let result = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID: deviceUUID, fileUUID: fileUUID, fileLabel: fileLabel, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName, informAllButSelf: informAllButSelf),
+            let sharingGroupUUID = result.sharingGroupUUID else {
+            XCTFail()
+            return
+        }
+                
+        // Next, upload v1 of the file -- i.e., upload just the specific change to the file.
+        
+        let fileIndex = FileIndexRepository(db)
+        let upload = UploadRepository(db)
+        let deferredUploads = DeferredUploadRepository(db)
+        
+        guard let fileIndexCount1 = fileIndex.count(),
+            let uploadCount1 = upload.count(),
+            let deferredUploadCount1 = deferredUploads.count() else {
+            XCTFail()
+            return
+        }
+                
+        let v1ChangeData = exampleComment.updateContents
+        
+        guard let result2 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: UUID().uuidString, testAccount: .primaryOwningAccount, mimeType: nil, deviceUUID: deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: nil, dataToUpload: v1ChangeData, informAllButSelf: informAllButSelf) else {
+            XCTFail()
+            return
+        }
+        
+        // Retry the v0 upload
+        guard let result3 = uploadTextFile(uploadIndex: 1, uploadCount: 1, batchUUID: batchUUID, deviceUUID: deviceUUID, fileUUID: fileUUID, addUser: .no(sharingGroupUUID: sharingGroupUUID), fileLabel: fileLabel, stringFile: .commentFile, fileGroup: fileGroup, changeResolverName: changeResolverName, informAllButSelf: informAllButSelf) else {
+            XCTFail()
+            return
+        }
+        
+        XCTAssert(result3.response?.allUploadsFinished == .v0DuplicateFileUpload)
+    }
+    
     enum FileGroupOption {
         case sameFileGroup
         case differentFileGroup

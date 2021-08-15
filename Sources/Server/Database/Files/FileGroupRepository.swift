@@ -34,7 +34,7 @@ class FileGroupModel : NSObject, Model {
     static let owningUserIdKey = "owningUserId"
     var owningUserId:UserId!
     
-    // When "deleted" file groups are not fully removed from the system. Their files are not removed from cloud storage; the file group is just marked as deleted.
+    // When "deleted", file groups are not fully removed from the system. Their files are not removed from cloud storage; the file group is just marked as deleted.
     static let deletedKey = "deleted"
     var deleted:Bool!
     

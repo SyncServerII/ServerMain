@@ -1,6 +1,9 @@
 SyncServer
 
-Versions 1.13.0
+Versions 1.13.1 (8/14/21)
+    * Fix issue: Enable v0 upload retries for mutable files to work properly.
+
+Versions 1.13.0 (8/5/21)
     * Improve error handling on v0 upload retries. See https://github.com/SyncServerII/Neebla/issues/25
 
 Versions 1.12.5 (7/18/21)

@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ChangeResolvers.git",
         "state": {
           "branch": null,
-          "revision": "e7fd8f41d1b8e576671a5a3b312ba7ae1e2be146",
-          "version": "0.3.2"
+          "revision": "74da2d45ea5f937d59fd492a1f267ce1b403a32c",
+          "version": "0.3.3"
         }
       },
       {

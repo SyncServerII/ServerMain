@@ -1,5 +1,9 @@
 SyncServer
 
+Version 1.13.3 (8/28/21)
+	* Update to ChangeResolver package: Allowing for nil `notNew` key
+		in MediaItemAttributes.
+	
 Version 1.13.2 (8/28/21)
 	* Added ChangeResolver package update-- adding support for "notNew".
 

@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.13.6 (8/28/21)
+	* Once again. That last one didn't deploy right.
+	
 Version 1.13.5 (8/28/21)
 	* Still trying to resolve server issue. Added possible fix in ChangeResolver package.
 	

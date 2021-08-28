@@ -303,8 +303,8 @@
         "repositoryURL": "https://github.com/SyncServerII/ServerGoogleAccount.git",
         "state": {
           "branch": null,
-          "revision": "b7b93c157464197840b57b8095414b25713e9b40",
-          "version": "0.0.2"
+          "revision": "76a2ccc6eb396b92028b4d76e69d42fcb2e0fb73",
+          "version": "0.0.3"
         }
       },
       {

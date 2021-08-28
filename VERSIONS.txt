@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.13.7 (8/28/21)
+	* Added debugging to ServerGoogleAccount.
+	
 Version 1.13.6 (8/28/21)
 	* Once again. That last one didn't deploy right.
 	

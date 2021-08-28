@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "AnyCodable",
+        "repositoryURL": "https://github.com/Flight-School/AnyCodable.git",
+        "state": {
+          "branch": null,
+          "revision": "69261f239f0fffaf51495dadc4f8483fbfe97025",
+          "version": "0.6.1"
+        }
+      },
+      {
         "package": "AppleJWTDecoder",
         "repositoryURL": "https://github.com/SyncServerII/AppleJWTDecoder.git",
         "state": {
@@ -101,6 +110,15 @@
         }
       },
       {
+        "package": "CredentialsSolid",
+        "repositoryURL": "https://github.com/crspybits/CredentialsSolid.git",
+        "state": {
+          "branch": null,
+          "revision": "63269db25f13607dd4864a9eafedf2a78c3ad1b1",
+          "version": "0.0.2"
+        }
+      },
+      {
         "package": "CryptoSwift",
         "repositoryURL": "https://github.com/krzyzanowskim/CryptoSwift.git",
         "state": {
@@ -116,6 +134,15 @@
           "branch": null,
           "revision": "55fd2f0b70793017acee853c53cfcf8da0bd8d8d",
           "version": "1.9.200"
+        }
+      },
+      {
+        "package": "jwt-kit",
+        "repositoryURL": "https://github.com/vapor/jwt-kit.git",
+        "state": {
+          "branch": null,
+          "revision": "df7955305940ea0fcd1626a0a6d1a1556623f95e",
+          "version": "4.2.3"
         }
       },
       {
@@ -326,6 +353,33 @@
         }
       },
       {
+        "package": "ServerSolidAccount",
+        "repositoryURL": "https://github.com/SyncServerII/ServerSolidAccount.git",
+        "state": {
+          "branch": null,
+          "revision": "73ff713ae2d4f95eb88d8d076897c385de042475",
+          "version": "0.0.2"
+        }
+      },
+      {
+        "package": "SolidAuthSwift",
+        "repositoryURL": "https://github.com/crspybits/SolidAuthSwift.git",
+        "state": {
+          "branch": null,
+          "revision": "0f01acda6b4446efd47964e595bd66d3b8a1964b",
+          "version": "0.0.9"
+        }
+      },
+      {
+        "package": "swift-crypto",
+        "repositoryURL": "https://github.com/apple/swift-crypto.git",
+        "state": {
+          "branch": null,
+          "revision": "3bea268b223651c4ab7b7b9ad62ef9b2d4143eb6",
+          "version": "1.1.6"
+        }
+      },
+      {
         "package": "SwiftJWKtoPEM",
         "repositoryURL": "https://github.com/ibm-cloud-security/Swift-JWK-to-PEM.git",
         "state": {
@@ -341,6 +395,15 @@
           "branch": null,
           "revision": "2f2fc12ae88660e0760b04d9e6c341517b31ad7b",
           "version": "3.6.200"
+        }
+      },
+      {
+        "package": "SwiftJWT2",
+        "repositoryURL": "https://github.com/crspybits/Swift-JWT2.git",
+        "state": {
+          "branch": null,
+          "revision": "2f928445272b8c7a567ab485c2a5a3c3d129eec5",
+          "version": "3.6.202"
         }
       },
       {

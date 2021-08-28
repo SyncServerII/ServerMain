@@ -88,12 +88,26 @@ extension KituraTest {
     // `expectingUploaderToRun` signals whether or not to wait for Uploader run to complete.
     func performServerTest(testAccount:TestAccount = .primaryOwningAccount, expectingUploaderToRun: Bool = false,
         asyncTask: @escaping (XCTestExpectation, Account) -> Void) {
+
+        let exp = expectation(0)
+
+        var creds: Account!
         
-        testAccount.scheme.doHandler(for: .getCredentials, testAccount: testAccount) { [weak self] creds in
-            guard let self = self else { return }
-            Log.debug("creds: \(String(describing: creds.accessToken))")
-            self.runTest(testAccount: testAccount, usingCreds: creds, expectingUploaderToRun: expectingUploaderToRun, asyncTask: asyncTask)
+        testAccount.scheme.doHandler(for: .getCredentials, testAccount: testAccount) { account in
+            creds = account
+            exp.fulfill()
         }
+        
+        waitExpectation(timeout: 10, handler: nil)
+        
+        guard creds != nil else {
+            XCTFail()
+            return
+        }
+        
+        Log.debug("creds: \(String(describing: creds.accessToken))")
+        
+        runTest(testAccount: testAccount, usingCreds: creds, expectingUploaderToRun: expectingUploaderToRun, asyncTask: asyncTask)
     }
     
     // Perform server test, with no creds. e.g., health check.
@@ -201,9 +215,11 @@ extension KituraTest {
         var headers = [String: String]()
         
         headers[ServerConstants.XTokenTypeKey] = testUser.scheme.authTokenType
-        headers[ServerConstants.HTTPOAuth2AccessTokenKey] = accessToken
         headers[ServerConstants.httpRequestDeviceUUID] = deviceUUID
         
+        // Not actually needed for accounts. E.g., Solid. But most do.
+        headers[ServerConstants.HTTPOAuth2AccessTokenKey] = accessToken
+
         testUser.scheme.specificHeaderSetup(headers: &headers, testUser: testUser)
 
         return headers

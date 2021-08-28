@@ -1,5 +1,8 @@
 SyncServer
 
+Version 1.14.0
+	* Adding Solid Pod support
+
 Versions 1.13.1 (8/14/21)
     * Fix issue: Enable v0 upload retries for mutable files to work properly.
 

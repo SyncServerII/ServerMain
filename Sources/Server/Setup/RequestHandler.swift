@@ -277,16 +277,10 @@ class RequestHandler {
         processRequest: @escaping ProcessRequest) {
         
         setJsonResponseHeaders()
-        let profile = request.userProfile
-#if DEBUG
-//        for header in request.headers {
-//            Log.info("request.header: \(header)")
-//        }
-#endif
         self.deviceUUID = request.headers[ServerConstants.httpRequestDeviceUUID]
         
 #if DEBUG
-        if let profile = profile {
+        if let profile = request.userProfile {
             let userId = profile.id
             let userName = profile.displayName
             Log.info("Profile: \(String(describing: profile)); userId: \(userId); userName: \(userName)")
@@ -339,7 +333,9 @@ class RequestHandler {
                 return
             }
             
-            let key = UserRepository.LookupKey.accountTypeInfo(accountType:accountProperties.accountScheme.accountName, credsId: profile!.id)
+            let key = UserRepository.LookupKey.accountTypeInfo(
+                accountType:accountProperties.accountScheme.accountName,
+                credsId: request.userProfile!.id)
             let userLookup = self.repositories.user.lookup(key: key, modelInit: User.init)
             
             switch userLookup {
@@ -388,43 +384,47 @@ class RequestHandler {
         
         // 6/1/17; Up until this point, I had been (a) calling .end on the RouterResponse object, and (b) only after that committing the transaction (or rolling it back) on the database. However, that can generate some unwanted asynchronous processing. i.e., the network caller can potentially initiate another request *before* the database commit completes. Instead, I should be: (a) committing (or rolling back) the transaction, and then (b) calling .end. That should provide the synchronous character that I really want.
         
-        if profile == nil {
-            assert(authenticationLevel! == .none)
+        guard let profile = request.userProfile else {
+            guard authenticationLevel! == .none else {
+                self.failWithError(message: "Did not have authenticationLevel .none")
+                return
+            }
             
             dbTransaction(db, handleResult: handleTransactionResult) { [weak self] handleResult in
                 guard let self = self else { return }
                 self.doRemainingRequestProcessing(dbCreds: nil, profileCreds:nil, requestObject: requestObject, db: db, profile: nil, accountProperties: nil, sharingGroupUUID: sharingGroupUUID, accountDelegate: accountDelegate, processRequest: processRequest, handleResult: handleResult)
             }
+            
+            return
         }
-        else {
-            var credsUser:AccountCreationUser?
-            switch authenticationLevel! {
-            case .primary:
-                // We don't have a userId yet for this user.
-                break
-                
-            case .secondary:
-                credsUser = .user(self.currentSignedInUser!)
-                
-            case .none:
-                assertionFailure("Should never get here with authenticationLevel == .none!")
-            }
+        
+        var credsUser:AccountCreationUser?
+        switch authenticationLevel! {
+        case .primary:
+            // We don't have a userId yet for this user.
+            break
             
-            guard let accountProperties = accountProperties else {
-                self.failWithError(message: "Do not have AccountProperties!s")
-                return
-            }
+        case .secondary:
+            credsUser = .user(self.currentSignedInUser!)
             
-            if let profileCreds = services.accountManager.accountFromProperties(properties: accountProperties, user: credsUser, accountDelegate: accountDelegate) {
+        case .none:
+            assertionFailure("Should never get here with authenticationLevel == .none!")
+        }
+        
+        guard let properties = accountProperties else {
+            self.failWithError(message: "Do not have AccountProperties!s")
+            return
+        }
+        
+        guard let profileCreds = services.accountManager.accountFromProperties(properties: properties, user: credsUser, accountDelegate: accountDelegate) else {
             
-                dbTransaction(db, handleResult: handleTransactionResult) { [weak self] handleResult in
-                    guard let self = self else { return }
-                    self.doRemainingRequestProcessing(dbCreds:dbCreds, profileCreds:profileCreds, requestObject: requestObject, db: db, profile: profile, accountProperties: accountProperties, sharingGroupUUID: sharingGroupUUID, accountDelegate: accountDelegate, processRequest: processRequest, handleResult: handleResult)
-                }
-            }
-            else {
-                handleTransactionResult(.failure(.messageWithStatus("Failed converting to Creds from profile", .unauthorized)))
-            }
+            handleTransactionResult(.failure(.messageWithStatus("Failed converting to Account from AccountProperties", .unauthorized)))
+            return
+        }
+        
+        dbTransaction(db, handleResult: handleTransactionResult) { [weak self] handleResult in
+            guard let self = self else { return }
+            self.doRemainingRequestProcessing(dbCreds:dbCreds, profileCreds:profileCreds, requestObject: requestObject, db: db, profile: profile, accountProperties: accountProperties, sharingGroupUUID: sharingGroupUUID, accountDelegate: accountDelegate, processRequest: processRequest, handleResult: handleResult)
         }
     }
     

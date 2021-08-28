@@ -109,5 +109,14 @@ struct TestConfiguration: Decodable {
     }
     
     let apple1: AppleSignInTokens
+    
+    struct SolidTokens: Decodable {
+        let id: String
+        let idToken: String
+        let refreshToken: String
+        let codeParametersBase64: String
+    }
+    
+    let solid1: SolidTokens
 }
 #endif

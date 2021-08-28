@@ -13,12 +13,13 @@ import ServerGoogleAccount
 import ServerMicrosoftAccount
 import ServerAppleSignInAccount
 import ServerFacebookAccount
+import ServerSolidAccount
 import CredentialsGoogle
 import CredentialsFacebook
 import CredentialsDropbox
 import CredentialsMicrosoft
 import CredentialsAppleSignIn
-// import CredentialsSolid
+import CredentialsSolid
 import LoggerAPI
 
 extension AccountManager {
@@ -64,11 +65,11 @@ extension AccountManager {
             }
         }
         
-//        if Configuration.server.allowedSignInTypes.Solid == true {
-//            let solidCredentials = CredentialsSolid(tokenTimeToLive: Configuration.server.signInTokenTimeToLive)
-//            credentials.register(plugin: solidCredentials)
-//            // addAccountType(AppleSignInCreds.self)
-//        }
+        if Configuration.server.allowedSignInTypes.Solid == true {
+            let solidCredentials = CredentialsSolidToken(tokenTimeToLive: Configuration.server.signInTokenTimeToLive)
+            credentials.register(plugin: solidCredentials)
+            addAccountType(SolidCreds.self)
+        }
         
         // 8/8/17; There needs to be at least one sign-in type configured for the server to do anything. And at least one of these needs to allow owning users. If there can be no owning users, how do you create anything to share? https://github.com/crspybits/SyncServerII/issues/9
         if numberAccountTypes == 0 {

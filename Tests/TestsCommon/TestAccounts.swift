@@ -17,6 +17,8 @@ import ServerAccount
 @testable import ServerMicrosoftAccount
 @testable import ServerAppleSignInAccount
 import ServerFacebookAccount
+@testable import ServerSolidAccount
+import SolidAuthSwiftTools
 
 func ==(lhs: TestAccount, rhs:TestAccount) -> Bool {
     return lhs.tokenKey == rhs.tokenKey && lhs.idKey == rhs.idKey
@@ -26,16 +28,22 @@ struct TestAccount {
     let tokenKey:KeyPath<TestConfiguration, String> // key values: e.g., Google: a refresh token; Facebook:long-lived access token.
     
     // For Microsoft, their idToken
+    // For Solid, base64 encoded CodeParameters
     let secondTokenKey:KeyPath<TestConfiguration, String>?
+    
+    let thirdTokenKey:KeyPath<TestConfiguration, String>?
     
     let idKey:KeyPath<TestConfiguration, String>
     
     let scheme: AccountScheme
     
     // tokenKey: \.DropboxAccessTokenRevoked, idKey: \.DropboxId3, scheme: .dropbox
-    init(tokenKey:KeyPath<TestConfiguration, String>, secondTokenKey:KeyPath<TestConfiguration, String>? = nil, idKey:KeyPath<TestConfiguration, String>, scheme: AccountScheme) {
+    init(tokenKey:KeyPath<TestConfiguration, String>, secondTokenKey:KeyPath<TestConfiguration, String>? = nil,
+        thirdTokenKey:KeyPath<TestConfiguration, String>? = nil,
+        idKey:KeyPath<TestConfiguration, String>, scheme: AccountScheme) {
         self.tokenKey = tokenKey
         self.secondTokenKey = secondTokenKey
+        self.thirdTokenKey = thirdTokenKey
         self.idKey = idKey
         self.scheme = scheme
     }
@@ -118,6 +126,8 @@ struct TestAccount {
     
     static let apple1 = TestAccount(tokenKey: \.apple1.idToken, secondTokenKey: \.apple1.authorizationCode, idKey: \.apple1.id, scheme: .appleSignIn)
     
+    static let solid1 = TestAccount(tokenKey: \.solid1.refreshToken, secondTokenKey: \.solid1.codeParametersBase64, thirdTokenKey: \.solid1.idToken, idKey: \.solid1.id, scheme: .solid)
+
     static let microsoft1ExpiredAccessToken = TestAccount(tokenKey: \.microsoft1ExpiredAccessToken.refreshToken, secondTokenKey: \.microsoft1ExpiredAccessToken.accessToken, idKey: \.microsoft1ExpiredAccessToken.id, scheme: .microsoft)
     
     static let microsoft2RevokedAccessToken = TestAccount(tokenKey: \.microsoft2RevokedAccessToken.refreshToken, secondTokenKey: \.microsoft2RevokedAccessToken.accessToken, idKey: \.microsoft2RevokedAccessToken.id, scheme: .microsoft)
@@ -132,6 +142,14 @@ struct TestAccount {
         }
         
         return Configuration.test![keyPath: secondTokenKey]
+    }
+    
+    func thirdToken() -> String? {
+        guard let thirdTokenKey = thirdTokenKey else {
+            return nil
+        }
+        
+        return Configuration.test![keyPath: thirdTokenKey]
     }
     
     func id() -> String {
@@ -179,6 +197,14 @@ struct TestAccount {
             creds.accessToken = testAccount.token()
             callback(creds)
         }
+        
+        // MARK: Solid
+        AccountScheme.solid.registerHandler(type: .getCredentials) { testAccount, callback in
+            CredsCache.credsFor(solidAccount: testAccount) { creds in
+                Log.debug("SolidCreds: creds: \(creds)")
+                callback(creds)
+            }
+        }
     }
 }
 
@@ -195,17 +221,19 @@ extension AccountScheme {
     }
     
     func registerHandler(type: HandlerType, handler:@escaping Handler) {
-        handlers[key(for: type)] = handler
+        let handlerType = key(for: type)
+        Log.debug("registerHandler: handlerType: \(handlerType)")
+        handlers[handlerType] = handler
     }
     
-    func doHandler(for type: HandlerType, testAccount: TestAccount, callback: @escaping ((Account)->())) {
+    // You need to setup an expectation and wait until the callback is made.
+    func doHandler(for type: HandlerType, testAccount: TestAccount, callback:@escaping (Account?)->()) {
         let handlerKey = key(for: type)
         guard let handler = handlers[handlerKey] else {
             assert(false)
             return
         }
         
-        // Log.debug("About to call handler: \(type)")
         handler(testAccount, callback)
     }
     
@@ -222,6 +250,10 @@ extension AccountScheme {
 
             // This is the idToken for the Microsoft account-- the real JWT Oauth2 token.
             headers[ServerConstants.HTTPOAuth2AccessTokenKey] = testUser.secondToken()
+
+        case AccountScheme.solid.accountName:
+            headers[ServerConstants.HTTPAccountDetailsKey] = testUser.secondToken()
+            headers[ServerConstants.HTTPIdTokenKey] = testUser.thirdToken()
             
         default:
             break
@@ -435,6 +467,50 @@ class CredsCache {
                 completion(creds)
             }
         }
+    }
+    
+    static var solidCreds:SolidCreds!
+    
+    static func credsFor(solidAccount:TestAccount,
+                         completion: @escaping (_ creds: SolidCreds)->()) {
+        guard let creds = cache[solidAccount.id()] else {
+            Log.info("Attempting to refresh Solid Creds...")
+            guard let creds = SolidCreds(configuration: Configuration.server, delegate: nil) else {
+                Log.error("Could not create SolidCreds")
+                XCTFail()
+                return
+            }
+            
+            self.cache[solidAccount.id()] = creds
+            creds.refreshToken = solidAccount.token()
+                        
+            guard let base64 = solidAccount.secondToken() else {
+                XCTFail()
+                Log.error("Could not get secondToken for SolidCreds")
+                completion(creds)
+                return
+            }
+            
+            creds.codeParameters = try! CodeParameters.from(fromBase64: base64)
+            self.solidCreds = creds
+            
+            Log.debug("About to refresh SolidCreds")
+
+            creds.refresh { error in
+                Log.debug("Succeeded refreshing SolidCreds")
+                XCTAssert(error == nil, "credsFor: Failure on refresh: \(error!)")
+                completion(self.solidCreds)
+            }
+            
+            return
+        }
+        
+        guard let solidCreds = creds as? SolidCreds else {
+            assert(false)
+            return
+        }
+        
+        completion(solidCreds)
     }
 }
 
